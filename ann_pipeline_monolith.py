@@ -1,6 +1,8 @@
 import argparse
+import hashlib
 import json
 import logging
+import numbers
 import os
 import re
 import sys
@@ -148,98 +150,8 @@ Cite sources as much as possible using the PMID provided with each object, with 
 
 Supplied objects:'''
 
-class LllmHandler:
-    @staticmethod
-    def get_llm_aggregate_json(
-        json_responses, pmids, model='gemma3:12b', json_schema=json_schema_default
-    ):
-        prompt = prompt3_prefix
-        for pmid, json_response in zip(pmids, json_responses):
-            prompt += f'\n\nPMID {pmid}: ' + json_response
-        log.debug((
-            f'Submitting section-aggregation job ({len(json_responses)} blurbs; total '
-            f'{len(prompt)} chars) to LLM (model {model})'
-        ))
-
-        response: ChatResponse = ollama.chat(
-            model=model,
-            messages=[
-                {
-                    'role': 'user',
-                    'content': prompt,
-                },
-            ],
-            format=json_schema,
-            options={
-                'temperature': 0,
-            },
-        )
-        response_text = response['message']['content']
-        duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
-        log.debug(
-            f'Got response ({len(response_text)} chars) back from {model} in ' + \
-                _seconds_to_str(duration_sec)
-        )
-        return response_text, duration_sec
-
-    @staticmethod
-    def get_llm_consensus_json(
-        json1, json2, json3, model='gemma3:12b', json_schema=json_schema_default
-    ):
-        prompt = prompt2_tmpl.format(json1, json2, json3)
-        log.debug((
-            f'Submitting candidate-aggregation job (length {len(prompt)} chars) to LLM (model ' + \
-                f'{model})'
-        ))
-        response: ChatResponse = ollama.chat(
-            model=model,
-            messages=[
-                {
-                    'role': 'user',
-                    'content': prompt,
-                },
-            ],
-            format=json_schema,
-            options={
-                'temperature': 0,
-            },
-        )
-        response_text = response['message']['content']
-        duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
-        log.debug(
-            f'Got response ({len(response_text)} chars) back from {model} in ' + \
-                _seconds_to_str(duration_sec)
-        )
-        return response_text, duration_sec
-
-    @staticmethod
-    def get_llm_gene_info_json(
-        gene_id, gene_name, info_text, model, json_schema=json_schema_default
-    ):
-        prompt = prompt1_tmpl.format(gene_id, gene_name, info_text)
-        log.debug((
-            f'Submitting section-summary job (length {len(prompt)} chars) to LLM (model {model})'
-        ))
-        response: ChatResponse = ollama.chat(
-            model=model,
-            messages=[
-                {
-                    'role': 'user',
-                    'content': prompt,
-                },
-            ],
-            format=json_schema,
-            options={
-                'temperature': 0,
-            },
-        )
-        response_text = response['message']['content']
-        duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
-        log.debug(
-            f'Got response ({len(response_text)} chars) back from {model} in ' + \
-                _seconds_to_str(duration_sec)
-        )
-        return response_text, duration_sec
+class LlmHandler:
+    cache_dir = './.cache'
 
     @staticmethod
     def json_regex_filter(
@@ -256,6 +168,186 @@ class LllmHandler:
                 return False
         except json.JSONDecodeError:
             return False
+
+    def __init__(self, cache_dir='./.cache'):
+        self.cache_dir = cache_dir
+
+    def get_llm_aggregate_json(
+        self, json_responses, pmids, model='gemma3:12b', json_schema=json_schema_default,
+        retry=True,
+    ):
+        prompt = prompt3_prefix
+        for pmid, json_response in zip(pmids, json_responses):
+            prompt += f'\n\nPMID {pmid}: ' + json_response
+
+        cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
+        if cached_response is not None:
+            log.debug((
+                f'Returning cached section-aggregation response ({len(cached_response)} chars)'
+            ))
+            return cached_response, cached_dur
+
+        log.debug((
+            f'Submitting section-aggregation job ({len(json_responses)} blurbs; total '
+            f'{len(prompt)} chars) to LLM (model {model})'
+        ))
+        try:
+            response: ChatResponse = ollama.chat(
+                model=model,
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': prompt,
+                    },
+                ],
+                format=json_schema,
+                options={
+                    'temperature': 0,
+                },
+            )
+            response_text = response['message']['content']
+            duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
+            log.debug(
+                f'Got response ({len(response_text)} chars) back from {model} in ' + \
+                    _seconds_to_str(duration_sec)
+            )
+            self._write_cache(model, prompt, json_schema, response_text, duration_sec)
+        except KeyError as ke:
+            if retry:
+                return get_llm_aggregate_json(
+                    json_responses, pmids, model=model, json_schema=json_schema, retry=False,
+                )
+            else:
+                raise RuntimeError(f'Failed to get response back from {model}') from ke
+        return response_text, duration_sec
+
+    def get_llm_consensus_json(
+        self, json1, json2, json3, model='gemma3:12b', json_schema=json_schema_default, retry=True,
+    ):
+        prompt = prompt2_tmpl.format(json1, json2, json3)
+
+        cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
+        if cached_response is not None:
+            log.debug((
+                f'Returning cached candidate-aggregation response ({len(cached_response)} chars)'
+            ))
+            return cached_response, cached_dur
+
+        log.debug((
+            f'Submitting candidate-aggregation job (length {len(prompt)} chars) to LLM (model ' + \
+                f'{model})'
+        ))
+        try:
+            response: ChatResponse = ollama.chat(
+                model=model,
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': prompt,
+                    },
+                ],
+                format=json_schema,
+                options={
+                    'temperature': 0,
+                },
+            )
+            response_text = response['message']['content']
+            duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
+            log.debug(
+                f'Got response ({len(response_text)} chars) back from {model} in ' + \
+                    _seconds_to_str(duration_sec)
+            )
+            self._write_cache(model, prompt, json_schema, response_text, duration_sec)
+        except KeyError as ke:
+            if retry:
+                return get_llm_consensus_json(
+                    json1, json2, json3, model=model, json_schema=json_schema, retry=False,
+                )
+            else:
+                raise RuntimeError(f'Failed to get response back from {model}') from ke
+        return response_text, duration_sec
+
+    def get_llm_gene_info_json(
+        self, gene_id, gene_name, info_text, model, json_schema=json_schema_default, retry=True,
+    ):
+        prompt = prompt1_tmpl.format(gene_id, gene_name, info_text)
+
+        cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
+        if cached_response is not None:
+            log.debug((
+                f'Returning cached section-summary response ({len(cached_response)} chars)'
+            ))
+            return cached_response, cached_dur
+
+        log.debug((
+            f'Submitting section-summary job (length {len(prompt)} chars) to LLM (model {model})'
+        ))
+        try:
+            response: ChatResponse = ollama.chat(
+                model=model,
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': prompt,
+                    },
+                ],
+                format=json_schema,
+                options={
+                    'temperature': 0,
+                },
+            )
+            response_text = response['message']['content']
+            duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
+            log.debug(
+                f'Got response ({len(response_text)} chars) back from {model} in ' + \
+                    _seconds_to_str(duration_sec)
+            )
+            self._write_cache(model, prompt, json_schema, response_text, duration_sec)
+        except KeyError as ke:
+            if retry:
+                return self.get_llm_gene_info_json(
+                    gene_id, gene_name, info_text, model, json_schema=json_schema, retry=False,
+                )
+            else:
+                raise RuntimeError(f'Failed to get response back from {model}') from ke
+        return response_text, duration_sec
+
+    def _get_file(self, model, prompt, json_schema):
+        md5 = hashlib.md5(usedforsecurity=False)
+        md5.update(model.encode(encoding='utf8'))
+        md5.update(prompt.encode(encoding='utf8'))
+        md5.update(json.dumps(json_schema).encode(encoding='utf8'))
+        digest = md5.hexdigest()
+
+        return os.path.join(self.cache_dir, 'llm_responses', digest[:3], digest[3:] + '.json')
+
+    def _read_cache(self, model, prompt, json_schema):
+        cache_path = self._get_file(model, prompt, json_schema)
+        if not os.path.exists(cache_path):
+            return None, None
+        log.debug(f'Reading cached response for LLM {model}')
+        with open(cache_path) as cache_file:
+            cache_obj = json.load(cache_file)
+            return cache_obj['response_text'], cache_obj['duration_sec']
+
+    def _write_cache(self, model, prompt, json_schema, response_text, duration_sec):
+        log.debug(f'Caching response from LLM {model}')
+        cache_path = self._get_file(model, prompt, json_schema)
+
+        cache_parent = os.path.dirname(cache_path)
+        if not os.path.exists(cache_parent):
+            os.makedirs(cache_parent, exist_ok=True) # prevent race condition issue
+
+        content = dict(
+            duration_sec=duration_sec,
+            response_text=response_text,
+        )
+        try:
+            with open(cache_path, 'w') as cache_file:
+                json.dump(content, cache_file)
+            return True
+        except Exception as e:
+            log.exception('Error encountered while writing cache file')
 
 class PaperManager:
     path_abstrct = 'abstracts'
@@ -310,8 +402,11 @@ class PaperManager:
             self._parse(pmc_id)
         else:
             log.debug(f'Using cached abstract for paper PMC{pmc_id}')
-        with open(abstrct_path, 'r', encoding='utf8') as abstrct_file:
-            return re.sub(r'\n+', r'\n', abstrct_file.read())
+        try:
+            with open(abstrct_path, 'r', encoding='utf8') as abstrct_file:
+                return re.sub(r'\n+', r'\n', abstrct_file.read())
+        except FileNotFoundError:
+            return None
 
     def get_discussion(self, pmc_id):
         discusn_path = os.path.join(self.discusn_dir, f'PMC{pmc_id}_discussion.txt')
@@ -324,8 +419,11 @@ class PaperManager:
             self._parse(pmc_id)
         else:
             log.debug(f'Using cached discussion for paper PMC{pmc_id}')
-        with open(discusn_path, 'r', encoding='utf8') as discusn_file:
-            return re.sub(r'\n+', r'\n', discusn_file.read())
+        try:
+            with open(discusn_path, 'r', encoding='utf8') as discusn_file:
+                return re.sub(r'\n+', r'\n', discusn_file.read())
+        except FileNotFoundError:
+            return None
 
     def get_methods(self, pmc_id):
         methods_path = os.path.join(self.methods_dir, f'PMC{pmc_id}_methods.txt')
@@ -338,15 +436,21 @@ class PaperManager:
             self._parse(pmc_id)
         else:
             log.debug(f'Using cached methods for paper PMC{pmc_id}')
-        with open(methods_path, 'r', encoding='utf8') as methods_file:
-            return re.sub(r'\n+', r'\n', methods_file.read())
+        try:
+            with open(methods_path, 'r', encoding='utf8') as methods_file:
+                return re.sub(r'\n+', r'\n', methods_file.read())
+        except FileNotFoundError:
+            return None
 
     def get_pmid(self, pmc_id):
         if pmc_id.startswith('PMC'):
             pmc_id = pmc_id[3:]
         article_xml = self._get_article_xml(pmc_id)
         article_meta = article_xml.find('front').find('article-meta')
-        return article_meta.find('article-id[@pub-id-type="pmid"]').text
+        try:
+            return article_meta.find('article-id[@pub-id-type="pmid"]').text
+        except AttributeError as ae:
+            log.exception(f'Failed PMID fetch for paper PMC{pmc_id}')
 
     def get_results(self, pmc_id):
         results_path = os.path.join(self.results_dir, f'PMC{pmc_id}_results.txt')
@@ -359,8 +463,11 @@ class PaperManager:
             self._parse(pmc_id)
         else:
             log.debug(f'Using cached results for paper PMC{pmc_id}')
-        with open(results_path, 'r', encoding='utf8') as results_file:
-            return re.sub(r'\n+', r'\n', results_file.read())
+        try:
+            with open(results_path, 'r', encoding='utf8') as results_file:
+                return re.sub(r'\n+', r'\n', results_file.read())
+        except FileNotFoundError:
+            return None
 
     @staticmethod
     def init_dir(dirpath, name):
@@ -376,6 +483,9 @@ class PaperManager:
 
     def is_relevant(self, pmc_id, gene, name):
         abstract = self.get_abstract(pmc_id)
+        if abstract is None:
+            return False
+
         species_in_abstract = any(re.search(p, abstract) for p in self.species_incl_patterns)
         gene_in_abstract = gene in abstract or name.lower() in abstract.lower()
 
@@ -404,7 +514,7 @@ class PaperManager:
         return True
 
     def save_gene_pmc_ids(self, gene, pmc_ids):
-        log.debug(f'Recording {len(pmc_ids)} papers relevant to gene {gene}')
+        log.debug(f'Recording {len(pmc_ids)} paper{_s_if_plural(pmc_ids)} relevant to gene {gene}')
         gene_pmc_ids_path = os.path.join(self.mapping_dir, f'{gene}.txt')
         with open(gene_pmc_ids_path, 'w', encoding='utf8') as gene_pmc_ids_file:
             gene_pmc_ids_file.write('\n'.join(pmc_ids))
@@ -445,10 +555,14 @@ class PaperManager:
         article_xml = self._get_article_xml(pmc_id)
 
         # abstract
-        self._save_section(
-            article_xml.find('front').find('article-meta').find('abstract'),
-            os.path.join(self.abstrct_dir, f'PMC{pmc_id}_abstract.txt')
-        )
+        try:
+            self._save_section(
+                article_xml.find('front').find('article-meta').find('abstract'),
+                os.path.join(self.abstrct_dir, f'PMC{pmc_id}_abstract.txt')
+            )
+        except AttributeError as ae:
+            log.debug(f'Paper PMC{pmc_id} missing abstract')
+            return
 
         # all other sections
         body = article_xml.find('body')
@@ -461,7 +575,13 @@ class PaperManager:
         for section in body.findall('sec'):
             section_type = section.get('sec-type')
             if section_type is None:
-                section_type = section.find('title').text.lower()
+                try:
+                    section_type = section.find('title').text.lower()
+                except AttributeError as ae:
+                    log.info(
+                        f'Paper PMC{pmc_id} has untitled body section; we may miss valid data'
+                    )
+                    continue
 
             if 'discussion' in section_type:
                 log.debug(f'Saving discussion for paper PMC{pmc_id}')
@@ -498,7 +618,8 @@ class Throttler:
         self.verbosity = 0
         if cooldown_seconds <= 1:
             log.info(
-                f'Using throttler to make no more than {1/cooldown_seconds:.0f} requests per second'
+                f'Using throttler to make no more than {1/cooldown_seconds:.0f} ' +\
+                    f'request{_s_if_plural(cooldown_seconds)} per second'
             )
         else:
             log.info(
@@ -521,11 +642,13 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     start = time.time()
     scraper = cs.create_scraper()
     throttler = Throttler(_COOLDOWN_SECONDS)
+    llm_handler = LlmHandler(cache_dir)
 
     paper_manager = PaperManager(cache_dir, scraper, throttler)
 
     mycobrowser_df = pd.read_csv(
-        '../published_data/Mycobacterium_tuberculosis_H37Rv_txt_v5.txt',
+        # '../published_data/Mycobacterium_tuberculosis_H37Rv_txt_v5.txt',
+        'Mycobacterium_tuberculosis_H37Rv_txt_v5.txt',
         sep='\t'
     )
     mycobrowser_df = mycobrowser_df.loc[
@@ -540,6 +663,9 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     paper_manager.save_gene_pmc_ids(gene, pmc_ids)
     section_distillation_candidates = []
     section_distillations = []
+
+    if len(pmc_ids) < 3:
+        log.warning(f'Found only {len(pmc_ids)} paper{_s_if_plural(pmc_ids)} for gene {gene}')
 
     for pmc_id in pmc_ids:
         sections = []
@@ -561,13 +687,16 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         if discussion is not None and discussion != results:
             sections.append(('discussion', discussion))
 
-        log.debug(f'Obtained {len(sections)} relevant sections for paper PMC{pmc_id}')
+        log.debug(
+            f'Obtained {len(sections)} relevant section{_s_if_plural(sections)} for paper PMC' +\
+                pmc_id
+        )
 
         for label, section in sections:
             log.debug(f'Starting processing for PMC{pmc_id} {label}')
             section_distillation_candidates_cur = []
             for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
-                section_distillation_candidate, duration_sec = LllmHandler.get_llm_gene_info_json(
+                section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
                     gene, name, section, model
                 )
                 section_distillation_candidates_cur.append(section_distillation_candidate)
@@ -575,7 +704,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
                     f'PMC{pmc_id}', label, model, gene, name, section_distillation_candidate,
                     duration_sec
                 ))
-            section_distillation, duration_sec = LllmHandler.get_llm_consensus_json(
+            section_distillation, duration_sec = llm_handler.get_llm_consensus_json(
                 section_distillation_candidates_cur[0], section_distillation_candidates_cur[1],
                 section_distillation_candidates_cur[2], model='phi4:14b'
             )
@@ -597,7 +726,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         str(len(section_distillation_candidate_df)),
         'total summaries generated for',
         str(len(section_distillation_df)),
-        'total paper sections for gene',
+        f'total paper section{_s_if_plural(section_distillation_df)} for gene',
         gene
     )))
     section_distillation_df.insert(
@@ -605,18 +734,24 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     )
 
     section_distillation_filtered_df = section_distillation_df.loc[
-        section_distillation_df['Response'].map(LllmHandler.json_regex_filter),
+        section_distillation_df['Response'].map(llm_handler.json_regex_filter),
         :
     ]
     log.debug(
-        f'Filtered down to {len(section_distillation_filtered_df)} valid sections for gene {gene}'
+        f'Filtered down to {len(section_distillation_filtered_df)} valid ' +\
+            f'section{_s_if_plural(section_distillation_filtered_df)} for gene {gene}'
     )
 
-    gene_distillation, duration_sec = LllmHandler.get_llm_aggregate_json(
-        section_distillation_filtered_df['Response'],
-        section_distillation_filtered_df['PMID'],
-        model='gemma3:12b'
-    )
+    if len(section_distillation_filtered_df) > 1:
+        gene_distillation, duration_sec = llm_handler.get_llm_aggregate_json(
+            section_distillation_filtered_df['Response'],
+            section_distillation_filtered_df['PMID'],
+            model='gemma3:12b'
+        )
+    elif len(section_distillation_filtered_df) == 1:
+        gene_distillation = section_distillation_filtered_df['Response'].iat[0]
+    else:
+        gene_distillation = None
     duration = time.time() - start
     log.info(
         f'Finished annotation process for gene {gene} in {_seconds_to_str(duration)}'
@@ -641,7 +776,7 @@ def get_pmc_ids(gene, name, scraper=None, throttler=None):
     )
     result1 = json.loads(response1.text)
     idlist1 = result1['esearchresult']['idlist']
-    log.debug(f'Found {len(idlist1)} papers by locus for gene {gene}')
+    log.debug(f'Found {len(idlist1)} paper{_s_if_plural(idlist1)} by locus for gene {gene}')
 
     if name == gene:
         log.debug(f'No name available for gene {gene}; moving on with obtained papers')
@@ -658,10 +793,18 @@ def get_pmc_ids(gene, name, scraper=None, throttler=None):
     )
     result2 = json.loads(response2.text)
     idlist2 = result2['esearchresult']['idlist']
-    log.debug(f'Found {len(idlist2)} papers by name ({name}) for gene {gene}')
+    log.debug(
+        f'Found {len(idlist2)} paper{_s_if_plural(idlist2)} by name ({name}) for gene {gene}'
+    )
 
     combined = list(set(idlist1 + idlist2))
-    log.debug(f'That makes total of {len(combined)} papers for gene {gene}')
+
+    if len(combined) < 3:
+        log.warning(f'Found only {len(combined)} paper{_s_if_plural(combined)} for gene {gene}')
+    else:
+        log.debug(
+            f'That makes total of {len(combined)} paper{_s_if_plural(combined)} for gene {gene}'
+        )
 
     return combined
 
@@ -671,6 +814,11 @@ def main(gene, cache_dir='./.cache'):
     print(gene, json.dumps(gene_distillation, indent=2))
 
     return gene_distillation
+
+def _s_if_plural(num_or_collection):
+    if isinstance(num_or_collection, numbers.Number):
+        return "s" if num_or_collection != 1 else ""
+    return "s" if len(num_or_collection) != 1 else ""
 
 def _seconds_to_str(total_seconds):
     seconds = total_seconds % 60
