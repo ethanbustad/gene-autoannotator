@@ -7,7 +7,7 @@ import llms
 import pmc
 import utils
 
-from .models import MODEL_SUMMARY, MODEL_AGGREGATION, MODEL_CONSENSUS
+from models import MODEL_SUMMARY, MODEL_AGGREGATION, MODEL_CONSENSUS
 
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)

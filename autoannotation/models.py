@@ -9,12 +9,10 @@ PERF_MODELS = {
 
 # === Lite models (<3GB each) ===
 # Use smaller, RAM-friendly alternatives that roughly mimic variety:
-# - Replace Mistral, LLaMA3, Gemma3 with smaller llama2/mistral models
-# - Keep one “fast reasoning” and one “general purpose” model
 LITE_MODELS = {
-    'summary': ['mistral-mini:2b', 'llama2-3b', 'gemma-mini:2b'],
-    'consensus': 'phi-mini:2b',
-    'aggregation': 'gemma-mini:2b'
+    'summary': ['mistral:7b-instruct-v0.2-q3_K_M', 'llama3.2:3b', 'gemma3:4b'],
+    'consensus': 'phi3:3.8b',
+    'aggregation': 'gemma3:4b'
 }
 
 # === Select mode ===
