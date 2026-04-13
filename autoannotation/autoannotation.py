@@ -39,6 +39,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     if len(pmc_ids) < 3:
         log.warning(f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {gene}')
 
+    pmc_ids = pmc_ids[:10]
     for pmc_id in pmc_ids:
         sections = []
 

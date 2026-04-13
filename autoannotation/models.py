@@ -16,7 +16,7 @@ LITE_MODELS = {
 }
 
 # === Select mode ===
-MODE = 'performance'   # 'performance' or 'lite'
+MODE = 'lite'   # 'performance' or 'lite'
 
 if MODE == 'performance':
     MODEL_SUMMARY = PERF_MODELS['summary']
