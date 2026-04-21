@@ -6,7 +6,7 @@ import logging
 
 #import compareannotations
 
-import core
+from . import core
 
 def main(trusted, generated):
 	trusted_data = core.load_json(trusted)
