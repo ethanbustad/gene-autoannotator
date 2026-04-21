@@ -2,7 +2,7 @@
 import json
 import logging
 
-from compareannotations.scoring import is_exact_match, embedded_similarity, llm_similarity
+from .scoring import is_exact_match, embedded_similarity, llm_similarity
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
