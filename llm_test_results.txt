@@ -1,0 +1,337 @@
+Model used: llama3.1:latest
+
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$ python3 -m pytest
+==================================================================================== test session starts =====================================================================================
+platform linux -- Python 3.12.3, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/caden-saltzberg/projects/sch/gene-autoannotator
+plugins: playwright-0.7.1, base-url-2.1.0, anyio-4.11.0
+collected 23 items                                                                                                                                                                           
+
+tests/test_embed.py ...F.....                                                                                                                                                          [ 39%]
+tests/test_exact.py .....                                                                                                                                                              [ 60%]
+tests/test_llm.py FFFFFF.FF                                                                                                                                                            [100%]
+
+========================================================================================== FAILURES ==========================================================================================
+__________________________________________________________________________ test_embed_different_fact_different_text __________________________________________________________________________
+
+    def test_embed_different_fact_different_text():
+    
+    	cases = [
+    		("I was born on December fourth","December fifth is my birthday"),
+    		("The gene is expressed in liver tissue","Gene expression occcurs in the kidney"),
+    		("The protein binds to DNA","RNA binding occurs via the protein"),
+    		("The sample was collected in Seattle","Collection location was Boston")
+    	]
+    
+    	for a, b in cases:
+    		score = embedded_similarity(a,b)
+>   		assert score < 0.4, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: The protein binds to DNA
+E       B: RNA binding occurs via the protein
+E       Score: 0.7116402983665466
+E     assert 0.7116402983665466 < 0.4
+
+tests/test_embed.py:54: AssertionError
+________________________________________________________________________________ test_llm_same_fact_same_text ________________________________________________________________________________
+
+    def test_llm_same_fact_same_text():
+    
+    	cases = [
+    		("December fifth is my birthday","December fifth is my birthday"),
+    		("The gene is expressed in liver tissue","The gene is expressed in liver tissue")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.7, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: December fifth is my birthday
+E       B: December fifth is my birthday
+E       Score: 0.5
+E     assert 0.5 > 0.7
+
+tests/test_llm.py:13: AssertionError
+_____________________________________________________________________________ test_llm_same_fact_different_text ______________________________________________________________________________
+
+    def test_llm_same_fact_different_text():
+    
+    	cases = [
+    		("December fifth is my birthday","I was born on December fifth"),
+    		("The gene is expressed in liver tissue","Gene expression occurs in the liver"),
+    		("The protein binds to DNA","DNA binding occurs via the protein"),
+    		("The sample was collected in Seattle","Collection location was Seattle")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.6, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: December fifth is my birthday
+E       B: I was born on December fifth
+E       Score: 0.5
+E     assert 0.5 > 0.6
+
+tests/test_llm.py:27: AssertionError
+_____________________________________________________________________________ test_llm_different_fact_same_text ______________________________________________________________________________
+
+    def test_llm_different_fact_same_text():
+    
+    	cases = [
+    		("I was born on December fourth","I was born on December fifth"),
+    		("The gene is expressed in liver tissue","The gene is expressed in kidney tissue"),
+    		("The protein binds to DNA","The protein binds to RNA"),
+    		("The sample was collected in Seattle","The sample was collected in Boston")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score < 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: I was born on December fourth
+E       B: I was born on December fifth
+E       Score: 0.5
+E     assert 0.5 < 0.5
+
+tests/test_llm.py:40: AssertionError
+___________________________________________________________________________ test_llm_different_fact_different_text ___________________________________________________________________________
+
+    def test_llm_different_fact_different_text():
+    
+    	cases = [
+    		("I was born on December fourth","December fifth is my birthday"),
+    		("The gene is expressed in liver tissue","Gene expression occcurs in the kidney"),
+    		("The protein binds to DNA","RNA binding occurs via the protein"),
+    		("The sample was collected in Seattle","Collection location was Boston")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score < 0.4, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: I was born on December fourth
+E       B: December fifth is my birthday
+E       Score: 0.5
+E     assert 0.5 < 0.4
+
+tests/test_llm.py:54: AssertionError
+___________________________________________________________________________________ test_llm_contradiction ___________________________________________________________________________________
+
+    def test_llm_contradiction():
+    
+    	cases = [
+    		("True","False"),
+    		("The gene is expressed in liver","The gene is not expressed in liver"),
+    		("The protein binds DNA","The protein does not bind DNA")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score < 0.3, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: True
+E       B: False
+E       Score: 0.5
+E     assert 0.5 < 0.3
+
+tests/test_llm.py:67: AssertionError
+___________________________________________________________________________________ test_llm_same_numbers ____________________________________________________________________________________
+
+    def test_llm_same_numbers():
+    
+    	cases = [
+    		("10","10"),
+    		("300","300"),
+    		("846","846")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.8, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: 10
+E       B: 10
+E       Score: 0.5
+E     assert 0.5 > 0.8
+
+tests/test_llm.py:80: AssertionError
+_________________________________________________________________________________ test_llm_same_number_text __________________________________________________________________________________
+
+    def test_llm_same_number_text():
+    
+    	cases = [
+    		("The gene expression level increased by 10%","The gene expression level increased by 11%"),
+    		("5 mg/mL is the protein concentration","The protein concentration is 5 mg/mL")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: The gene expression level increased by 10%
+E       B: The gene expression level increased by 11%
+E       Score: 0.5
+E     assert 0.5 > 0.5
+
+tests/test_llm.py:105: AssertionError
+_______________________________________________________________________________ test_llm_different_number_text _______________________________________________________________________________
+
+    def test_llm_different_number_text():
+    
+    	cases = [
+    		("The gene has 1 functional copy of the gene","The gene has 2 functional copies of the gene"),
+    		("The gene expression level increased by 10%","The gene expression level increased by 45%"),
+    		("The protein concentration is 5.0 mg/mL","The protein concentration is 20 mg/mL"),
+    		("The enzyme is active at 1 copy per cell","The enzyme is active at 3 copies per cell")
+    	]
+    
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score < 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError: 
+E       A: The gene has 1 functional copy of the gene
+E       B: The gene has 2 functional copies of the gene
+E       Score: 0.5
+E     assert 0.5 < 0.5
+
+tests/test_llm.py:119: AssertionError
+================================================================================== short test summary info ===================================================================================
+FAILED tests/test_embed.py::test_embed_different_fact_different_text - AssertionError: 
+FAILED tests/test_llm.py::test_llm_same_fact_same_text - AssertionError: 
+FAILED tests/test_llm.py::test_llm_same_fact_different_text - AssertionError: 
+FAILED tests/test_llm.py::test_llm_different_fact_same_text - AssertionError: 
+FAILED tests/test_llm.py::test_llm_different_fact_different_text - AssertionError: 
+FAILED tests/test_llm.py::test_llm_contradiction - AssertionError: 
+FAILED tests/test_llm.py::test_llm_same_numbers - AssertionError: 
+FAILED tests/test_llm.py::test_llm_same_number_text - AssertionError: 
+FAILED tests/test_llm.py::test_llm_different_number_text - AssertionError: 
+========================================================================== 9 failed, 14 passed in 70.84s (0:01:10) ===========================================================================
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$ 
+
+
+
+
+
+Model used: qwen2.5:latest
+
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$ python3 -m pytest
+==================================================================================== test session starts =====================================================================================
+platform linux -- Python 3.12.3, pytest-8.4.2, pluggy-1.6.0
+rootdir: /home/caden-saltzberg/projects/sch/gene-autoannotator
+plugins: playwright-0.7.1, base-url-2.1.0, anyio-4.11.0
+collected 23 items
+
+tests/test_embed.py ...F.....                                                                                                                                                          [ 39%]
+tests/test_exact.py .....                                                                                                                                                              [ 60%]
+tests/test_llm.py FF...F.F.                                                                                                                                                            [100%]
+
+========================================================================================== FAILURES ==========================================================================================
+__________________________________________________________________________ test_embed_different_fact_different_text __________________________________________________________________________
+
+    def test_embed_different_fact_different_text():
+
+    	cases = [
+    		("I was born on December fourth","December fifth is my birthday"),
+    		("The gene is expressed in liver tissue","Gene expression occcurs in the kidney"),
+    		("The protein binds to DNA","RNA binding occurs via the protein"),
+    		("The sample was collected in Seattle","Collection location was Boston")
+    	]
+
+    	for a, b in cases:
+    		score = embedded_similarity(a,b)
+>   		assert score < 0.4, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError:
+E       A: The protein binds to DNA
+E       B: RNA binding occurs via the protein
+E       Score: 0.7116402983665466
+E     assert 0.7116402983665466 < 0.4
+
+tests/test_embed.py:54: AssertionError
+________________________________________________________________________________ test_llm_same_fact_same_text ________________________________________________________________________________
+
+    def test_llm_same_fact_same_text():
+
+    	cases = [
+    		("December fifth is my birthday","December fifth is my birthday"),
+    		("The gene is expressed in liver tissue","The gene is expressed in liver tissue")
+    	]
+
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.7, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError:
+E       A: December fifth is my birthday
+E       B: December fifth is my birthday
+E       Score: 0.0
+E     assert 0.0 > 0.7
+
+tests/test_llm.py:13: AssertionError
+_____________________________________________________________________________ test_llm_same_fact_different_text ______________________________________________________________________________
+
+    def test_llm_same_fact_different_text():
+
+    	cases = [
+    		("December fifth is my birthday","I was born on December fifth"),
+    		("The gene is expressed in liver tissue","Gene expression occurs in the liver"),
+    		("The protein binds to DNA","DNA binding occurs via the protein"),
+    		("The sample was collected in Seattle","Collection location was Seattle")
+    	]
+
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.6, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError:
+E       A: December fifth is my birthday
+E       B: I was born on December fifth
+E       Score: 0.0
+E     assert 0.0 > 0.6
+
+tests/test_llm.py:27: AssertionError
+___________________________________________________________________________________ test_llm_same_numbers ____________________________________________________________________________________
+
+    def test_llm_same_numbers():
+
+    	cases = [
+    		("10","10"),
+    		("300","300"),
+    		("846","846")
+    	]
+
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.8, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError:
+E       A: 10
+E       B: 10
+E       Score: 0.0
+E     assert 0.0 > 0.8
+
+tests/test_llm.py:80: AssertionError
+_________________________________________________________________________________ test_llm_same_number_text __________________________________________________________________________________
+
+    def test_llm_same_number_text():
+
+    	cases = [
+    		("The gene expression level increased by 10%","The gene expression level increased by 11%"),
+    		("5 mg/mL is the protein concentration","The protein concentration is 5 mg/mL")
+    	]
+
+    	for a, b in cases:
+    		score = llm_similarity(a,b)
+>   		assert score > 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
+E     AssertionError:
+E       A: The gene expression level increased by 10%
+E       B: The gene expression level increased by 11%
+E       Score: 0.0
+E     assert 0.0 > 0.5
+
+tests/test_llm.py:105: AssertionError
+================================================================================== short test summary info ===================================================================================
+FAILED tests/test_embed.py::test_embed_different_fact_different_text - AssertionError:
+FAILED tests/test_llm.py::test_llm_same_fact_same_text - AssertionError:
+FAILED tests/test_llm.py::test_llm_same_fact_different_text - AssertionError:
+FAILED tests/test_llm.py::test_llm_same_numbers - AssertionError:
+FAILED tests/test_llm.py::test_llm_same_number_text - AssertionError:
+========================================================================== 5 failed, 18 passed in 87.04s (0:01:27) ===========================================================================
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$
+

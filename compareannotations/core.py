@@ -22,13 +22,17 @@ def compare(trusted, generated):
 	missing = list(set(trusted.keys()) - set(generated.keys()))
 	extra = list(set(generated.keys()) - set(trusted.keys()))
 
+	avg_embed, avg_llm = compute_average_scores(field_scores)
+
 	report = {
 		"trusted": trusted,
 		"generated": generated,
 		"field_scores": field_scores,
 		"missing": missing,
 		"extra": extra,
-		"exact_matches": [key for key, value in field_scores.items() if value["exact"] == 1 ]
+		"exact_matches": [key for key, value in field_scores.items() if value["exact"] == 1 ],
+		"avg_embed": avg_embed,
+		"avg_llm": avg_llm
 	}
 
 	overall_score = compute_overall_score(field_scores)
@@ -49,9 +53,23 @@ def compute_overall_score(field_scores):
 		if score["exact"] == 1:
 			score_sum += 1.0
 		else:
-			score_sum += EMBED_SCORE_WEIGHT * score["embedding"] + LLM_SCORE_WEIGHT * score["llm"]
+			score_sum += (EMBED_SCORE_WEIGHT * score["embedding"] + LLM_SCORE_WEIGHT * score["llm"])
 
 	return score_sum / total
+
+def compute_average_scores(field_scores):
+	total = len(field_scores)
+	if total == 0:
+		return 0.0, 0.0
+	
+	embed_sum = 0.0
+	llm_sum = 0.0
+
+	for score in field_scores.values():
+		embed_sum += score["embedding"]
+		llm_sum += score["llm"]
+
+	return embed_sum / total, llm_sum / total
 
 
 def score_field(key, trusted, generated):

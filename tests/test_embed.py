@@ -105,7 +105,7 @@ def test_embed_same_number_text():
 		assert score > 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
 
 
-def test_embed_different_number_text():
+def test_embed_different_number_same_text():
 	
 	cases = [
 		("The gene has 1 functional copy of the gene","The gene has 2 functional copies of the gene"),

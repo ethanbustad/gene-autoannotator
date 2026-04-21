@@ -29,7 +29,7 @@ mistral:7b-instruct-v0.2-q3_K_M    6897f015d8dc    3.5 GB
 gemma:2b                           b50d6c999e59    1.7 GB
 
 """
-MODEL = "llama3.1:latest"
+MODEL = "qwen2.5:latest"
 
 embedder = SentenceTransformer("all-mpnet-base-v2")
 
@@ -63,7 +63,7 @@ def embedded_similarity(a, b):
 
 
 def llm_similarity(a, b):
-	prompt1 = """
+	prompt = """
 	You are a strict evaluator of factual equivalence between two statements
 	
 	Focus ONLY on the concrete facts (numbers, dates, names, quantities, entities). 
@@ -86,7 +86,7 @@ def llm_similarity(a, b):
 	Statement B: {b}
 
 	"""
-	prompt = """
+	promp2 = """
 	You are a strict evaluator of factual equivalence between two statements
 
 	Focus ONLY on the concrete facts (numbers, dates, names, quantities, entitires, etc)

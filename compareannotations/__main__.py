@@ -25,8 +25,20 @@ def main(trusted, generated):
 	print(f"{len(report["trusted"])}: fields in trusted")
 	print(f"{len(report["generated"])}: fields in generated")
 	print(f"{len(report["exact_matches"])}: exact field matches")
+	
+	non_exact = len(report["field_scores"]) - len(report["exact_matches"])
+	print(f"{non_exact}: non_exact field Matches")
+
+	print(f"{report["avg_embed"]:.4f}: AVG embed score")
+	print(f"{report["avg_llm"]:.4f}: AVG llm score")
+
 	print(f"{len(report["missing"])}: missing fields")
 	print(f"{len(report["extra"])}: extra fields")
+
+	print("\n=== FIELD SCORES ===\n")
+
+	for field, scores in report["field_scores"].items():
+		print(f"\"{field}\": embed score: {scores["embedding"]:.4f} llm score: {scores["llm"]:.4f}")
 
 	print(f"\nOverall Score: {score}\n")
 
