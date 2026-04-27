@@ -22,25 +22,25 @@ def main(trusted, generated):
 
 	print("\n=== COMPARISON REPORT ===\n")
 
-	print(f"{len(report["trusted"])}: fields in trusted")
-	print(f"{len(report["generated"])}: fields in generated")
-	print(f"{len(report["exact_matches"])}: exact field matches")
+	print(f"{len(report["trusted"])}\t: fields in trusted")
+	print(f"{len(report["generated"])}\t: fields in generated")
+	print(f"{len(report["exact_matches"])}\t: exact field matches")
 	
 	non_exact = len(report["field_scores"]) - len(report["exact_matches"])
-	print(f"{non_exact}: non_exact field Matches")
+	print(f"{non_exact}\t: non-exact field Matches")
 
-	print(f"{report["avg_embed"]:.4f}: AVG embed score")
-	print(f"{report["avg_llm"]:.4f}: AVG llm score")
+	print(f"{report["avg_embed"]:.2f}\t: AVG embed score")
+	print(f"{report["avg_llm"]:.2f}\t: AVG llm score")
 
-	print(f"{len(report["missing"])}: missing fields")
-	print(f"{len(report["extra"])}: extra fields")
+	print(f"{len(report["missing"])}\t: missing fields")
+	print(f"{len(report["extra"])}\t: extra fields")
 
 	print("\n=== FIELD SCORES ===\n")
 
 	for field, scores in report["field_scores"].items():
-		print(f"\"{field}\": embed score: {scores["embedding"]:.4f} llm score: {scores["llm"]:.4f}")
+		print(f"\"{field}\": overall score: {(scores["embedding"] + scores["llm"]) / 2:.2f} exact score: {scores["exact"]} embed score: {scores["embedding"]:.2f} llm score: {scores["llm"]:.2f}")
 
-	print(f"\nOverall Score: {score}\n")
+	print(f"\nOverall Score: {score:.2f}\n")
 
 
 	print("\n=== END OF REPORT ===\n")
