@@ -10,7 +10,7 @@ PERF_MODELS = {
 # === Lite models (<3GB each) ===
 # Use smaller, RAM-friendly alternatives that roughly mimic variety:
 LITE_MODELS = {
-    'summary': ['mistral:7b-instruct-v0.2-q3_K_M', 'llama3.2:3b', 'gemma3:4b'],
+    'summary': ['mistral:7b-instruct', 'llama3.2:3b', 'gemma3:4b'],
     'consensus': 'phi3:3.8b',
     'aggregation': 'gemma3:4b'
 }
