@@ -187,7 +187,7 @@ class PmcPaperManager(papers.PaperManager):
 
         if results is not None:
             species_in_results = any(re.search(p, results) for p in self.species_incl_patterns)
-            gene_in_results = gene in results or name.lower() in abstract.lower()
+            gene_in_results = gene in results or name.lower() in abstract.lower()lsp
             excl_in_results = any(re.search(p, results) for p in self.species_excl_patterns)
 
             if not species_in_results or not gene_in_results or excl_in_results:

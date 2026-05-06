@@ -130,4 +130,15 @@ def test_llm_different_number_text():
 		score = llm_similarity(a,b)
 		assert score < 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
 
+def test_llm_missing_null_text():
+
+	cases = [
+		("The gene expression level increased by 10%","Null"),
+		("The gene expression level increased by 10%","Unknown"),
+		("The gene expression level increased by 10%","Missing")
+	]
+
+	for a, b in cases:
+		score = llm_similarity(a,b)
+		assert score < 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
 

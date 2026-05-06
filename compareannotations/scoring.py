@@ -15,7 +15,7 @@ qwen2.5:14b-instruct  9.0 GB  0: /9
 qwen2.5:7b-instruct   4.7 GB  02:53 9/9
 qwen2.5:3b-instruct   1.9 GB  01:21 8/9
 """
-MODEL = "qwen2.5:14b-instruct"
+MODEL = "qwen2.5:7b-instruct"
 
 embedder = SentenceTransformer("all-mpnet-base-v2")
 

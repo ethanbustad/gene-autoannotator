@@ -9,6 +9,12 @@ def main(gene, cache_dir='./.cache'):
 
     print(gene, json.dumps(gene_distillation, indent=2))
 
+    if gene_distillation is None:
+        return
+
+    with open(f"gen_{gene}.json", "w") as f:
+        json.dump(gene_distillation, f, indent=2)
+
     return gene_distillation
 
 if __name__ == '__main__':
