@@ -19,14 +19,25 @@ def load_json(path):
 	with open(path, "r") as f:
 		return json.load(f)
 
+def is_unknown(v):
+	return v is None or v == "" or v == "unknown" or v == "missing"
+
 def compare(trusted, generated):
 	
 	field_scores = {}
 
+	ignored = []
+
 	for key in trusted:
+		trusted_val = trusted.get(key)
+
+		if is_unknown(trusted_val):
+			ignored.append(key)
+			continue
+
 		field_scores[key] = score_field(key, trusted, generated)
 
-	missing = list(set(trusted.keys()) - set(generated.keys()))
+	missing = [key for key in trusted.keys() if key not in generated and key not in ignored]
 	extra = list(set(generated.keys()) - set(trusted.keys()))
 
 	avg_embed, avg_llm = compute_average_scores(field_scores)
@@ -34,6 +45,7 @@ def compare(trusted, generated):
 	report = {
 		"trusted": trusted,
 		"generated": generated,
+		"ignored": ignored,
 		"field_scores": field_scores,
 		"missing": missing,
 		"extra": extra,
@@ -126,7 +138,7 @@ def score_field(key, trusted, generated):
 		return scores
 
 	scores["embedding"] = embedded_similarity(trusted_val, generated_val)
-	scores["llm"] = llm_similarity(trusted_val, generated_val)
+	scores["llm"] = llm_similarity(f"{key}: {trusted_val}", f"{key}: {generated_val}")
 
 	return scores
 

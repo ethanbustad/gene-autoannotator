@@ -1,0 +1,2146 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-05-08 14:40:45,676 W | Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 6404.75it/s]
+Loading weights:   0%|          | 0/393 [00:00<?, ?it/s]Loading weights: 100%|██████████| 393/393 [00:00<00:00, 8671.98it/s]
+[transformers] [1mRobertaForSequenceClassification LOAD REPORT[0m from: roberta-large-mnli
+Key                         | Status     |  | 
+----------------------------+------------+--+-
+roberta.pooler.dense.bias   | UNEXPECTED |  | 
+roberta.pooler.dense.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+2026-05-08 14:40:48,078 I | Starting annotation process for gene Rv0001
+2026-05-08 14:40:48,078 I | Using dir ./.cache for caching papers
+2026-05-08 14:40:48,078 I | Using dir ./.cache for caching PMC papers
+2026-05-08 14:40:48,104 I | Using throttler to make no more than 2 requests per second
+2026-05-08 14:40:48,151 I | Searching PubMed Central for gene Rv0001
+2026-05-08 14:40:48,151 D | Searching PubMed Central by gene locus Rv0001
+2026-05-08 14:40:48,334 D | Found 36 papers by locus for gene Rv0001
+2026-05-08 14:40:48,334 D | Searching PubMed Central by gene name dnaA
+2026-05-08 14:40:48,334 D | Slowing down requests: sleeping for 0.500s
+2026-05-08 14:40:49,313 D | Found 1115 papers by name (dnaA) for gene Rv0001
+2026-05-08 14:40:49,314 D | That makes total of 1126 papers for gene Rv0001
+2026-05-08 14:40:49,314 D | Recording 1126 papers relevant to gene Rv0001
+2026-05-08 14:40:49,315 D | No cached abstract for paper PMC11205783
+2026-05-08 14:40:49,315 D | Parsing paper PMC11205783
+2026-05-08 14:40:49,315 D | Downloading paper PMC11205783 from PubMed Central
+2026-05-08 14:40:49,315 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:40:50,109 D | Saving methods for paper PMC11205783
+2026-05-08 14:40:50,110 D | Saving results for paper PMC11205783
+2026-05-08 14:40:50,111 D | Saving discussion for paper PMC11205783
+2026-05-08 14:40:50,114 I | Skipping paper PMC11205783: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:50,114 D | No cached abstract for paper PMC148192
+2026-05-08 14:40:50,114 D | Parsing paper PMC148192
+2026-05-08 14:40:50,114 D | Downloading paper PMC148192 from PubMed Central
+2026-05-08 14:40:50,114 D | Slowing down requests: sleeping for 0.482s
+2026-05-08 14:40:50,755 D | No paper body available for PMC148192
+2026-05-08 14:40:50,755 I | Skipping paper PMC148192: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:50,756 D | No cached abstract for paper PMC8903201
+2026-05-08 14:40:50,756 D | Parsing paper PMC8903201
+2026-05-08 14:40:50,756 D | Downloading paper PMC8903201 from PubMed Central
+2026-05-08 14:40:50,756 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:40:51,607 I | Skipping paper PMC8903201: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:51,607 D | No cached abstract for paper PMC4453565
+2026-05-08 14:40:51,607 D | Parsing paper PMC4453565
+2026-05-08 14:40:51,607 D | Downloading paper PMC4453565 from PubMed Central
+2026-05-08 14:40:51,607 D | Slowing down requests: sleeping for 0.485s
+2026-05-08 14:40:52,401 D | Saving discussion for paper PMC4453565
+2026-05-08 14:40:52,402 D | Saving results for paper PMC4453565
+2026-05-08 14:40:52,402 D | Saving methods for paper PMC4453565
+2026-05-08 14:40:52,403 I | Skipping paper PMC4453565: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:52,403 D | No cached abstract for paper PMC5669810
+2026-05-08 14:40:52,403 D | Parsing paper PMC5669810
+2026-05-08 14:40:52,403 D | Downloading paper PMC5669810 from PubMed Central
+2026-05-08 14:40:52,403 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:40:53,190 D | Saving methods for paper PMC5669810
+2026-05-08 14:40:53,190 D | Saving discussion for paper PMC5669810
+2026-05-08 14:40:53,190 D | Saving results for paper PMC5669810
+2026-05-08 14:40:53,191 I | Skipping paper PMC5669810: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:53,191 D | No cached abstract for paper PMC4448311
+2026-05-08 14:40:53,191 D | Parsing paper PMC4448311
+2026-05-08 14:40:53,191 D | Downloading paper PMC4448311 from PubMed Central
+2026-05-08 14:40:53,191 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:40:54,302 D | Saving discussion for paper PMC4448311
+2026-05-08 14:40:54,303 D | Saving results for paper PMC4448311
+2026-05-08 14:40:54,304 D | Saving methods for paper PMC4448311
+2026-05-08 14:40:54,306 I | Skipping paper PMC4448311: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:54,306 D | No cached abstract for paper PMC7476773
+2026-05-08 14:40:54,306 D | Parsing paper PMC7476773
+2026-05-08 14:40:54,306 D | Downloading paper PMC7476773 from PubMed Central
+2026-05-08 14:40:54,306 D | Slowing down requests: sleeping for 0.437s
+2026-05-08 14:40:55,015 I | Skipping paper PMC7476773: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:55,015 D | No cached abstract for paper PMC5448010
+2026-05-08 14:40:55,015 D | Parsing paper PMC5448010
+2026-05-08 14:40:55,015 D | Downloading paper PMC5448010 from PubMed Central
+2026-05-08 14:40:55,015 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:40:55,919 I | Skipping paper PMC5448010: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:55,920 D | No cached abstract for paper PMC4342819
+2026-05-08 14:40:55,920 D | Parsing paper PMC4342819
+2026-05-08 14:40:55,920 D | Downloading paper PMC4342819 from PubMed Central
+2026-05-08 14:40:55,920 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:40:56,816 D | Saving methods for paper PMC4342819
+2026-05-08 14:40:56,817 D | Saving results for paper PMC4342819
+2026-05-08 14:40:56,817 D | Saving discussion for paper PMC4342819
+2026-05-08 14:40:56,818 I | Skipping paper PMC4342819: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:56,818 D | No cached abstract for paper PMC2612411
+2026-05-08 14:40:56,818 D | Parsing paper PMC2612411
+2026-05-08 14:40:56,818 D | Downloading paper PMC2612411 from PubMed Central
+2026-05-08 14:40:56,818 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:40:57,585 D | No paper body available for PMC2612411
+2026-05-08 14:40:57,585 I | Skipping paper PMC2612411: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:57,586 D | No cached abstract for paper PMC199434
+2026-05-08 14:40:57,586 D | Parsing paper PMC199434
+2026-05-08 14:40:57,586 D | Downloading paper PMC199434 from PubMed Central
+2026-05-08 14:40:57,586 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:40:58,257 D | Paper PMC199434 missing abstract
+2026-05-08 14:40:58,257 I | Skipping paper PMC199434: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:58,257 D | Using cached abstract for paper PMC178904
+2026-05-08 14:40:58,258 I | Skipping paper PMC178904: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:58,258 D | No cached abstract for paper PMC8092298
+2026-05-08 14:40:58,258 D | Parsing paper PMC8092298
+2026-05-08 14:40:58,258 D | Downloading paper PMC8092298 from PubMed Central
+2026-05-08 14:40:58,258 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:40:59,088 D | Saving results for paper PMC8092298
+2026-05-08 14:40:59,090 D | Saving discussion for paper PMC8092298
+2026-05-08 14:40:59,091 D | Saving methods for paper PMC8092298
+2026-05-08 14:40:59,093 I | Skipping paper PMC8092298: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:59,093 D | No cached abstract for paper PMC7710501
+2026-05-08 14:40:59,094 D | Parsing paper PMC7710501
+2026-05-08 14:40:59,094 D | Downloading paper PMC7710501 from PubMed Central
+2026-05-08 14:40:59,094 D | Slowing down requests: sleeping for 0.476s
+2026-05-08 14:40:59,976 I | Skipping paper PMC7710501: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:59,977 D | Using cached abstract for paper PMC2704942
+2026-05-08 14:40:59,977 I | Skipping paper PMC2704942: does not pass relevance checks for gene Rv0001
+2026-05-08 14:40:59,977 D | No cached abstract for paper PMC3457243
+2026-05-08 14:40:59,977 D | Parsing paper PMC3457243
+2026-05-08 14:40:59,977 D | Downloading paper PMC3457243 from PubMed Central
+2026-05-08 14:40:59,977 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:00,768 D | No paper body available for PMC3457243
+2026-05-08 14:41:00,769 I | Skipping paper PMC3457243: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:00,769 D | No cached abstract for paper PMC6286618
+2026-05-08 14:41:00,769 D | Parsing paper PMC6286618
+2026-05-08 14:41:00,769 D | Downloading paper PMC6286618 from PubMed Central
+2026-05-08 14:41:00,769 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:41:01,713 D | Saving methods for paper PMC6286618
+2026-05-08 14:41:01,714 I | Skipping paper PMC6286618: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:01,714 D | No cached abstract for paper PMC4425900
+2026-05-08 14:41:01,714 D | Parsing paper PMC4425900
+2026-05-08 14:41:01,714 D | Downloading paper PMC4425900 from PubMed Central
+2026-05-08 14:41:01,714 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:02,506 D | Saving results for paper PMC4425900
+2026-05-08 14:41:02,506 D | Saving discussion for paper PMC4425900
+2026-05-08 14:41:02,507 D | Saving methods for paper PMC4425900
+2026-05-08 14:41:02,507 I | Skipping paper PMC4425900: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:02,507 D | No cached abstract for paper PMC5676007
+2026-05-08 14:41:02,507 D | Parsing paper PMC5676007
+2026-05-08 14:41:02,508 D | Downloading paper PMC5676007 from PubMed Central
+2026-05-08 14:41:02,508 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:03,404 D | Saving methods for paper PMC5676007
+2026-05-08 14:41:03,404 D | Saving results for paper PMC5676007
+2026-05-08 14:41:03,405 D | Saving discussion for paper PMC5676007
+2026-05-08 14:41:03,405 I | Skipping paper PMC5676007: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:03,405 D | No cached abstract for paper PMC5510660
+2026-05-08 14:41:03,405 D | Parsing paper PMC5510660
+2026-05-08 14:41:03,405 D | Downloading paper PMC5510660 from PubMed Central
+2026-05-08 14:41:03,405 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:04,315 I | Skipping paper PMC5510660: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:04,315 D | No cached abstract for paper PMC9939409
+2026-05-08 14:41:04,315 D | Parsing paper PMC9939409
+2026-05-08 14:41:04,315 D | Downloading paper PMC9939409 from PubMed Central
+2026-05-08 14:41:04,315 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:05,226 I | Skipping paper PMC9939409: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:05,226 D | No cached abstract for paper PMC356885
+2026-05-08 14:41:05,226 D | Parsing paper PMC356885
+2026-05-08 14:41:05,226 D | Downloading paper PMC356885 from PubMed Central
+2026-05-08 14:41:05,226 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:05,921 D | No paper body available for PMC356885
+2026-05-08 14:41:05,921 I | Skipping paper PMC356885: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:05,921 D | No cached abstract for paper PMC10730256
+2026-05-08 14:41:05,921 D | Parsing paper PMC10730256
+2026-05-08 14:41:05,921 D | Downloading paper PMC10730256 from PubMed Central
+2026-05-08 14:41:05,921 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:41:06,735 I | Skipping paper PMC10730256: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:06,735 D | No cached abstract for paper PMC12119520
+2026-05-08 14:41:06,736 D | Parsing paper PMC12119520
+2026-05-08 14:41:06,736 D | Downloading paper PMC12119520 from PubMed Central
+2026-05-08 14:41:06,736 D | Slowing down requests: sleeping for 0.475s
+2026-05-08 14:41:07,620 I | Skipping paper PMC12119520: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:07,621 D | No cached abstract for paper PMC7647400
+2026-05-08 14:41:07,621 D | Parsing paper PMC7647400
+2026-05-08 14:41:07,621 D | Downloading paper PMC7647400 from PubMed Central
+2026-05-08 14:41:07,621 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:08,466 D | Saving results for paper PMC7647400
+2026-05-08 14:41:08,468 D | Saving discussion for paper PMC7647400
+2026-05-08 14:41:08,469 D | Saving methods for paper PMC7647400
+2026-05-08 14:41:08,471 I | Skipping paper PMC7647400: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:08,471 D | No cached abstract for paper PMC4095571
+2026-05-08 14:41:08,471 D | Parsing paper PMC4095571
+2026-05-08 14:41:08,471 D | Downloading paper PMC4095571 from PubMed Central
+2026-05-08 14:41:08,471 D | Slowing down requests: sleeping for 0.470s
+2026-05-08 14:41:09,185 D | Saving methods for paper PMC4095571
+2026-05-08 14:41:09,185 D | Saving results for paper PMC4095571
+2026-05-08 14:41:09,185 D | Saving discussion for paper PMC4095571
+2026-05-08 14:41:09,186 I | Skipping paper PMC4095571: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:09,186 D | No cached abstract for paper PMC3155888
+2026-05-08 14:41:09,186 D | Parsing paper PMC3155888
+2026-05-08 14:41:09,186 D | Downloading paper PMC3155888 from PubMed Central
+2026-05-08 14:41:09,186 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:10,049 I | Skipping paper PMC3155888: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:10,049 D | No cached abstract for paper PMC6393171
+2026-05-08 14:41:10,049 D | Parsing paper PMC6393171
+2026-05-08 14:41:10,049 D | Downloading paper PMC6393171 from PubMed Central
+2026-05-08 14:41:10,049 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:41:10,826 D | Saving discussion for paper PMC6393171
+2026-05-08 14:41:10,827 I | Skipping paper PMC6393171: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:10,827 D | No cached abstract for paper PMC11633570
+2026-05-08 14:41:10,827 D | Parsing paper PMC11633570
+2026-05-08 14:41:10,827 D | Downloading paper PMC11633570 from PubMed Central
+2026-05-08 14:41:10,828 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:11,611 D | No paper body available for PMC11633570
+2026-05-08 14:41:11,612 I | Skipping paper PMC11633570: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:11,612 D | No cached abstract for paper PMC17203
+2026-05-08 14:41:11,612 D | Parsing paper PMC17203
+2026-05-08 14:41:11,612 D | Downloading paper PMC17203 from PubMed Central
+2026-05-08 14:41:11,612 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:12,292 D | No paper body available for PMC17203
+2026-05-08 14:41:12,292 I | Skipping paper PMC17203: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:12,293 D | No cached abstract for paper PMC3232902
+2026-05-08 14:41:12,293 D | Parsing paper PMC3232902
+2026-05-08 14:41:12,293 D | Downloading paper PMC3232902 from PubMed Central
+2026-05-08 14:41:12,293 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:13,052 D | No paper body available for PMC3232902
+2026-05-08 14:41:13,053 I | Skipping paper PMC3232902: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:13,053 D | No cached abstract for paper PMC12607872
+2026-05-08 14:41:13,053 D | Parsing paper PMC12607872
+2026-05-08 14:41:13,053 D | Downloading paper PMC12607872 from PubMed Central
+2026-05-08 14:41:13,054 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:13,864 D | Saving methods for paper PMC12607872
+2026-05-08 14:41:13,865 D | Saving results for paper PMC12607872
+2026-05-08 14:41:13,865 D | Saving discussion for paper PMC12607872
+2026-05-08 14:41:13,866 I | Skipping paper PMC12607872: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:13,866 D | No cached abstract for paper PMC8592123
+2026-05-08 14:41:13,866 D | Parsing paper PMC8592123
+2026-05-08 14:41:13,866 D | Downloading paper PMC8592123 from PubMed Central
+2026-05-08 14:41:13,866 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:14,805 I | Skipping paper PMC8592123: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:14,805 D | Using cached abstract for paper PMC4109909
+2026-05-08 14:41:14,805 I | Skipping paper PMC4109909: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:14,806 D | No cached abstract for paper PMC108568
+2026-05-08 14:41:14,806 D | Parsing paper PMC108568
+2026-05-08 14:41:14,806 D | Downloading paper PMC108568 from PubMed Central
+2026-05-08 14:41:14,806 D | Slowing down requests: sleeping for 0.470s
+2026-05-08 14:41:15,454 D | No paper body available for PMC108568
+2026-05-08 14:41:15,454 I | Skipping paper PMC108568: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:15,454 D | No cached abstract for paper PMC9618640
+2026-05-08 14:41:15,454 D | Parsing paper PMC9618640
+2026-05-08 14:41:15,454 D | Downloading paper PMC9618640 from PubMed Central
+2026-05-08 14:41:15,454 D | Slowing down requests: sleeping for 0.499s
+2026-05-08 14:41:16,232 I | Skipping paper PMC9618640: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:16,232 D | No cached abstract for paper PMC1194940
+2026-05-08 14:41:16,232 D | Parsing paper PMC1194940
+2026-05-08 14:41:16,233 D | Downloading paper PMC1194940 from PubMed Central
+2026-05-08 14:41:16,233 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:16,997 D | No paper body available for PMC1194940
+2026-05-08 14:41:16,998 I | Skipping paper PMC1194940: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:16,998 D | No cached abstract for paper PMC5397419
+2026-05-08 14:41:16,998 D | Parsing paper PMC5397419
+2026-05-08 14:41:16,998 D | Downloading paper PMC5397419 from PubMed Central
+2026-05-08 14:41:16,998 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:17,763 D | Saving methods for paper PMC5397419
+2026-05-08 14:41:17,763 D | Saving results for paper PMC5397419
+2026-05-08 14:41:17,764 D | Saving discussion for paper PMC5397419
+2026-05-08 14:41:17,764 I | Skipping paper PMC5397419: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:17,764 D | No cached abstract for paper PMC2712441
+2026-05-08 14:41:17,764 D | Parsing paper PMC2712441
+2026-05-08 14:41:17,764 D | Downloading paper PMC2712441 from PubMed Central
+2026-05-08 14:41:17,764 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:18,450 D | No paper body available for PMC2712441
+2026-05-08 14:41:18,451 I | Skipping paper PMC2712441: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:18,451 D | No cached abstract for paper PMC11755094
+2026-05-08 14:41:18,452 D | Parsing paper PMC11755094
+2026-05-08 14:41:18,452 D | Downloading paper PMC11755094 from PubMed Central
+2026-05-08 14:41:18,452 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:19,167 D | Saving methods for paper PMC11755094
+2026-05-08 14:41:19,167 D | Saving results for paper PMC11755094
+2026-05-08 14:41:19,167 D | Saving discussion for paper PMC11755094
+2026-05-08 14:41:19,168 I | Skipping paper PMC11755094: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:19,168 D | No cached abstract for paper PMC7671480
+2026-05-08 14:41:19,168 D | Parsing paper PMC7671480
+2026-05-08 14:41:19,168 D | Downloading paper PMC7671480 from PubMed Central
+2026-05-08 14:41:19,168 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:41:19,985 D | Saving results for paper PMC7671480
+2026-05-08 14:41:19,985 D | Saving discussion for paper PMC7671480
+2026-05-08 14:41:19,985 D | Saving methods for paper PMC7671480
+2026-05-08 14:41:19,986 I | Skipping paper PMC7671480: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:19,986 D | No cached abstract for paper PMC5915789
+2026-05-08 14:41:19,986 D | Parsing paper PMC5915789
+2026-05-08 14:41:19,986 D | Downloading paper PMC5915789 from PubMed Central
+2026-05-08 14:41:19,986 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:20,956 D | No paper body available for PMC5915789
+2026-05-08 14:41:20,957 I | Skipping paper PMC5915789: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:20,957 D | No cached abstract for paper PMC12323610
+2026-05-08 14:41:20,958 D | Parsing paper PMC12323610
+2026-05-08 14:41:20,958 D | Downloading paper PMC12323610 from PubMed Central
+2026-05-08 14:41:20,958 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:21,776 D | Saving methods for paper PMC12323610
+2026-05-08 14:41:21,777 D | Saving results for paper PMC12323610
+2026-05-08 14:41:21,777 D | Saving discussion for paper PMC12323610
+2026-05-08 14:41:21,778 I | Skipping paper PMC12323610: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:21,778 D | No cached abstract for paper PMC12098619
+2026-05-08 14:41:21,778 D | Parsing paper PMC12098619
+2026-05-08 14:41:21,778 D | Downloading paper PMC12098619 from PubMed Central
+2026-05-08 14:41:21,779 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:22,564 D | Saving methods for paper PMC12098619
+2026-05-08 14:41:22,564 D | Saving results for paper PMC12098619
+2026-05-08 14:41:22,565 I | Skipping paper PMC12098619: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:22,565 D | No cached abstract for paper PMC10233549
+2026-05-08 14:41:22,565 D | Parsing paper PMC10233549
+2026-05-08 14:41:22,565 D | Downloading paper PMC10233549 from PubMed Central
+2026-05-08 14:41:22,565 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:23,367 D | Saving results for paper PMC10233549
+2026-05-08 14:41:23,368 D | Saving discussion for paper PMC10233549
+2026-05-08 14:41:23,368 D | Saving methods for paper PMC10233549
+2026-05-08 14:41:23,369 I | Skipping paper PMC10233549: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:23,369 D | No cached abstract for paper PMC4676537
+2026-05-08 14:41:23,369 D | Parsing paper PMC4676537
+2026-05-08 14:41:23,369 D | Downloading paper PMC4676537 from PubMed Central
+2026-05-08 14:41:23,369 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:24,097 D | No paper body available for PMC4676537
+2026-05-08 14:41:24,098 I | Skipping paper PMC4676537: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:24,098 D | No cached abstract for paper PMC3946367
+2026-05-08 14:41:24,098 D | Parsing paper PMC3946367
+2026-05-08 14:41:24,098 D | Downloading paper PMC3946367 from PubMed Central
+2026-05-08 14:41:24,098 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:25,540 D | Saving results for paper PMC3946367
+2026-05-08 14:41:25,540 D | Saving discussion for paper PMC3946367
+2026-05-08 14:41:25,540 D | Saving methods for paper PMC3946367
+2026-05-08 14:41:25,541 I | Skipping paper PMC3946367: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:25,541 D | No cached abstract for paper PMC2629846
+2026-05-08 14:41:25,541 D | Parsing paper PMC2629846
+2026-05-08 14:41:25,541 D | Downloading paper PMC2629846 from PubMed Central
+2026-05-08 14:41:25,541 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:26,441 D | Saving results for paper PMC2629846
+2026-05-08 14:41:26,442 D | Saving discussion for paper PMC2629846
+2026-05-08 14:41:26,442 D | Saving methods for paper PMC2629846
+2026-05-08 14:41:26,443 I | Skipping paper PMC2629846: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:26,443 D | No cached abstract for paper PMC6006331
+2026-05-08 14:41:26,443 D | Parsing paper PMC6006331
+2026-05-08 14:41:26,443 D | Downloading paper PMC6006331 from PubMed Central
+2026-05-08 14:41:26,443 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:41:27,175 D | Saving results for paper PMC6006331
+2026-05-08 14:41:27,176 D | Saving discussion for paper PMC6006331
+2026-05-08 14:41:27,176 D | Saving methods for paper PMC6006331
+2026-05-08 14:41:27,176 I | Skipping paper PMC6006331: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:27,177 D | No cached abstract for paper PMC3309013
+2026-05-08 14:41:27,177 D | Parsing paper PMC3309013
+2026-05-08 14:41:27,177 D | Downloading paper PMC3309013 from PubMed Central
+2026-05-08 14:41:27,177 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:27,962 D | Saving results for paper PMC3309013
+2026-05-08 14:41:27,962 D | Saving discussion for paper PMC3309013
+2026-05-08 14:41:27,962 D | Saving methods for paper PMC3309013
+2026-05-08 14:41:27,963 I | Skipping paper PMC3309013: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:27,963 D | No cached abstract for paper PMC94557
+2026-05-08 14:41:27,963 D | Parsing paper PMC94557
+2026-05-08 14:41:27,963 D | Downloading paper PMC94557 from PubMed Central
+2026-05-08 14:41:27,963 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:28,652 D | No paper body available for PMC94557
+2026-05-08 14:41:28,652 I | Skipping paper PMC94557: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:28,652 D | No cached abstract for paper PMC3065591
+2026-05-08 14:41:28,652 D | Parsing paper PMC3065591
+2026-05-08 14:41:28,652 D | Downloading paper PMC3065591 from PubMed Central
+2026-05-08 14:41:28,652 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:29,539 D | No paper body available for PMC3065591
+2026-05-08 14:41:29,540 I | Skipping paper PMC3065591: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:29,540 D | No cached abstract for paper PMC4187155
+2026-05-08 14:41:29,540 D | Parsing paper PMC4187155
+2026-05-08 14:41:29,540 D | Downloading paper PMC4187155 from PubMed Central
+2026-05-08 14:41:29,540 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:30,364 D | Saving discussion for paper PMC4187155
+2026-05-08 14:41:30,365 I | Skipping paper PMC4187155: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:30,365 D | No cached abstract for paper PMC10769358
+2026-05-08 14:41:30,365 D | Parsing paper PMC10769358
+2026-05-08 14:41:30,365 D | Downloading paper PMC10769358 from PubMed Central
+2026-05-08 14:41:30,365 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:41:31,353 D | Saving results for paper PMC10769358
+2026-05-08 14:41:31,353 D | Saving discussion for paper PMC10769358
+2026-05-08 14:41:31,353 D | Saving methods for paper PMC10769358
+2026-05-08 14:41:31,354 I | Skipping paper PMC10769358: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:31,354 D | No cached abstract for paper PMC7561715
+2026-05-08 14:41:31,354 D | Parsing paper PMC7561715
+2026-05-08 14:41:31,354 D | Downloading paper PMC7561715 from PubMed Central
+2026-05-08 14:41:31,354 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:32,254 D | Saving methods for paper PMC7561715
+2026-05-08 14:41:32,254 D | Saving results for paper PMC7561715
+2026-05-08 14:41:32,255 D | Saving discussion for paper PMC7561715
+2026-05-08 14:41:32,256 I | Skipping paper PMC7561715: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:32,256 D | No cached abstract for paper PMC2675986
+2026-05-08 14:41:32,256 D | Parsing paper PMC2675986
+2026-05-08 14:41:32,256 D | Downloading paper PMC2675986 from PubMed Central
+2026-05-08 14:41:32,256 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:41:33,005 D | Paper PMC2675986 missing abstract
+2026-05-08 14:41:33,005 I | Skipping paper PMC2675986: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:33,005 D | No cached abstract for paper PMC12472320
+2026-05-08 14:41:33,005 D | Parsing paper PMC12472320
+2026-05-08 14:41:33,005 D | Downloading paper PMC12472320 from PubMed Central
+2026-05-08 14:41:33,005 D | Slowing down requests: sleeping for 0.499s
+2026-05-08 14:41:33,875 I | Skipping paper PMC12472320: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:33,875 D | No cached abstract for paper PMC9159947
+2026-05-08 14:41:33,875 D | Parsing paper PMC9159947
+2026-05-08 14:41:33,875 D | Downloading paper PMC9159947 from PubMed Central
+2026-05-08 14:41:33,875 D | Slowing down requests: sleeping for 0.488s
+2026-05-08 14:41:34,703 D | Saving results for paper PMC9159947
+2026-05-08 14:41:34,703 D | Saving discussion for paper PMC9159947
+2026-05-08 14:41:34,704 D | Saving methods for paper PMC9159947
+2026-05-08 14:41:34,704 I | Skipping paper PMC9159947: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:34,705 D | No cached abstract for paper PMC10128896
+2026-05-08 14:41:34,705 D | Parsing paper PMC10128896
+2026-05-08 14:41:34,705 D | Downloading paper PMC10128896 from PubMed Central
+2026-05-08 14:41:34,705 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:41:35,373 D | No paper body available for PMC10128896
+2026-05-08 14:41:35,374 I | Skipping paper PMC10128896: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:35,374 D | Using cached abstract for paper PMC5979482
+2026-05-08 14:41:35,374 I | Skipping paper PMC5979482: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:35,374 D | Using cached abstract for paper PMC3133320
+2026-05-08 14:41:35,378 I | Skipping paper PMC3133320: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:35,378 D | No cached abstract for paper PMC8442456
+2026-05-08 14:41:35,378 D | Parsing paper PMC8442456
+2026-05-08 14:41:35,378 D | Downloading paper PMC8442456 from PubMed Central
+2026-05-08 14:41:35,378 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:36,097 D | Saving results for paper PMC8442456
+2026-05-08 14:41:36,098 D | Saving discussion for paper PMC8442456
+2026-05-08 14:41:36,098 D | Saving methods for paper PMC8442456
+2026-05-08 14:41:36,098 I | Skipping paper PMC8442456: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:36,098 D | No cached abstract for paper PMC3233906
+2026-05-08 14:41:36,098 D | Parsing paper PMC3233906
+2026-05-08 14:41:36,098 D | Downloading paper PMC3233906 from PubMed Central
+2026-05-08 14:41:36,098 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:36,822 D | Saving methods for paper PMC3233906
+2026-05-08 14:41:36,822 D | Saving discussion for paper PMC3233906
+2026-05-08 14:41:36,822 D | Saving results for paper PMC3233906
+2026-05-08 14:41:36,823 I | Skipping paper PMC3233906: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:36,823 D | Using cached abstract for paper PMC7946783
+2026-05-08 14:41:36,823 I | Skipping paper PMC7946783: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:36,823 D | No cached abstract for paper PMC549432
+2026-05-08 14:41:36,823 D | Parsing paper PMC549432
+2026-05-08 14:41:36,823 D | Downloading paper PMC549432 from PubMed Central
+2026-05-08 14:41:36,823 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:37,636 D | Saving methods for paper PMC549432
+2026-05-08 14:41:37,636 D | Saving results for paper PMC549432
+2026-05-08 14:41:37,636 D | Saving discussion for paper PMC549432
+2026-05-08 14:41:37,637 I | Skipping paper PMC549432: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:37,637 D | No cached abstract for paper PMC10760025
+2026-05-08 14:41:37,637 D | Parsing paper PMC10760025
+2026-05-08 14:41:37,637 D | Downloading paper PMC10760025 from PubMed Central
+2026-05-08 14:41:37,637 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:38,440 D | Saving methods for paper PMC10760025
+2026-05-08 14:41:38,441 D | Saving results for paper PMC10760025
+2026-05-08 14:41:38,441 D | Saving discussion for paper PMC10760025
+2026-05-08 14:41:38,443 I | Skipping paper PMC10760025: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:38,444 D | No cached abstract for paper PMC8019907
+2026-05-08 14:41:38,444 D | Parsing paper PMC8019907
+2026-05-08 14:41:38,444 D | Downloading paper PMC8019907 from PubMed Central
+2026-05-08 14:41:38,444 D | Slowing down requests: sleeping for 0.483s
+2026-05-08 14:41:39,176 D | Saving methods for paper PMC8019907
+2026-05-08 14:41:39,177 D | Saving results for paper PMC8019907
+2026-05-08 14:41:39,177 D | Saving discussion for paper PMC8019907
+2026-05-08 14:41:39,178 I | Skipping paper PMC8019907: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:39,178 D | No cached abstract for paper PMC6423232
+2026-05-08 14:41:39,178 D | Parsing paper PMC6423232
+2026-05-08 14:41:39,178 D | Downloading paper PMC6423232 from PubMed Central
+2026-05-08 14:41:39,178 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:39,907 D | Saving methods for paper PMC6423232
+2026-05-08 14:41:39,907 D | Saving results for paper PMC6423232
+2026-05-08 14:41:39,907 D | Saving discussion for paper PMC6423232
+2026-05-08 14:41:39,908 I | Skipping paper PMC6423232: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:39,908 D | No cached abstract for paper PMC4836228
+2026-05-08 14:41:39,908 D | Parsing paper PMC4836228
+2026-05-08 14:41:39,908 D | Downloading paper PMC4836228 from PubMed Central
+2026-05-08 14:41:39,908 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:40,651 D | No paper body available for PMC4836228
+2026-05-08 14:41:40,651 I | Skipping paper PMC4836228: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:40,652 D | No cached abstract for paper PMC3034339
+2026-05-08 14:41:40,652 D | Parsing paper PMC3034339
+2026-05-08 14:41:40,652 D | Downloading paper PMC3034339 from PubMed Central
+2026-05-08 14:41:40,652 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:41,579 I | Skipping paper PMC3034339: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:41,579 D | No cached abstract for paper PMC1366493
+2026-05-08 14:41:41,580 D | Parsing paper PMC1366493
+2026-05-08 14:41:41,580 D | Downloading paper PMC1366493 from PubMed Central
+2026-05-08 14:41:41,580 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:42,358 D | Saving discussion for paper PMC1366493
+2026-05-08 14:41:42,359 D | Saving results for paper PMC1366493
+2026-05-08 14:41:42,359 D | Saving methods for paper PMC1366493
+2026-05-08 14:41:42,360 I | Skipping paper PMC1366493: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:42,360 D | No cached abstract for paper PMC4431734
+2026-05-08 14:41:42,360 D | Parsing paper PMC4431734
+2026-05-08 14:41:42,360 D | Downloading paper PMC4431734 from PubMed Central
+2026-05-08 14:41:42,360 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:43,151 D | Saving results for paper PMC4431734
+2026-05-08 14:41:43,151 D | Saving methods for paper PMC4431734
+2026-05-08 14:41:43,152 I | Skipping paper PMC4431734: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:43,152 D | No cached abstract for paper PMC515132
+2026-05-08 14:41:43,152 D | Parsing paper PMC515132
+2026-05-08 14:41:43,152 D | Downloading paper PMC515132 from PubMed Central
+2026-05-08 14:41:43,152 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:43,822 D | No paper body available for PMC515132
+2026-05-08 14:41:43,823 I | Skipping paper PMC515132: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:43,823 D | Using cached abstract for paper PMC11511705
+2026-05-08 14:41:43,823 I | Skipping paper PMC11511705: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:43,823 D | No cached abstract for paper PMC6517692
+2026-05-08 14:41:43,823 D | Parsing paper PMC6517692
+2026-05-08 14:41:43,823 D | Downloading paper PMC6517692 from PubMed Central
+2026-05-08 14:41:43,823 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:44,629 D | Saving results for paper PMC6517692
+2026-05-08 14:41:44,629 D | Saving discussion for paper PMC6517692
+2026-05-08 14:41:44,629 D | Saving methods for paper PMC6517692
+2026-05-08 14:41:44,630 I | Skipping paper PMC6517692: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:44,630 D | No cached abstract for paper PMC5359288
+2026-05-08 14:41:44,630 D | Parsing paper PMC5359288
+2026-05-08 14:41:44,630 D | Downloading paper PMC5359288 from PubMed Central
+2026-05-08 14:41:44,630 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:45,564 D | Saving methods for paper PMC5359288
+2026-05-08 14:41:45,565 D | Saving results for paper PMC5359288
+2026-05-08 14:41:45,565 D | Saving discussion for paper PMC5359288
+2026-05-08 14:41:45,566 I | Skipping paper PMC5359288: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:45,566 D | No cached abstract for paper PMC10501769
+2026-05-08 14:41:45,566 D | Parsing paper PMC10501769
+2026-05-08 14:41:45,566 D | Downloading paper PMC10501769 from PubMed Central
+2026-05-08 14:41:45,566 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:46,472 D | Saving results for paper PMC10501769
+2026-05-08 14:41:46,473 D | Saving discussion for paper PMC10501769
+2026-05-08 14:41:46,473 D | Saving methods for paper PMC10501769
+2026-05-08 14:41:46,474 I | Skipping paper PMC10501769: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:46,474 D | Using cached abstract for paper PMC98286
+2026-05-08 14:41:46,474 I | Skipping paper PMC98286: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:46,474 D | No cached abstract for paper PMC7184733
+2026-05-08 14:41:46,475 D | Parsing paper PMC7184733
+2026-05-08 14:41:46,475 D | Downloading paper PMC7184733 from PubMed Central
+2026-05-08 14:41:46,475 D | Slowing down requests: sleeping for 0.488s
+2026-05-08 14:41:47,365 D | Saving results for paper PMC7184733
+2026-05-08 14:41:47,366 D | Saving discussion for paper PMC7184733
+2026-05-08 14:41:47,366 D | Saving methods for paper PMC7184733
+2026-05-08 14:41:47,367 I | Skipping paper PMC7184733: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:47,367 D | No cached abstract for paper PMC3982062
+2026-05-08 14:41:47,367 D | Parsing paper PMC3982062
+2026-05-08 14:41:47,367 D | Downloading paper PMC3982062 from PubMed Central
+2026-05-08 14:41:47,367 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:48,125 I | Paper PMC3982062 has untitled body section; we may miss valid data
+2026-05-08 14:41:48,125 I | Skipping paper PMC3982062: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:48,125 D | No cached abstract for paper PMC93371
+2026-05-08 14:41:48,125 D | Parsing paper PMC93371
+2026-05-08 14:41:48,125 D | Downloading paper PMC93371 from PubMed Central
+2026-05-08 14:41:48,126 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:48,786 D | No paper body available for PMC93371
+2026-05-08 14:41:48,787 I | Skipping paper PMC93371: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:48,787 D | No cached abstract for paper PMC3290536
+2026-05-08 14:41:48,787 D | Parsing paper PMC3290536
+2026-05-08 14:41:48,787 D | Downloading paper PMC3290536 from PubMed Central
+2026-05-08 14:41:48,787 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:41:49,579 D | Saving results for paper PMC3290536
+2026-05-08 14:41:49,580 D | Saving discussion for paper PMC3290536
+2026-05-08 14:41:49,580 D | Saving methods for paper PMC3290536
+2026-05-08 14:41:49,580 I | Skipping paper PMC3290536: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:49,581 D | Using cached abstract for paper PMC5872134
+2026-05-08 14:41:49,581 I | Skipping paper PMC5872134: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:49,581 D | No cached abstract for paper PMC4473185
+2026-05-08 14:41:49,581 D | Parsing paper PMC4473185
+2026-05-08 14:41:49,581 D | Downloading paper PMC4473185 from PubMed Central
+2026-05-08 14:41:49,581 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:50,305 D | No paper body available for PMC4473185
+2026-05-08 14:41:50,306 I | Skipping paper PMC4473185: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:50,306 D | No cached abstract for paper PMC7522526
+2026-05-08 14:41:50,306 D | Parsing paper PMC7522526
+2026-05-08 14:41:50,306 D | Downloading paper PMC7522526 from PubMed Central
+2026-05-08 14:41:50,307 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:51,139 D | Saving methods for paper PMC7522526
+2026-05-08 14:41:51,139 D | Saving discussion for paper PMC7522526
+2026-05-08 14:41:51,140 D | Saving results for paper PMC7522526
+2026-05-08 14:41:51,141 I | Skipping paper PMC7522526: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:51,141 D | No cached abstract for paper PMC7039861
+2026-05-08 14:41:51,141 D | Parsing paper PMC7039861
+2026-05-08 14:41:51,141 D | Downloading paper PMC7039861 from PubMed Central
+2026-05-08 14:41:51,141 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:51,986 D | Saving methods for paper PMC7039861
+2026-05-08 14:41:51,987 D | Saving results for paper PMC7039861
+2026-05-08 14:41:51,987 D | Saving discussion for paper PMC7039861
+2026-05-08 14:41:51,987 I | Skipping paper PMC7039861: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:51,988 D | No cached abstract for paper PMC6323687
+2026-05-08 14:41:51,988 D | Parsing paper PMC6323687
+2026-05-08 14:41:51,988 D | Downloading paper PMC6323687 from PubMed Central
+2026-05-08 14:41:51,988 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:41:52,774 D | Saving methods for paper PMC6323687
+2026-05-08 14:41:52,774 D | Saving results for paper PMC6323687
+2026-05-08 14:41:52,775 D | Saving discussion for paper PMC6323687
+2026-05-08 14:41:52,776 I | Skipping paper PMC6323687: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:52,776 D | No cached abstract for paper PMC7884073
+2026-05-08 14:41:52,776 D | Parsing paper PMC7884073
+2026-05-08 14:41:52,776 D | Downloading paper PMC7884073 from PubMed Central
+2026-05-08 14:41:52,776 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:41:53,726 D | Saving results for paper PMC7884073
+2026-05-08 14:41:53,727 D | Saving discussion for paper PMC7884073
+2026-05-08 14:41:53,727 D | Saving methods for paper PMC7884073
+2026-05-08 14:41:53,728 I | Skipping paper PMC7884073: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:53,728 D | No cached abstract for paper PMC548372
+2026-05-08 14:41:53,728 D | Parsing paper PMC548372
+2026-05-08 14:41:53,728 D | Downloading paper PMC548372 from PubMed Central
+2026-05-08 14:41:53,728 D | Slowing down requests: sleeping for 0.490s
+2026-05-08 14:41:54,944 D | Saving methods for paper PMC548372
+2026-05-08 14:41:54,945 D | Saving results for paper PMC548372
+2026-05-08 14:41:54,945 D | Saving discussion for paper PMC548372
+2026-05-08 14:41:54,946 I | Skipping paper PMC548372: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:54,946 D | No cached abstract for paper PMC2448323
+2026-05-08 14:41:54,946 D | Parsing paper PMC2448323
+2026-05-08 14:41:54,946 D | Downloading paper PMC2448323 from PubMed Central
+2026-05-08 14:41:54,946 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:41:55,676 I | Skipping paper PMC2448323: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:55,677 D | No cached abstract for paper PMC11470805
+2026-05-08 14:41:55,677 D | Parsing paper PMC11470805
+2026-05-08 14:41:55,677 D | Downloading paper PMC11470805 from PubMed Central
+2026-05-08 14:41:55,677 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:41:56,577 I | Skipping paper PMC11470805: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:56,577 D | No cached abstract for paper PMC3438132
+2026-05-08 14:41:56,577 D | Parsing paper PMC3438132
+2026-05-08 14:41:56,577 D | Downloading paper PMC3438132 from PubMed Central
+2026-05-08 14:41:56,577 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:41:57,427 D | Saving results for paper PMC3438132
+2026-05-08 14:41:57,427 D | Saving discussion for paper PMC3438132
+2026-05-08 14:41:57,427 D | Saving methods for paper PMC3438132
+2026-05-08 14:41:57,428 I | Skipping paper PMC3438132: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:57,428 D | No cached abstract for paper PMC7738170
+2026-05-08 14:41:57,428 D | Parsing paper PMC7738170
+2026-05-08 14:41:57,428 D | Downloading paper PMC7738170 from PubMed Central
+2026-05-08 14:41:57,428 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:41:58,176 D | Saving results for paper PMC7738170
+2026-05-08 14:41:58,176 D | Saving methods for paper PMC7738170
+2026-05-08 14:41:58,177 D | No discussion available for paper PMC7738170
+2026-05-08 14:41:58,177 D | Using cached results for paper PMC7738170
+2026-05-08 14:41:58,178 I | Skipping paper PMC7738170: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:58,178 D | No cached abstract for paper PMC6456759
+2026-05-08 14:41:58,178 D | Parsing paper PMC6456759
+2026-05-08 14:41:58,178 D | Downloading paper PMC6456759 from PubMed Central
+2026-05-08 14:41:58,178 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:59,081 I | Skipping paper PMC6456759: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:59,081 D | No cached abstract for paper PMC3394739
+2026-05-08 14:41:59,081 D | Parsing paper PMC3394739
+2026-05-08 14:41:59,081 D | Downloading paper PMC3394739 from PubMed Central
+2026-05-08 14:41:59,081 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:41:59,832 D | Saving methods for paper PMC3394739
+2026-05-08 14:41:59,832 D | Saving results for paper PMC3394739
+2026-05-08 14:41:59,832 D | Saving discussion for paper PMC3394739
+2026-05-08 14:41:59,833 I | Skipping paper PMC3394739: does not pass relevance checks for gene Rv0001
+2026-05-08 14:41:59,833 D | No cached abstract for paper PMC8036659
+2026-05-08 14:41:59,833 D | Parsing paper PMC8036659
+2026-05-08 14:41:59,833 D | Downloading paper PMC8036659 from PubMed Central
+2026-05-08 14:41:59,833 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:00,701 D | Saving results for paper PMC8036659
+2026-05-08 14:42:00,701 D | Saving discussion for paper PMC8036659
+2026-05-08 14:42:00,701 D | Saving methods for paper PMC8036659
+2026-05-08 14:42:00,702 I | Skipping paper PMC8036659: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:00,702 D | Using cached abstract for paper PMC4963484
+2026-05-08 14:42:00,702 I | Skipping paper PMC4963484: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:00,702 D | No cached abstract for paper PMC10986616
+2026-05-08 14:42:00,702 D | Parsing paper PMC10986616
+2026-05-08 14:42:00,702 D | Downloading paper PMC10986616 from PubMed Central
+2026-05-08 14:42:00,702 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:01,473 D | Saving results for paper PMC10986616
+2026-05-08 14:42:01,474 D | Saving discussion for paper PMC10986616
+2026-05-08 14:42:01,474 D | Saving methods for paper PMC10986616
+2026-05-08 14:42:01,475 I | Skipping paper PMC10986616: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:01,475 D | Using cached abstract for paper PMC6936261
+2026-05-08 14:42:01,475 I | Skipping paper PMC6936261: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:01,475 D | No cached abstract for paper PMC6375678
+2026-05-08 14:42:01,475 D | Parsing paper PMC6375678
+2026-05-08 14:42:01,475 D | Downloading paper PMC6375678 from PubMed Central
+2026-05-08 14:42:01,475 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:02,319 D | Saving methods for paper PMC6375678
+2026-05-08 14:42:02,319 D | Saving results for paper PMC6375678
+2026-05-08 14:42:02,319 D | Saving discussion for paper PMC6375678
+2026-05-08 14:42:02,320 I | Skipping paper PMC6375678: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:02,320 D | Using cached abstract for paper PMC2580684
+2026-05-08 14:42:02,320 I | Skipping paper PMC2580684: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:02,320 D | No cached abstract for paper PMC9117542
+2026-05-08 14:42:02,320 D | Parsing paper PMC9117542
+2026-05-08 14:42:02,320 D | Downloading paper PMC9117542 from PubMed Central
+2026-05-08 14:42:02,321 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:42:03,113 D | Saving results for paper PMC9117542
+2026-05-08 14:42:03,114 D | Saving discussion for paper PMC9117542
+2026-05-08 14:42:03,114 D | Saving methods for paper PMC9117542
+2026-05-08 14:42:03,114 I | Skipping paper PMC9117542: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:03,114 D | No cached abstract for paper PMC2713425
+2026-05-08 14:42:03,115 D | Parsing paper PMC2713425
+2026-05-08 14:42:03,115 D | Downloading paper PMC2713425 from PubMed Central
+2026-05-08 14:42:03,115 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:42:03,909 D | Saving results for paper PMC2713425
+2026-05-08 14:42:03,909 D | Saving discussion for paper PMC2713425
+2026-05-08 14:42:03,910 D | Saving methods for paper PMC2713425
+2026-05-08 14:42:03,910 I | Skipping paper PMC2713425: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:03,910 D | No cached abstract for paper PMC3249017
+2026-05-08 14:42:03,910 D | Parsing paper PMC3249017
+2026-05-08 14:42:03,910 D | Downloading paper PMC3249017 from PubMed Central
+2026-05-08 14:42:03,911 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:04,638 D | Saving methods for paper PMC3249017
+2026-05-08 14:42:04,639 D | Saving results for paper PMC3249017
+2026-05-08 14:42:04,641 D | No discussion available for paper PMC3249017
+2026-05-08 14:42:04,641 D | Using cached results for paper PMC3249017
+2026-05-08 14:42:04,642 I | Skipping paper PMC3249017: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:04,642 D | No cached abstract for paper PMC5320678
+2026-05-08 14:42:04,642 D | Parsing paper PMC5320678
+2026-05-08 14:42:04,642 D | Downloading paper PMC5320678 from PubMed Central
+2026-05-08 14:42:04,643 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:42:05,387 D | Saving methods for paper PMC5320678
+2026-05-08 14:42:05,387 D | Saving discussion for paper PMC5320678
+2026-05-08 14:42:05,387 D | Saving results for paper PMC5320678
+2026-05-08 14:42:05,388 I | Skipping paper PMC5320678: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:05,388 D | No cached abstract for paper PMC2897671
+2026-05-08 14:42:05,388 D | Parsing paper PMC2897671
+2026-05-08 14:42:05,388 D | Downloading paper PMC2897671 from PubMed Central
+2026-05-08 14:42:05,388 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:06,229 D | No paper body available for PMC2897671
+2026-05-08 14:42:06,229 I | Skipping paper PMC2897671: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:06,230 D | No cached abstract for paper PMC1540033
+2026-05-08 14:42:06,230 D | Parsing paper PMC1540033
+2026-05-08 14:42:06,230 D | Downloading paper PMC1540033 from PubMed Central
+2026-05-08 14:42:06,230 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:06,953 D | No paper body available for PMC1540033
+2026-05-08 14:42:06,954 I | Skipping paper PMC1540033: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:06,954 D | No cached abstract for paper PMC9392950
+2026-05-08 14:42:06,954 D | Parsing paper PMC9392950
+2026-05-08 14:42:06,954 D | Downloading paper PMC9392950 from PubMed Central
+2026-05-08 14:42:06,954 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:07,809 D | Saving results for paper PMC9392950
+2026-05-08 14:42:07,809 D | Saving discussion for paper PMC9392950
+2026-05-08 14:42:07,810 D | Saving methods for paper PMC9392950
+2026-05-08 14:42:07,810 I | Skipping paper PMC9392950: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:07,810 D | No cached abstract for paper PMC9312162
+2026-05-08 14:42:07,810 D | Parsing paper PMC9312162
+2026-05-08 14:42:07,811 D | Downloading paper PMC9312162 from PubMed Central
+2026-05-08 14:42:07,811 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:42:08,639 D | Saving methods for paper PMC9312162
+2026-05-08 14:42:08,639 D | Saving results for paper PMC9312162
+2026-05-08 14:42:08,639 D | Saving discussion for paper PMC9312162
+2026-05-08 14:42:08,640 I | Skipping paper PMC9312162: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:08,640 D | No cached abstract for paper PMC8549364
+2026-05-08 14:42:08,640 D | Parsing paper PMC8549364
+2026-05-08 14:42:08,640 D | Downloading paper PMC8549364 from PubMed Central
+2026-05-08 14:42:08,640 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:09,527 D | Saving methods for paper PMC8549364
+2026-05-08 14:42:09,527 D | Saving results for paper PMC8549364
+2026-05-08 14:42:09,528 D | Saving discussion for paper PMC8549364
+2026-05-08 14:42:09,528 I | Skipping paper PMC8549364: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:09,528 D | No cached abstract for paper PMC3962454
+2026-05-08 14:42:09,529 D | Parsing paper PMC3962454
+2026-05-08 14:42:09,529 D | Downloading paper PMC3962454 from PubMed Central
+2026-05-08 14:42:09,529 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:10,201 D | Saving methods for paper PMC3962454
+2026-05-08 14:42:10,201 D | Saving results for paper PMC3962454
+2026-05-08 14:42:10,202 D | Saving discussion for paper PMC3962454
+2026-05-08 14:42:10,202 I | Skipping paper PMC3962454: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:10,202 D | No cached abstract for paper PMC328303
+2026-05-08 14:42:10,202 D | Parsing paper PMC328303
+2026-05-08 14:42:10,202 D | Downloading paper PMC328303 from PubMed Central
+2026-05-08 14:42:10,202 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:10,868 D | Paper PMC328303 missing abstract
+2026-05-08 14:42:10,868 I | Skipping paper PMC328303: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:10,869 D | No cached abstract for paper PMC7290993
+2026-05-08 14:42:10,869 D | Parsing paper PMC7290993
+2026-05-08 14:42:10,869 D | Downloading paper PMC7290993 from PubMed Central
+2026-05-08 14:42:10,869 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:42:11,661 I | Skipping paper PMC7290993: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:11,661 D | No cached abstract for paper PMC4536437
+2026-05-08 14:42:11,661 D | Parsing paper PMC4536437
+2026-05-08 14:42:11,662 D | Downloading paper PMC4536437 from PubMed Central
+2026-05-08 14:42:11,662 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:12,356 D | No paper body available for PMC4536437
+2026-05-08 14:42:12,356 I | Skipping paper PMC4536437: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:12,356 D | No cached abstract for paper PMC284541
+2026-05-08 14:42:12,356 D | Parsing paper PMC284541
+2026-05-08 14:42:12,356 D | Downloading paper PMC284541 from PubMed Central
+2026-05-08 14:42:12,356 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:13,044 D | No paper body available for PMC284541
+2026-05-08 14:42:13,044 I | Skipping paper PMC284541: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:13,044 D | No cached abstract for paper PMC7177374
+2026-05-08 14:42:13,044 D | Parsing paper PMC7177374
+2026-05-08 14:42:13,044 D | Downloading paper PMC7177374 from PubMed Central
+2026-05-08 14:42:13,045 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:42:13,902 I | Skipping paper PMC7177374: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:13,903 D | Using cached abstract for paper PMC4217445
+2026-05-08 14:42:13,903 I | Skipping paper PMC4217445: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:13,903 D | No cached abstract for paper PMC3997798
+2026-05-08 14:42:13,903 D | Parsing paper PMC3997798
+2026-05-08 14:42:13,903 D | Downloading paper PMC3997798 from PubMed Central
+2026-05-08 14:42:13,903 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:42:14,722 I | Skipping paper PMC3997798: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:14,722 D | No cached abstract for paper PMC3532143
+2026-05-08 14:42:14,722 D | Parsing paper PMC3532143
+2026-05-08 14:42:14,722 D | Downloading paper PMC3532143 from PubMed Central
+2026-05-08 14:42:14,722 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:42:15,644 D | Saving methods for paper PMC3532143
+2026-05-08 14:42:15,644 D | Saving discussion for paper PMC3532143
+2026-05-08 14:42:15,647 D | Saving results for paper PMC3532143
+2026-05-08 14:42:15,651 I | Skipping paper PMC3532143: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:15,651 D | No cached abstract for paper PMC2909200
+2026-05-08 14:42:15,651 D | Parsing paper PMC2909200
+2026-05-08 14:42:15,652 D | Downloading paper PMC2909200 from PubMed Central
+2026-05-08 14:42:15,652 D | Slowing down requests: sleeping for 0.471s
+2026-05-08 14:42:16,394 D | Saving discussion for paper PMC2909200
+2026-05-08 14:42:16,395 D | Saving results for paper PMC2909200
+2026-05-08 14:42:16,395 D | Saving methods for paper PMC2909200
+2026-05-08 14:42:16,396 I | Skipping paper PMC2909200: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:16,396 D | No cached abstract for paper PMC2734928
+2026-05-08 14:42:16,396 D | Parsing paper PMC2734928
+2026-05-08 14:42:16,396 D | Downloading paper PMC2734928 from PubMed Central
+2026-05-08 14:42:16,396 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:42:17,301 D | Saving methods for paper PMC2734928
+2026-05-08 14:42:17,302 I | Skipping paper PMC2734928: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:17,302 D | No cached abstract for paper PMC2631862
+2026-05-08 14:42:17,302 D | Parsing paper PMC2631862
+2026-05-08 14:42:17,303 D | Downloading paper PMC2631862 from PubMed Central
+2026-05-08 14:42:17,303 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:18,028 I | Skipping paper PMC2631862: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:18,028 D | No cached abstract for paper PMC1523251
+2026-05-08 14:42:18,028 D | Parsing paper PMC1523251
+2026-05-08 14:42:18,028 D | Downloading paper PMC1523251 from PubMed Central
+2026-05-08 14:42:18,028 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:42:18,811 D | Saving results for paper PMC1523251
+2026-05-08 14:42:18,811 D | Saving discussion for paper PMC1523251
+2026-05-08 14:42:18,812 D | Saving methods for paper PMC1523251
+2026-05-08 14:42:18,812 I | Skipping paper PMC1523251: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:18,812 D | No cached abstract for paper PMC1280162
+2026-05-08 14:42:18,813 D | Parsing paper PMC1280162
+2026-05-08 14:42:18,813 D | Downloading paper PMC1280162 from PubMed Central
+2026-05-08 14:42:18,813 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:19,504 D | No paper body available for PMC1280162
+2026-05-08 14:42:19,504 I | Skipping paper PMC1280162: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:19,504 D | No cached abstract for paper PMC12765389
+2026-05-08 14:42:19,504 D | Parsing paper PMC12765389
+2026-05-08 14:42:19,505 D | Downloading paper PMC12765389 from PubMed Central
+2026-05-08 14:42:19,505 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:20,302 D | Saving results for paper PMC12765389
+2026-05-08 14:42:20,303 D | Saving discussion for paper PMC12765389
+2026-05-08 14:42:20,304 D | Saving methods for paper PMC12765389
+2026-05-08 14:42:20,305 I | Skipping paper PMC12765389: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:20,305 D | No cached abstract for paper PMC7062782
+2026-05-08 14:42:20,305 D | Parsing paper PMC7062782
+2026-05-08 14:42:20,306 D | Downloading paper PMC7062782 from PubMed Central
+2026-05-08 14:42:20,306 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:42:21,393 D | Saving results for paper PMC7062782
+2026-05-08 14:42:21,393 D | Saving discussion for paper PMC7062782
+2026-05-08 14:42:21,394 D | Saving methods for paper PMC7062782
+2026-05-08 14:42:21,394 I | Skipping paper PMC7062782: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:21,394 D | No cached abstract for paper PMC12604733
+2026-05-08 14:42:21,394 D | Parsing paper PMC12604733
+2026-05-08 14:42:21,394 D | Downloading paper PMC12604733 from PubMed Central
+2026-05-08 14:42:21,394 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:42:22,204 D | Saving methods for paper PMC12604733
+2026-05-08 14:42:22,204 D | Saving discussion for paper PMC12604733
+2026-05-08 14:42:22,206 D | Saving results for paper PMC12604733
+2026-05-08 14:42:22,209 I | Skipping paper PMC12604733: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:22,209 D | No cached abstract for paper PMC10832538
+2026-05-08 14:42:22,209 D | Parsing paper PMC10832538
+2026-05-08 14:42:22,209 D | Downloading paper PMC10832538 from PubMed Central
+2026-05-08 14:42:22,209 D | Slowing down requests: sleeping for 0.481s
+2026-05-08 14:42:23,336 I | Skipping paper PMC10832538: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:23,336 D | No cached abstract for paper PMC5502672
+2026-05-08 14:42:23,336 D | Parsing paper PMC5502672
+2026-05-08 14:42:23,336 D | Downloading paper PMC5502672 from PubMed Central
+2026-05-08 14:42:23,336 D | Slowing down requests: sleeping for 0.488s
+2026-05-08 14:42:24,142 I | Skipping paper PMC5502672: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:24,143 D | No cached abstract for paper PMC7705670
+2026-05-08 14:42:24,143 D | Parsing paper PMC7705670
+2026-05-08 14:42:24,143 D | Downloading paper PMC7705670 from PubMed Central
+2026-05-08 14:42:24,143 D | Slowing down requests: sleeping for 0.467s
+2026-05-08 14:42:25,029 D | Saving discussion for paper PMC7705670
+2026-05-08 14:42:25,030 D | Saving results for paper PMC7705670
+2026-05-08 14:42:25,030 D | Saving methods for paper PMC7705670
+2026-05-08 14:42:25,031 I | Skipping paper PMC7705670: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:25,031 D | No cached abstract for paper PMC8985835
+2026-05-08 14:42:25,031 D | Parsing paper PMC8985835
+2026-05-08 14:42:25,031 D | Downloading paper PMC8985835 from PubMed Central
+2026-05-08 14:42:25,032 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:25,758 D | Saving methods for paper PMC8985835
+2026-05-08 14:42:25,758 D | Saving discussion for paper PMC8985835
+2026-05-08 14:42:25,759 D | Saving results for paper PMC8985835
+2026-05-08 14:42:25,759 I | Skipping paper PMC8985835: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:25,759 D | No cached abstract for paper PMC5527388
+2026-05-08 14:42:25,759 D | Parsing paper PMC5527388
+2026-05-08 14:42:25,759 D | Downloading paper PMC5527388 from PubMed Central
+2026-05-08 14:42:25,759 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:26,432 D | No paper body available for PMC5527388
+2026-05-08 14:42:26,433 I | Skipping paper PMC5527388: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:26,433 D | No cached abstract for paper PMC8632127
+2026-05-08 14:42:26,433 D | Parsing paper PMC8632127
+2026-05-08 14:42:26,433 D | Downloading paper PMC8632127 from PubMed Central
+2026-05-08 14:42:26,433 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:27,215 D | No paper body available for PMC8632127
+2026-05-08 14:42:27,216 I | Skipping paper PMC8632127: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:27,216 D | No cached abstract for paper PMC12484021
+2026-05-08 14:42:27,216 D | Parsing paper PMC12484021
+2026-05-08 14:42:27,216 D | Downloading paper PMC12484021 from PubMed Central
+2026-05-08 14:42:27,216 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:28,407 D | Saving methods for paper PMC12484021
+2026-05-08 14:42:28,407 D | Saving results for paper PMC12484021
+2026-05-08 14:42:28,408 D | Saving discussion for paper PMC12484021
+2026-05-08 14:42:28,408 I | Skipping paper PMC12484021: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:28,408 D | No cached abstract for paper PMC4251894
+2026-05-08 14:42:28,408 D | Parsing paper PMC4251894
+2026-05-08 14:42:28,408 D | Downloading paper PMC4251894 from PubMed Central
+2026-05-08 14:42:28,408 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:42:29,225 D | Paper PMC4251894 missing abstract
+2026-05-08 14:42:29,225 I | Skipping paper PMC4251894: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:29,225 D | No cached abstract for paper PMC4535907
+2026-05-08 14:42:29,225 D | Parsing paper PMC4535907
+2026-05-08 14:42:29,225 D | Downloading paper PMC4535907 from PubMed Central
+2026-05-08 14:42:29,225 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:30,139 D | Saving methods for paper PMC4535907
+2026-05-08 14:42:30,140 D | Saving results for paper PMC4535907
+2026-05-08 14:42:30,141 I | Skipping paper PMC4535907: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:30,141 D | No cached abstract for paper PMC3479198
+2026-05-08 14:42:30,141 D | Parsing paper PMC3479198
+2026-05-08 14:42:30,141 D | Downloading paper PMC3479198 from PubMed Central
+2026-05-08 14:42:30,141 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:30,935 D | Saving methods for paper PMC3479198
+2026-05-08 14:42:30,935 D | Saving results for paper PMC3479198
+2026-05-08 14:42:30,936 D | Saving discussion for paper PMC3479198
+2026-05-08 14:42:30,936 I | Skipping paper PMC3479198: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:30,937 D | No cached abstract for paper PMC2814468
+2026-05-08 14:42:30,937 D | Parsing paper PMC2814468
+2026-05-08 14:42:30,937 D | Downloading paper PMC2814468 from PubMed Central
+2026-05-08 14:42:30,937 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:31,597 D | No paper body available for PMC2814468
+2026-05-08 14:42:31,598 I | Skipping paper PMC2814468: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:31,598 D | No cached abstract for paper PMC2909876
+2026-05-08 14:42:31,598 D | Parsing paper PMC2909876
+2026-05-08 14:42:31,598 D | Downloading paper PMC2909876 from PubMed Central
+2026-05-08 14:42:31,598 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:32,271 D | No paper body available for PMC2909876
+2026-05-08 14:42:32,271 I | Skipping paper PMC2909876: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:32,271 D | No cached abstract for paper PMC372862
+2026-05-08 14:42:32,271 D | Parsing paper PMC372862
+2026-05-08 14:42:32,271 D | Downloading paper PMC372862 from PubMed Central
+2026-05-08 14:42:32,271 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:32,975 D | No paper body available for PMC372862
+2026-05-08 14:42:32,975 I | Skipping paper PMC372862: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:32,975 D | No cached abstract for paper PMC1142466
+2026-05-08 14:42:32,975 D | Parsing paper PMC1142466
+2026-05-08 14:42:32,975 D | Downloading paper PMC1142466 from PubMed Central
+2026-05-08 14:42:32,976 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:42:33,768 D | No paper body available for PMC1142466
+2026-05-08 14:42:33,769 I | Skipping paper PMC1142466: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:33,769 D | No cached abstract for paper PMC9968493
+2026-05-08 14:42:33,770 D | Parsing paper PMC9968493
+2026-05-08 14:42:33,770 D | Downloading paper PMC9968493 from PubMed Central
+2026-05-08 14:42:33,770 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:42:34,638 I | Skipping paper PMC9968493: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:34,639 D | No cached abstract for paper PMC375587
+2026-05-08 14:42:34,639 D | Parsing paper PMC375587
+2026-05-08 14:42:34,639 D | Downloading paper PMC375587 from PubMed Central
+2026-05-08 14:42:34,639 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:42:35,330 D | No paper body available for PMC375587
+2026-05-08 14:42:35,331 I | Skipping paper PMC375587: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:35,331 D | No cached abstract for paper PMC3670865
+2026-05-08 14:42:35,331 D | Parsing paper PMC3670865
+2026-05-08 14:42:35,331 D | Downloading paper PMC3670865 from PubMed Central
+2026-05-08 14:42:35,331 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:36,249 D | Saving results for paper PMC3670865
+2026-05-08 14:42:36,249 D | Saving discussion for paper PMC3670865
+2026-05-08 14:42:36,250 D | Saving methods for paper PMC3670865
+2026-05-08 14:42:36,250 I | Skipping paper PMC3670865: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:36,250 D | No cached abstract for paper PMC12783184
+2026-05-08 14:42:36,250 D | Parsing paper PMC12783184
+2026-05-08 14:42:36,250 D | Downloading paper PMC12783184 from PubMed Central
+2026-05-08 14:42:36,250 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:37,045 D | Saving results for paper PMC12783184
+2026-05-08 14:42:37,045 D | Saving methods for paper PMC12783184
+2026-05-08 14:42:37,046 I | Skipping paper PMC12783184: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:37,046 D | No cached abstract for paper PMC2168647
+2026-05-08 14:42:37,046 D | Parsing paper PMC2168647
+2026-05-08 14:42:37,046 D | Downloading paper PMC2168647 from PubMed Central
+2026-05-08 14:42:37,046 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:37,778 D | No paper body available for PMC2168647
+2026-05-08 14:42:37,778 I | Skipping paper PMC2168647: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:37,778 D | No cached abstract for paper PMC11242194
+2026-05-08 14:42:37,778 D | Parsing paper PMC11242194
+2026-05-08 14:42:37,778 D | Downloading paper PMC11242194 from PubMed Central
+2026-05-08 14:42:37,779 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:38,646 D | Saving results for paper PMC11242194
+2026-05-08 14:42:38,647 D | Saving discussion for paper PMC11242194
+2026-05-08 14:42:38,647 D | Saving methods for paper PMC11242194
+2026-05-08 14:42:38,648 I | Skipping paper PMC11242194: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:38,648 D | No cached abstract for paper PMC5425795
+2026-05-08 14:42:38,648 D | Parsing paper PMC5425795
+2026-05-08 14:42:38,648 D | Downloading paper PMC5425795 from PubMed Central
+2026-05-08 14:42:38,648 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:39,376 D | No paper body available for PMC5425795
+2026-05-08 14:42:39,376 I | Skipping paper PMC5425795: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:39,377 D | No cached abstract for paper PMC4456996
+2026-05-08 14:42:39,377 D | Parsing paper PMC4456996
+2026-05-08 14:42:39,377 D | Downloading paper PMC4456996 from PubMed Central
+2026-05-08 14:42:39,377 D | Slowing down requests: sleeping for 0.499s
+2026-05-08 14:42:40,232 D | Saving methods for paper PMC4456996
+2026-05-08 14:42:40,232 D | Saving results for paper PMC4456996
+2026-05-08 14:42:40,233 I | Skipping paper PMC4456996: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:40,233 D | No cached abstract for paper PMC452551
+2026-05-08 14:42:40,233 D | Parsing paper PMC452551
+2026-05-08 14:42:40,233 D | Downloading paper PMC452551 from PubMed Central
+2026-05-08 14:42:40,233 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:40,947 D | Paper PMC452551 missing abstract
+2026-05-08 14:42:40,948 I | Skipping paper PMC452551: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:40,948 D | No cached abstract for paper PMC3365025
+2026-05-08 14:42:40,948 D | Parsing paper PMC3365025
+2026-05-08 14:42:40,948 D | Downloading paper PMC3365025 from PubMed Central
+2026-05-08 14:42:40,948 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:42:41,736 D | Saving methods for paper PMC3365025
+2026-05-08 14:42:41,737 D | Saving results for paper PMC3365025
+2026-05-08 14:42:41,737 D | Saving discussion for paper PMC3365025
+2026-05-08 14:42:41,738 I | Skipping paper PMC3365025: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:41,738 D | No cached abstract for paper PMC7557734
+2026-05-08 14:42:41,738 D | Parsing paper PMC7557734
+2026-05-08 14:42:41,738 D | Downloading paper PMC7557734 from PubMed Central
+2026-05-08 14:42:41,738 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:42,668 D | Saving methods for paper PMC7557734
+2026-05-08 14:42:42,668 D | Saving results for paper PMC7557734
+2026-05-08 14:42:42,669 I | Skipping paper PMC7557734: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:42,669 D | Using cached abstract for paper PMC6333855
+2026-05-08 14:42:42,669 I | Skipping paper PMC6333855: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:42,670 D | No cached abstract for paper PMC7987221
+2026-05-08 14:42:42,670 D | Parsing paper PMC7987221
+2026-05-08 14:42:42,670 D | Downloading paper PMC7987221 from PubMed Central
+2026-05-08 14:42:42,670 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:43,446 D | Saving methods for paper PMC7987221
+2026-05-08 14:42:43,446 D | Saving results for paper PMC7987221
+2026-05-08 14:42:43,446 D | Saving discussion for paper PMC7987221
+2026-05-08 14:42:43,447 I | Skipping paper PMC7987221: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:43,447 D | No cached abstract for paper PMC390363
+2026-05-08 14:42:43,447 D | Parsing paper PMC390363
+2026-05-08 14:42:43,447 D | Downloading paper PMC390363 from PubMed Central
+2026-05-08 14:42:43,447 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:44,234 D | No paper body available for PMC390363
+2026-05-08 14:42:44,234 I | Skipping paper PMC390363: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:44,235 D | No cached abstract for paper PMC4048454
+2026-05-08 14:42:44,235 D | Parsing paper PMC4048454
+2026-05-08 14:42:44,235 D | Downloading paper PMC4048454 from PubMed Central
+2026-05-08 14:42:44,235 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:45,055 D | Saving discussion for paper PMC4048454
+2026-05-08 14:42:45,057 D | Saving results for paper PMC4048454
+2026-05-08 14:42:45,059 D | Saving methods for paper PMC4048454
+2026-05-08 14:42:45,061 I | Skipping paper PMC4048454: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:45,061 D | No cached abstract for paper PMC135739
+2026-05-08 14:42:45,061 D | Parsing paper PMC135739
+2026-05-08 14:42:45,061 D | Downloading paper PMC135739 from PubMed Central
+2026-05-08 14:42:45,061 D | Slowing down requests: sleeping for 0.482s
+2026-05-08 14:42:46,094 D | No paper body available for PMC135739
+2026-05-08 14:42:46,094 I | Skipping paper PMC135739: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:46,094 D | No cached abstract for paper PMC11228462
+2026-05-08 14:42:46,094 D | Parsing paper PMC11228462
+2026-05-08 14:42:46,094 D | Downloading paper PMC11228462 from PubMed Central
+2026-05-08 14:42:46,094 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:46,906 D | Saving results for paper PMC11228462
+2026-05-08 14:42:46,907 D | Saving discussion for paper PMC11228462
+2026-05-08 14:42:46,907 D | Saving methods for paper PMC11228462
+2026-05-08 14:42:46,908 I | Skipping paper PMC11228462: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:46,908 D | No cached abstract for paper PMC8011737
+2026-05-08 14:42:46,908 D | Parsing paper PMC8011737
+2026-05-08 14:42:46,908 D | Downloading paper PMC8011737 from PubMed Central
+2026-05-08 14:42:46,908 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:47,639 D | Saving results for paper PMC8011737
+2026-05-08 14:42:47,639 I | Skipping paper PMC8011737: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:47,639 D | No cached abstract for paper PMC9121174
+2026-05-08 14:42:47,640 D | Parsing paper PMC9121174
+2026-05-08 14:42:47,640 D | Downloading paper PMC9121174 from PubMed Central
+2026-05-08 14:42:47,640 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:42:48,529 D | Saving methods for paper PMC9121174
+2026-05-08 14:42:48,529 D | Saving results for paper PMC9121174
+2026-05-08 14:42:48,529 D | Saving discussion for paper PMC9121174
+2026-05-08 14:42:48,530 I | Skipping paper PMC9121174: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:48,530 D | No cached abstract for paper PMC4248442
+2026-05-08 14:42:48,530 D | Parsing paper PMC4248442
+2026-05-08 14:42:48,530 D | Downloading paper PMC4248442 from PubMed Central
+2026-05-08 14:42:48,530 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:42:49,317 D | Saving results for paper PMC4248442
+2026-05-08 14:42:49,317 D | Saving discussion for paper PMC4248442
+2026-05-08 14:42:49,317 D | Saving methods for paper PMC4248442
+2026-05-08 14:42:49,318 I | Skipping paper PMC4248442: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:49,318 D | No cached abstract for paper PMC7642360
+2026-05-08 14:42:49,318 D | Parsing paper PMC7642360
+2026-05-08 14:42:49,318 D | Downloading paper PMC7642360 from PubMed Central
+2026-05-08 14:42:49,318 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:50,136 D | Saving methods for paper PMC7642360
+2026-05-08 14:42:50,136 D | Saving results for paper PMC7642360
+2026-05-08 14:42:50,137 D | Saving discussion for paper PMC7642360
+2026-05-08 14:42:50,137 I | Skipping paper PMC7642360: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:50,137 D | No cached abstract for paper PMC6199490
+2026-05-08 14:42:50,138 D | Parsing paper PMC6199490
+2026-05-08 14:42:50,138 D | Downloading paper PMC6199490 from PubMed Central
+2026-05-08 14:42:50,138 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:42:50,905 D | Saving results for paper PMC6199490
+2026-05-08 14:42:50,906 D | Saving discussion for paper PMC6199490
+2026-05-08 14:42:50,906 D | Saving methods for paper PMC6199490
+2026-05-08 14:42:50,907 I | Skipping paper PMC6199490: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:50,907 D | No cached abstract for paper PMC6640162
+2026-05-08 14:42:50,907 D | Parsing paper PMC6640162
+2026-05-08 14:42:50,907 D | Downloading paper PMC6640162 from PubMed Central
+2026-05-08 14:42:50,907 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:51,715 I | Paper PMC6640162 has untitled body section; we may miss valid data
+2026-05-08 14:42:51,716 I | Skipping paper PMC6640162: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:51,716 D | No cached abstract for paper PMC6160223
+2026-05-08 14:42:51,716 D | Parsing paper PMC6160223
+2026-05-08 14:42:51,716 D | Downloading paper PMC6160223 from PubMed Central
+2026-05-08 14:42:51,717 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:42:52,490 D | Saving results for paper PMC6160223
+2026-05-08 14:42:52,491 D | Saving methods for paper PMC6160223
+2026-05-08 14:42:52,492 I | Skipping paper PMC6160223: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:52,492 D | No cached abstract for paper PMC2901685
+2026-05-08 14:42:52,492 D | Parsing paper PMC2901685
+2026-05-08 14:42:52,492 D | Downloading paper PMC2901685 from PubMed Central
+2026-05-08 14:42:52,492 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:53,165 D | No paper body available for PMC2901685
+2026-05-08 14:42:53,165 I | Skipping paper PMC2901685: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:53,165 D | No cached abstract for paper PMC2650633
+2026-05-08 14:42:53,165 D | Parsing paper PMC2650633
+2026-05-08 14:42:53,166 D | Downloading paper PMC2650633 from PubMed Central
+2026-05-08 14:42:53,166 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:53,914 D | Saving methods for paper PMC2650633
+2026-05-08 14:42:53,915 D | Saving discussion for paper PMC2650633
+2026-05-08 14:42:53,915 D | Saving results for paper PMC2650633
+2026-05-08 14:42:53,917 I | Skipping paper PMC2650633: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:53,917 D | Using cached abstract for paper PMC12046097
+2026-05-08 14:42:53,918 I | Skipping paper PMC12046097: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:53,918 D | No cached abstract for paper PMC7609029
+2026-05-08 14:42:53,918 D | Parsing paper PMC7609029
+2026-05-08 14:42:53,918 D | Downloading paper PMC7609029 from PubMed Central
+2026-05-08 14:42:53,918 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:54,671 I | Skipping paper PMC7609029: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:54,671 D | No cached abstract for paper PMC10568018
+2026-05-08 14:42:54,672 D | Parsing paper PMC10568018
+2026-05-08 14:42:54,672 D | Downloading paper PMC10568018 from PubMed Central
+2026-05-08 14:42:54,672 D | Slowing down requests: sleeping for 0.486s
+2026-05-08 14:42:55,480 D | Saving methods for paper PMC10568018
+2026-05-08 14:42:55,480 D | Saving results for paper PMC10568018
+2026-05-08 14:42:55,480 D | Saving discussion for paper PMC10568018
+2026-05-08 14:42:55,481 I | Skipping paper PMC10568018: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:55,481 D | No cached abstract for paper PMC7772558
+2026-05-08 14:42:55,481 D | Parsing paper PMC7772558
+2026-05-08 14:42:55,481 D | Downloading paper PMC7772558 from PubMed Central
+2026-05-08 14:42:55,481 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:56,233 D | Saving results for paper PMC7772558
+2026-05-08 14:42:56,233 D | Saving discussion for paper PMC7772558
+2026-05-08 14:42:56,234 D | Saving methods for paper PMC7772558
+2026-05-08 14:42:56,234 I | Skipping paper PMC7772558: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:56,235 D | No cached abstract for paper PMC6590888
+2026-05-08 14:42:56,235 D | Parsing paper PMC6590888
+2026-05-08 14:42:56,235 D | Downloading paper PMC6590888 from PubMed Central
+2026-05-08 14:42:56,235 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:42:57,017 D | Saving methods for paper PMC6590888
+2026-05-08 14:42:57,017 D | Saving results for paper PMC6590888
+2026-05-08 14:42:57,018 I | Skipping paper PMC6590888: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:57,018 D | No cached abstract for paper PMC12214026
+2026-05-08 14:42:57,018 D | Parsing paper PMC12214026
+2026-05-08 14:42:57,018 D | Downloading paper PMC12214026 from PubMed Central
+2026-05-08 14:42:57,018 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:42:57,785 D | Saving methods for paper PMC12214026
+2026-05-08 14:42:57,785 D | Saving results for paper PMC12214026
+2026-05-08 14:42:57,786 D | Saving discussion for paper PMC12214026
+2026-05-08 14:42:57,787 I | Skipping paper PMC12214026: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:57,787 D | No cached abstract for paper PMC2223565
+2026-05-08 14:42:57,787 D | Parsing paper PMC2223565
+2026-05-08 14:42:57,787 D | Downloading paper PMC2223565 from PubMed Central
+2026-05-08 14:42:57,787 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:42:58,447 D | Paper PMC2223565 missing abstract
+2026-05-08 14:42:58,447 I | Skipping paper PMC2223565: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:58,447 D | No cached abstract for paper PMC5687851
+2026-05-08 14:42:58,448 D | Parsing paper PMC5687851
+2026-05-08 14:42:58,448 D | Downloading paper PMC5687851 from PubMed Central
+2026-05-08 14:42:58,448 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:42:59,239 D | Saving discussion for paper PMC5687851
+2026-05-08 14:42:59,240 D | Saving results for paper PMC5687851
+2026-05-08 14:42:59,240 D | Saving methods for paper PMC5687851
+2026-05-08 14:42:59,241 I | Skipping paper PMC5687851: does not pass relevance checks for gene Rv0001
+2026-05-08 14:42:59,241 D | No cached abstract for paper PMC2967437
+2026-05-08 14:42:59,241 D | Parsing paper PMC2967437
+2026-05-08 14:42:59,241 D | Downloading paper PMC2967437 from PubMed Central
+2026-05-08 14:42:59,241 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:43:00,040 D | Saving results for paper PMC2967437
+2026-05-08 14:43:00,041 D | Saving discussion for paper PMC2967437
+2026-05-08 14:43:00,041 D | Saving methods for paper PMC2967437
+2026-05-08 14:43:00,042 I | Skipping paper PMC2967437: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:00,042 D | No cached abstract for paper PMC5975246
+2026-05-08 14:43:00,042 D | Parsing paper PMC5975246
+2026-05-08 14:43:00,042 D | Downloading paper PMC5975246 from PubMed Central
+2026-05-08 14:43:00,042 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:43:00,796 D | No paper body available for PMC5975246
+2026-05-08 14:43:00,797 I | Skipping paper PMC5975246: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:00,797 D | No cached abstract for paper PMC18471
+2026-05-08 14:43:00,797 D | Parsing paper PMC18471
+2026-05-08 14:43:00,798 D | Downloading paper PMC18471 from PubMed Central
+2026-05-08 14:43:00,798 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:43:01,613 D | No paper body available for PMC18471
+2026-05-08 14:43:01,613 I | Skipping paper PMC18471: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:01,614 D | No cached abstract for paper PMC11260486
+2026-05-08 14:43:01,614 D | Parsing paper PMC11260486
+2026-05-08 14:43:01,614 D | Downloading paper PMC11260486 from PubMed Central
+2026-05-08 14:43:01,614 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:43:02,395 D | Saving methods for paper PMC11260486
+2026-05-08 14:43:02,396 D | Saving results for paper PMC11260486
+2026-05-08 14:43:02,397 I | Skipping paper PMC11260486: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:02,397 D | No cached abstract for paper PMC10662689
+2026-05-08 14:43:02,397 D | Parsing paper PMC10662689
+2026-05-08 14:43:02,397 D | Downloading paper PMC10662689 from PubMed Central
+2026-05-08 14:43:02,397 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:43:03,217 D | Saving results for paper PMC10662689
+2026-05-08 14:43:03,218 D | Saving discussion for paper PMC10662689
+2026-05-08 14:43:03,219 D | Saving methods for paper PMC10662689
+2026-05-08 14:43:03,221 I | Skipping paper PMC10662689: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:03,221 D | No cached abstract for paper PMC197193
+2026-05-08 14:43:03,222 D | Parsing paper PMC197193
+2026-05-08 14:43:03,222 D | Downloading paper PMC197193 from PubMed Central
+2026-05-08 14:43:03,222 D | Slowing down requests: sleeping for 0.485s
+2026-05-08 14:43:03,878 D | Paper PMC197193 missing abstract
+2026-05-08 14:43:03,878 I | Skipping paper PMC197193: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:03,878 D | No cached abstract for paper PMC5054358
+2026-05-08 14:43:03,878 D | Parsing paper PMC5054358
+2026-05-08 14:43:03,879 D | Downloading paper PMC5054358 from PubMed Central
+2026-05-08 14:43:03,879 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:43:04,635 D | Saving discussion for paper PMC5054358
+2026-05-08 14:43:04,636 D | Saving results for paper PMC5054358
+2026-05-08 14:43:04,637 D | Saving methods for paper PMC5054358
+2026-05-08 14:43:04,639 I | Skipping paper PMC5054358: does not pass relevance checks for gene Rv0001
+2026-05-08 14:43:04,640 D | No cached abstract for paper PMC1153791
+2026-05-08 14:43:04,640 D | Parsing paper PMC1153791
+2026-05-08 14:43:04,640 D | Downloading paper PMC1153791 from PubMed Central
+2026-05-08 14:43:04,641 D | Slowing down requests: sleeping for 0.483s
+2026-05-08 14:43:05,345 D | No paper body available for PMC1153791
+2026-05-08 14:43:05,345 D | No discussion available for paper PMC1153791
+2026-05-08 14:43:05,346 D | No results available for paper PMC1153791
+2026-05-08 14:43:05,346 I | Starting inference process for gene Rv0001 with paper PMC1153791
+2026-05-08 14:43:05,346 D | Using cached abstract for paper PMC1153791
+2026-05-08 14:43:05,347 D | No results available for paper PMC1153791
+2026-05-08 14:43:05,347 D | No discussion available for paper PMC1153791
+2026-05-08 14:43:05,347 D | Obtained 1 relevant section for paper PMC1153791
+2026-05-08 14:43:05,347 D | Starting processing for PMC1153791 abstract
+2026-05-08 14:43:05,348 D | Submitting section-summary job (length 2304 chars) to LLM (model mistral-nemo:12b)
+2026-05-08 14:44:20,880 D | Got response (266 chars) back from mistral-nemo:12b in 1m, 15.5s
+2026-05-08 14:44:20,880 D | Caching response from LLM mistral-nemo:12b
+2026-05-08 14:44:20,880 D | Submitting section-summary job (length 2304 chars) to LLM (model llama3:8b)
+2026-05-08 14:45:07,999 D | Got response (209 chars) back from llama3:8b in 47.1s
+2026-05-08 14:45:07,999 D | Caching response from LLM llama3:8b
+2026-05-08 14:45:08,000 D | Submitting section-summary job (length 2304 chars) to LLM (model gemma3:12b)
+2026-05-08 14:46:23,621 D | Got response (249 chars) back from gemma3:12b in 1m, 15.6s
+2026-05-08 14:46:23,622 D | Caching response from LLM gemma3:12b
+2026-05-08 14:46:23,622 D | Submitting candidate-aggregation job (length 1218 chars) to LLM (model phi4:14b)
+2026-05-08 14:47:40,649 D | Got response (268 chars) back from phi4:14b in 1m, 17.0s
+2026-05-08 14:47:40,649 D | Caching response from LLM phi4:14b
+2026-05-08 14:47:40,650 D | No cached abstract for paper PMC2453136
+2026-05-08 14:47:40,650 D | Parsing paper PMC2453136
+2026-05-08 14:47:40,651 D | Downloading paper PMC2453136 from PubMed Central
+2026-05-08 14:47:40,895 D | Saving methods for paper PMC2453136
+2026-05-08 14:47:40,897 D | Saving results for paper PMC2453136
+2026-05-08 14:47:40,898 D | Saving discussion for paper PMC2453136
+2026-05-08 14:47:40,899 I | Skipping paper PMC2453136: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:40,900 D | No cached abstract for paper PMC87149
+2026-05-08 14:47:40,900 D | Parsing paper PMC87149
+2026-05-08 14:47:40,900 D | Downloading paper PMC87149 from PubMed Central
+2026-05-08 14:47:40,900 D | Slowing down requests: sleeping for 0.486s
+2026-05-08 14:47:41,559 D | No paper body available for PMC87149
+2026-05-08 14:47:41,559 I | Skipping paper PMC87149: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:41,559 D | Using cached abstract for paper PMC1166602
+2026-05-08 14:47:41,564 I | Skipping paper PMC1166602: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:41,564 D | No cached abstract for paper PMC5585685
+2026-05-08 14:47:41,564 D | Parsing paper PMC5585685
+2026-05-08 14:47:41,564 D | Downloading paper PMC5585685 from PubMed Central
+2026-05-08 14:47:41,564 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:47:42,311 D | Saving discussion for paper PMC5585685
+2026-05-08 14:47:42,315 D | Saving results for paper PMC5585685
+2026-05-08 14:47:42,317 I | Skipping paper PMC5585685: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:42,317 D | No cached abstract for paper PMC3749051
+2026-05-08 14:47:42,317 D | Parsing paper PMC3749051
+2026-05-08 14:47:42,318 D | Downloading paper PMC3749051 from PubMed Central
+2026-05-08 14:47:42,318 D | Slowing down requests: sleeping for 0.486s
+2026-05-08 14:47:43,184 D | No paper body available for PMC3749051
+2026-05-08 14:47:43,184 I | Skipping paper PMC3749051: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:43,188 D | No cached abstract for paper PMC6784150
+2026-05-08 14:47:43,188 D | Parsing paper PMC6784150
+2026-05-08 14:47:43,188 D | Downloading paper PMC6784150 from PubMed Central
+2026-05-08 14:47:43,189 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:47:44,007 I | Skipping paper PMC6784150: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:44,007 D | No cached abstract for paper PMC5790871
+2026-05-08 14:47:44,007 D | Parsing paper PMC5790871
+2026-05-08 14:47:44,011 D | Downloading paper PMC5790871 from PubMed Central
+2026-05-08 14:47:44,011 D | Slowing down requests: sleeping for 0.490s
+2026-05-08 14:47:44,826 D | Saving results for paper PMC5790871
+2026-05-08 14:47:44,830 D | Saving discussion for paper PMC5790871
+2026-05-08 14:47:44,830 D | Saving methods for paper PMC5790871
+2026-05-08 14:47:44,831 I | Skipping paper PMC5790871: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:44,832 D | No cached abstract for paper PMC5720513
+2026-05-08 14:47:44,832 D | Parsing paper PMC5720513
+2026-05-08 14:47:44,832 D | Downloading paper PMC5720513 from PubMed Central
+2026-05-08 14:47:44,832 D | Slowing down requests: sleeping for 0.486s
+2026-05-08 14:47:45,642 D | Saving methods for paper PMC5720513
+2026-05-08 14:47:45,646 D | Saving discussion for paper PMC5720513
+2026-05-08 14:47:45,649 D | Saving results for paper PMC5720513
+2026-05-08 14:47:45,653 I | Skipping paper PMC5720513: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:45,653 D | No cached abstract for paper PMC4250340
+2026-05-08 14:47:45,654 D | Parsing paper PMC4250340
+2026-05-08 14:47:45,654 D | Downloading paper PMC4250340 from PubMed Central
+2026-05-08 14:47:45,654 D | Slowing down requests: sleeping for 0.470s
+2026-05-08 14:47:46,429 I | Skipping paper PMC4250340: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:46,429 D | No cached abstract for paper PMC4337567
+2026-05-08 14:47:46,429 D | Parsing paper PMC4337567
+2026-05-08 14:47:46,430 D | Downloading paper PMC4337567 from PubMed Central
+2026-05-08 14:47:46,430 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:47:47,289 D | Saving results for paper PMC4337567
+2026-05-08 14:47:47,292 D | Saving discussion for paper PMC4337567
+2026-05-08 14:47:47,292 D | Saving methods for paper PMC4337567
+2026-05-08 14:47:47,293 I | Skipping paper PMC4337567: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:47,293 D | No cached abstract for paper PMC3314630
+2026-05-08 14:47:47,293 D | Parsing paper PMC3314630
+2026-05-08 14:47:47,293 D | Downloading paper PMC3314630 from PubMed Central
+2026-05-08 14:47:47,293 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:47:48,096 D | Saving results for paper PMC3314630
+2026-05-08 14:47:48,096 D | Saving discussion for paper PMC3314630
+2026-05-08 14:47:48,096 D | Saving methods for paper PMC3314630
+2026-05-08 14:47:48,097 I | Skipping paper PMC3314630: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:48,101 D | No cached abstract for paper PMC11796401
+2026-05-08 14:47:48,101 D | Parsing paper PMC11796401
+2026-05-08 14:47:48,101 D | Downloading paper PMC11796401 from PubMed Central
+2026-05-08 14:47:48,101 D | Slowing down requests: sleeping for 0.488s
+2026-05-08 14:47:48,882 D | Saving results for paper PMC11796401
+2026-05-08 14:47:48,883 D | Saving discussion for paper PMC11796401
+2026-05-08 14:47:48,883 D | Saving methods for paper PMC11796401
+2026-05-08 14:47:48,887 I | Skipping paper PMC11796401: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:48,887 D | No cached abstract for paper PMC10956419
+2026-05-08 14:47:48,887 D | Parsing paper PMC10956419
+2026-05-08 14:47:48,887 D | Downloading paper PMC10956419 from PubMed Central
+2026-05-08 14:47:48,888 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:47:49,721 I | Skipping paper PMC10956419: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:49,725 D | No cached abstract for paper PMC375242
+2026-05-08 14:47:49,725 D | Parsing paper PMC375242
+2026-05-08 14:47:49,725 D | Downloading paper PMC375242 from PubMed Central
+2026-05-08 14:47:49,725 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:47:50,387 D | Paper PMC375242 missing abstract
+2026-05-08 14:47:50,387 I | Skipping paper PMC375242: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:50,387 D | No cached abstract for paper PMC13076061
+2026-05-08 14:47:50,388 D | Parsing paper PMC13076061
+2026-05-08 14:47:50,388 D | Downloading paper PMC13076061 from PubMed Central
+2026-05-08 14:47:50,388 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:47:51,292 I | Skipping paper PMC13076061: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:51,292 D | No cached abstract for paper PMC3005629
+2026-05-08 14:47:51,292 D | Parsing paper PMC3005629
+2026-05-08 14:47:51,292 D | Downloading paper PMC3005629 from PubMed Central
+2026-05-08 14:47:51,292 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:47:52,004 I | Skipping paper PMC3005629: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:52,008 D | No cached abstract for paper PMC2976628
+2026-05-08 14:47:52,008 D | Parsing paper PMC2976628
+2026-05-08 14:47:52,008 D | Downloading paper PMC2976628 from PubMed Central
+2026-05-08 14:47:52,008 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:47:52,736 D | Saving methods for paper PMC2976628
+2026-05-08 14:47:52,739 D | Saving results for paper PMC2976628
+2026-05-08 14:47:52,739 D | Saving discussion for paper PMC2976628
+2026-05-08 14:47:52,740 I | Skipping paper PMC2976628: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:52,740 D | No cached abstract for paper PMC3650546
+2026-05-08 14:47:52,740 D | Parsing paper PMC3650546
+2026-05-08 14:47:52,740 D | Downloading paper PMC3650546 from PubMed Central
+2026-05-08 14:47:52,740 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:47:53,550 D | No paper body available for PMC3650546
+2026-05-08 14:47:53,550 I | Skipping paper PMC3650546: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:53,551 D | No cached abstract for paper PMC4083091
+2026-05-08 14:47:53,551 D | Parsing paper PMC4083091
+2026-05-08 14:47:53,551 D | Downloading paper PMC4083091 from PubMed Central
+2026-05-08 14:47:53,551 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:47:54,347 D | Saving results for paper PMC4083091
+2026-05-08 14:47:54,347 D | Saving discussion for paper PMC4083091
+2026-05-08 14:47:54,348 D | Saving methods for paper PMC4083091
+2026-05-08 14:47:54,348 I | Skipping paper PMC4083091: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:54,348 D | No cached abstract for paper PMC156888
+2026-05-08 14:47:54,348 D | Parsing paper PMC156888
+2026-05-08 14:47:54,348 D | Downloading paper PMC156888 from PubMed Central
+2026-05-08 14:47:54,348 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:47:55,086 D | Saving results for paper PMC156888
+2026-05-08 14:47:55,087 D | Saving discussion for paper PMC156888
+2026-05-08 14:47:55,087 D | Saving methods for paper PMC156888
+2026-05-08 14:47:55,091 I | Skipping paper PMC156888: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:55,091 D | No cached abstract for paper PMC6023979
+2026-05-08 14:47:55,091 D | Parsing paper PMC6023979
+2026-05-08 14:47:55,091 D | Downloading paper PMC6023979 from PubMed Central
+2026-05-08 14:47:55,091 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:47:55,874 D | Saving methods for paper PMC6023979
+2026-05-08 14:47:55,874 D | Saving results for paper PMC6023979
+2026-05-08 14:47:55,875 D | Saving discussion for paper PMC6023979
+2026-05-08 14:47:55,875 I | Skipping paper PMC6023979: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:55,875 D | No cached abstract for paper PMC10931510
+2026-05-08 14:47:55,876 D | Parsing paper PMC10931510
+2026-05-08 14:47:55,879 D | Downloading paper PMC10931510 from PubMed Central
+2026-05-08 14:47:55,879 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:47:56,665 D | Saving results for paper PMC10931510
+2026-05-08 14:47:56,665 D | Saving methods for paper PMC10931510
+2026-05-08 14:47:56,666 I | Skipping paper PMC10931510: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:56,666 D | No cached abstract for paper PMC9067532
+2026-05-08 14:47:56,666 D | Parsing paper PMC9067532
+2026-05-08 14:47:56,666 D | Downloading paper PMC9067532 from PubMed Central
+2026-05-08 14:47:56,666 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:47:57,508 D | Saving methods for paper PMC9067532
+2026-05-08 14:47:57,509 D | Saving discussion for paper PMC9067532
+2026-05-08 14:47:57,509 I | Skipping paper PMC9067532: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:57,510 D | No cached abstract for paper PMC8208687
+2026-05-08 14:47:57,510 D | Parsing paper PMC8208687
+2026-05-08 14:47:57,510 D | Downloading paper PMC8208687 from PubMed Central
+2026-05-08 14:47:57,510 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:47:58,326 D | Saving methods for paper PMC8208687
+2026-05-08 14:47:58,326 D | Saving results for paper PMC8208687
+2026-05-08 14:47:58,327 D | Saving discussion for paper PMC8208687
+2026-05-08 14:47:58,328 I | Skipping paper PMC8208687: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:58,328 D | No cached abstract for paper PMC3743902
+2026-05-08 14:47:58,328 D | Parsing paper PMC3743902
+2026-05-08 14:47:58,328 D | Downloading paper PMC3743902 from PubMed Central
+2026-05-08 14:47:58,328 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:47:59,255 D | Saving methods for paper PMC3743902
+2026-05-08 14:47:59,255 D | Saving results for paper PMC3743902
+2026-05-08 14:47:59,256 D | Saving discussion for paper PMC3743902
+2026-05-08 14:47:59,256 I | Skipping paper PMC3743902: does not pass relevance checks for gene Rv0001
+2026-05-08 14:47:59,260 D | No cached abstract for paper PMC3750612
+2026-05-08 14:47:59,260 D | Parsing paper PMC3750612
+2026-05-08 14:47:59,260 D | Downloading paper PMC3750612 from PubMed Central
+2026-05-08 14:47:59,260 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:48:00,162 D | Saving discussion for paper PMC3750612
+2026-05-08 14:48:00,165 I | Skipping paper PMC3750612: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:00,165 D | No cached abstract for paper PMC2841939
+2026-05-08 14:48:00,165 D | Parsing paper PMC2841939
+2026-05-08 14:48:00,165 D | Downloading paper PMC2841939 from PubMed Central
+2026-05-08 14:48:00,165 D | Slowing down requests: sleeping for 0.451s
+2026-05-08 14:48:00,792 D | No paper body available for PMC2841939
+2026-05-08 14:48:00,792 I | Skipping paper PMC2841939: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:00,792 D | Using cached abstract for paper PMC12646202
+2026-05-08 14:48:00,797 I | Skipping paper PMC12646202: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:00,797 D | Using cached abstract for paper PMC2446769
+2026-05-08 14:48:00,797 I | Skipping paper PMC2446769: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:00,797 D | No cached abstract for paper PMC11200800
+2026-05-08 14:48:00,797 D | Parsing paper PMC11200800
+2026-05-08 14:48:00,797 D | Downloading paper PMC11200800 from PubMed Central
+2026-05-08 14:48:00,797 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:01,632 D | Saving results for paper PMC11200800
+2026-05-08 14:48:01,633 D | Saving discussion for paper PMC11200800
+2026-05-08 14:48:01,633 D | Saving methods for paper PMC11200800
+2026-05-08 14:48:01,637 I | Skipping paper PMC11200800: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:01,637 D | No cached abstract for paper PMC4117421
+2026-05-08 14:48:01,637 D | Parsing paper PMC4117421
+2026-05-08 14:48:01,637 D | Downloading paper PMC4117421 from PubMed Central
+2026-05-08 14:48:01,637 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:02,497 D | Saving results for paper PMC4117421
+2026-05-08 14:48:02,498 D | Saving discussion for paper PMC4117421
+2026-05-08 14:48:02,498 D | Saving methods for paper PMC4117421
+2026-05-08 14:48:02,499 I | Skipping paper PMC4117421: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:02,499 D | No cached abstract for paper PMC11806353
+2026-05-08 14:48:02,499 D | Parsing paper PMC11806353
+2026-05-08 14:48:02,499 D | Downloading paper PMC11806353 from PubMed Central
+2026-05-08 14:48:02,499 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:03,298 D | Saving methods for paper PMC11806353
+2026-05-08 14:48:03,299 D | Saving results for paper PMC11806353
+2026-05-08 14:48:03,300 D | Saving discussion for paper PMC11806353
+2026-05-08 14:48:03,302 I | Skipping paper PMC11806353: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:03,302 D | Using cached abstract for paper PMC10609372
+2026-05-08 14:48:03,303 I | Skipping paper PMC10609372: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:03,303 D | No cached abstract for paper PMC11165638
+2026-05-08 14:48:03,304 D | Parsing paper PMC11165638
+2026-05-08 14:48:03,304 D | Downloading paper PMC11165638 from PubMed Central
+2026-05-08 14:48:03,304 D | Slowing down requests: sleeping for 0.479s
+2026-05-08 14:48:04,068 D | Saving methods for paper PMC11165638
+2026-05-08 14:48:04,068 D | Saving results for paper PMC11165638
+2026-05-08 14:48:04,069 D | Saving discussion for paper PMC11165638
+2026-05-08 14:48:04,072 I | Skipping paper PMC11165638: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:04,072 D | No cached abstract for paper PMC12282082
+2026-05-08 14:48:04,072 D | Parsing paper PMC12282082
+2026-05-08 14:48:04,072 D | Downloading paper PMC12282082 from PubMed Central
+2026-05-08 14:48:04,072 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:48:04,800 D | Saving methods for paper PMC12282082
+2026-05-08 14:48:04,800 D | Saving results for paper PMC12282082
+2026-05-08 14:48:04,804 D | Saving discussion for paper PMC12282082
+2026-05-08 14:48:04,804 I | Skipping paper PMC12282082: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:04,804 D | No cached abstract for paper PMC7581894
+2026-05-08 14:48:04,804 D | Parsing paper PMC7581894
+2026-05-08 14:48:04,804 D | Downloading paper PMC7581894 from PubMed Central
+2026-05-08 14:48:04,805 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:05,586 I | Skipping paper PMC7581894: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:05,586 D | No cached abstract for paper PMC4054188
+2026-05-08 14:48:05,586 D | Parsing paper PMC4054188
+2026-05-08 14:48:05,586 D | Downloading paper PMC4054188 from PubMed Central
+2026-05-08 14:48:05,586 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:06,390 D | No paper body available for PMC4054188
+2026-05-08 14:48:06,390 I | Skipping paper PMC4054188: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:06,390 D | No cached abstract for paper PMC3175528
+2026-05-08 14:48:06,391 D | Parsing paper PMC3175528
+2026-05-08 14:48:06,391 D | Downloading paper PMC3175528 from PubMed Central
+2026-05-08 14:48:06,391 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:07,068 D | No paper body available for PMC3175528
+2026-05-08 14:48:07,068 I | Skipping paper PMC3175528: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:07,072 D | No cached abstract for paper PMC4129139
+2026-05-08 14:48:07,073 D | Parsing paper PMC4129139
+2026-05-08 14:48:07,073 D | Downloading paper PMC4129139 from PubMed Central
+2026-05-08 14:48:07,073 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:07,922 I | Skipping paper PMC4129139: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:07,922 D | No cached abstract for paper PMC2957888
+2026-05-08 14:48:07,922 D | Parsing paper PMC2957888
+2026-05-08 14:48:07,922 D | Downloading paper PMC2957888 from PubMed Central
+2026-05-08 14:48:07,922 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:08,706 D | No paper body available for PMC2957888
+2026-05-08 14:48:08,706 I | Skipping paper PMC2957888: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:08,706 D | No cached abstract for paper PMC1636241
+2026-05-08 14:48:08,706 D | Parsing paper PMC1636241
+2026-05-08 14:48:08,706 D | Downloading paper PMC1636241 from PubMed Central
+2026-05-08 14:48:08,706 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:09,466 D | No paper body available for PMC1636241
+2026-05-08 14:48:09,467 I | Skipping paper PMC1636241: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:09,467 D | No cached abstract for paper PMC3191993
+2026-05-08 14:48:09,467 D | Parsing paper PMC3191993
+2026-05-08 14:48:09,468 D | Downloading paper PMC3191993 from PubMed Central
+2026-05-08 14:48:09,468 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:10,156 D | No paper body available for PMC3191993
+2026-05-08 14:48:10,156 I | Skipping paper PMC3191993: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:10,156 D | No cached abstract for paper PMC10316083
+2026-05-08 14:48:10,156 D | Parsing paper PMC10316083
+2026-05-08 14:48:10,157 D | Downloading paper PMC10316083 from PubMed Central
+2026-05-08 14:48:10,157 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:11,120 D | Saving results for paper PMC10316083
+2026-05-08 14:48:11,121 D | Saving discussion for paper PMC10316083
+2026-05-08 14:48:11,121 D | Saving methods for paper PMC10316083
+2026-05-08 14:48:11,122 I | Skipping paper PMC10316083: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:11,122 D | Using cached abstract for paper PMC9825169
+2026-05-08 14:48:11,125 I | Skipping paper PMC9825169: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:11,125 D | No cached abstract for paper PMC6142227
+2026-05-08 14:48:11,125 D | Parsing paper PMC6142227
+2026-05-08 14:48:11,126 D | Downloading paper PMC6142227 from PubMed Central
+2026-05-08 14:48:11,126 D | Slowing down requests: sleeping for 0.490s
+2026-05-08 14:48:11,913 D | No paper body available for PMC6142227
+2026-05-08 14:48:11,914 I | Skipping paper PMC6142227: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:11,914 D | No cached abstract for paper PMC9344073
+2026-05-08 14:48:11,914 D | Parsing paper PMC9344073
+2026-05-08 14:48:11,914 D | Downloading paper PMC9344073 from PubMed Central
+2026-05-08 14:48:11,914 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:12,643 D | Saving discussion for paper PMC9344073
+2026-05-08 14:48:12,644 D | Saving results for paper PMC9344073
+2026-05-08 14:48:12,644 I | Skipping paper PMC9344073: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:12,644 D | No cached abstract for paper PMC3837797
+2026-05-08 14:48:12,644 D | Parsing paper PMC3837797
+2026-05-08 14:48:12,645 D | Downloading paper PMC3837797 from PubMed Central
+2026-05-08 14:48:12,645 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:13,355 D | No paper body available for PMC3837797
+2026-05-08 14:48:13,355 I | Skipping paper PMC3837797: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:13,356 D | No cached abstract for paper PMC31270
+2026-05-08 14:48:13,356 D | Parsing paper PMC31270
+2026-05-08 14:48:13,356 D | Downloading paper PMC31270 from PubMed Central
+2026-05-08 14:48:13,356 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:14,079 D | No paper body available for PMC31270
+2026-05-08 14:48:14,080 I | Skipping paper PMC31270: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:14,080 D | No cached abstract for paper PMC11551753
+2026-05-08 14:48:14,081 D | Parsing paper PMC11551753
+2026-05-08 14:48:14,081 D | Downloading paper PMC11551753 from PubMed Central
+2026-05-08 14:48:14,081 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:48:14,864 D | Saving methods for paper PMC11551753
+2026-05-08 14:48:14,864 D | Saving results for paper PMC11551753
+2026-05-08 14:48:14,865 D | Saving discussion for paper PMC11551753
+2026-05-08 14:48:14,865 I | Skipping paper PMC11551753: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:14,865 D | Using cached abstract for paper PMC5625382
+2026-05-08 14:48:14,869 I | Skipping paper PMC5625382: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:14,869 D | No cached abstract for paper PMC12727939
+2026-05-08 14:48:14,869 D | Parsing paper PMC12727939
+2026-05-08 14:48:14,869 D | Downloading paper PMC12727939 from PubMed Central
+2026-05-08 14:48:14,869 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:48:15,648 D | Saving results for paper PMC12727939
+2026-05-08 14:48:15,648 D | Saving discussion for paper PMC12727939
+2026-05-08 14:48:15,649 I | Skipping paper PMC12727939: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:15,649 D | No cached abstract for paper PMC10745584
+2026-05-08 14:48:15,649 D | Parsing paper PMC10745584
+2026-05-08 14:48:15,649 D | Downloading paper PMC10745584 from PubMed Central
+2026-05-08 14:48:15,649 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:16,433 D | Saving methods for paper PMC10745584
+2026-05-08 14:48:16,433 D | Saving results for paper PMC10745584
+2026-05-08 14:48:16,434 D | Saving discussion for paper PMC10745584
+2026-05-08 14:48:16,434 I | Skipping paper PMC10745584: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:16,434 D | No cached abstract for paper PMC9118660
+2026-05-08 14:48:16,434 D | Parsing paper PMC9118660
+2026-05-08 14:48:16,435 D | Downloading paper PMC9118660 from PubMed Central
+2026-05-08 14:48:16,435 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:48:17,242 D | Saving results for paper PMC9118660
+2026-05-08 14:48:17,242 D | Saving discussion for paper PMC9118660
+2026-05-08 14:48:17,242 D | Saving methods for paper PMC9118660
+2026-05-08 14:48:17,243 I | Skipping paper PMC9118660: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:17,243 D | No cached abstract for paper PMC95199
+2026-05-08 14:48:17,243 D | Parsing paper PMC95199
+2026-05-08 14:48:17,243 D | Downloading paper PMC95199 from PubMed Central
+2026-05-08 14:48:17,243 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:17,966 D | No paper body available for PMC95199
+2026-05-08 14:48:17,967 I | Skipping paper PMC95199: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:17,967 D | No cached abstract for paper PMC11050019
+2026-05-08 14:48:17,968 D | Parsing paper PMC11050019
+2026-05-08 14:48:17,968 D | Downloading paper PMC11050019 from PubMed Central
+2026-05-08 14:48:17,968 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:18,743 I | Skipping paper PMC11050019: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:18,743 D | No cached abstract for paper PMC4554461
+2026-05-08 14:48:18,743 D | Parsing paper PMC4554461
+2026-05-08 14:48:18,743 D | Downloading paper PMC4554461 from PubMed Central
+2026-05-08 14:48:18,744 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:19,491 D | Saving methods for paper PMC4554461
+2026-05-08 14:48:19,491 D | Saving results for paper PMC4554461
+2026-05-08 14:48:19,492 D | Saving discussion for paper PMC4554461
+2026-05-08 14:48:19,492 I | Skipping paper PMC4554461: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:19,492 D | No cached abstract for paper PMC3429619
+2026-05-08 14:48:19,493 D | Parsing paper PMC3429619
+2026-05-08 14:48:19,493 D | Downloading paper PMC3429619 from PubMed Central
+2026-05-08 14:48:19,493 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:48:20,198 D | No paper body available for PMC3429619
+2026-05-08 14:48:20,198 I | Skipping paper PMC3429619: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:20,198 D | No cached abstract for paper PMC3397429
+2026-05-08 14:48:20,199 D | Parsing paper PMC3397429
+2026-05-08 14:48:20,199 D | Downloading paper PMC3397429 from PubMed Central
+2026-05-08 14:48:20,199 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:20,941 I | Skipping paper PMC3397429: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:20,941 D | No cached abstract for paper PMC4135643
+2026-05-08 14:48:20,941 D | Parsing paper PMC4135643
+2026-05-08 14:48:20,941 D | Downloading paper PMC4135643 from PubMed Central
+2026-05-08 14:48:20,941 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:21,623 D | No paper body available for PMC4135643
+2026-05-08 14:48:21,624 I | Skipping paper PMC4135643: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:21,624 D | Using cached abstract for paper PMC12703862
+2026-05-08 14:48:21,628 I | Skipping paper PMC12703862: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:21,628 D | No cached abstract for paper PMC103750
+2026-05-08 14:48:21,628 D | Parsing paper PMC103750
+2026-05-08 14:48:21,628 D | Downloading paper PMC103750 from PubMed Central
+2026-05-08 14:48:21,628 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:22,299 D | No paper body available for PMC103750
+2026-05-08 14:48:22,299 I | Skipping paper PMC103750: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:22,299 D | No cached abstract for paper PMC9574059
+2026-05-08 14:48:22,299 D | Parsing paper PMC9574059
+2026-05-08 14:48:22,299 D | Downloading paper PMC9574059 from PubMed Central
+2026-05-08 14:48:22,299 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:48:23,181 D | Saving discussion for paper PMC9574059
+2026-05-08 14:48:23,182 I | Skipping paper PMC9574059: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:23,182 D | No cached abstract for paper PMC4779234
+2026-05-08 14:48:23,182 D | Parsing paper PMC4779234
+2026-05-08 14:48:23,182 D | Downloading paper PMC4779234 from PubMed Central
+2026-05-08 14:48:23,182 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:23,978 D | Saving results for paper PMC4779234
+2026-05-08 14:48:23,978 D | Saving methods for paper PMC4779234
+2026-05-08 14:48:23,979 I | Skipping paper PMC4779234: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:23,979 D | No cached abstract for paper PMC2738546
+2026-05-08 14:48:23,979 D | Parsing paper PMC2738546
+2026-05-08 14:48:23,979 D | Downloading paper PMC2738546 from PubMed Central
+2026-05-08 14:48:23,979 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:24,732 D | Saving methods for paper PMC2738546
+2026-05-08 14:48:24,732 D | Saving discussion for paper PMC2738546
+2026-05-08 14:48:24,732 D | Saving results for paper PMC2738546
+2026-05-08 14:48:24,733 I | Skipping paper PMC2738546: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:24,733 D | No cached abstract for paper PMC11794272
+2026-05-08 14:48:24,734 D | Parsing paper PMC11794272
+2026-05-08 14:48:24,734 D | Downloading paper PMC11794272 from PubMed Central
+2026-05-08 14:48:24,734 D | Slowing down requests: sleeping for 0.486s
+2026-05-08 14:48:25,518 D | Saving methods for paper PMC11794272
+2026-05-08 14:48:25,519 D | Saving results for paper PMC11794272
+2026-05-08 14:48:25,519 D | Saving discussion for paper PMC11794272
+2026-05-08 14:48:25,520 I | Skipping paper PMC11794272: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:25,520 D | No cached abstract for paper PMC2785639
+2026-05-08 14:48:25,520 D | Parsing paper PMC2785639
+2026-05-08 14:48:25,520 D | Downloading paper PMC2785639 from PubMed Central
+2026-05-08 14:48:25,520 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:26,235 D | No paper body available for PMC2785639
+2026-05-08 14:48:26,236 I | Skipping paper PMC2785639: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:26,236 D | No cached abstract for paper PMC8092266
+2026-05-08 14:48:26,236 D | Parsing paper PMC8092266
+2026-05-08 14:48:26,237 D | Downloading paper PMC8092266 from PubMed Central
+2026-05-08 14:48:26,237 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:27,034 D | Saving results for paper PMC8092266
+2026-05-08 14:48:27,035 D | Saving discussion for paper PMC8092266
+2026-05-08 14:48:27,035 D | Saving methods for paper PMC8092266
+2026-05-08 14:48:27,035 I | Skipping paper PMC8092266: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:27,035 D | No cached abstract for paper PMC4961139
+2026-05-08 14:48:27,035 D | Parsing paper PMC4961139
+2026-05-08 14:48:27,035 D | Downloading paper PMC4961139 from PubMed Central
+2026-05-08 14:48:27,035 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:27,864 D | No paper body available for PMC4961139
+2026-05-08 14:48:27,864 I | Skipping paper PMC4961139: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:27,864 D | No cached abstract for paper PMC3589379
+2026-05-08 14:48:27,864 D | Parsing paper PMC3589379
+2026-05-08 14:48:27,864 D | Downloading paper PMC3589379 from PubMed Central
+2026-05-08 14:48:27,864 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:28,583 D | Saving methods for paper PMC3589379
+2026-05-08 14:48:28,583 D | Saving results for paper PMC3589379
+2026-05-08 14:48:28,583 D | Saving discussion for paper PMC3589379
+2026-05-08 14:48:28,584 I | Skipping paper PMC3589379: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:28,584 D | No cached abstract for paper PMC3553843
+2026-05-08 14:48:28,584 D | Parsing paper PMC3553843
+2026-05-08 14:48:28,584 D | Downloading paper PMC3553843 from PubMed Central
+2026-05-08 14:48:28,584 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:29,317 D | No paper body available for PMC3553843
+2026-05-08 14:48:29,318 I | Skipping paper PMC3553843: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:29,318 D | No cached abstract for paper PMC1539956
+2026-05-08 14:48:29,318 D | Parsing paper PMC1539956
+2026-05-08 14:48:29,318 D | Downloading paper PMC1539956 from PubMed Central
+2026-05-08 14:48:29,318 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:30,069 D | No paper body available for PMC1539956
+2026-05-08 14:48:30,070 I | Skipping paper PMC1539956: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:30,070 D | No cached abstract for paper PMC4215301
+2026-05-08 14:48:30,070 D | Parsing paper PMC4215301
+2026-05-08 14:48:30,071 D | Downloading paper PMC4215301 from PubMed Central
+2026-05-08 14:48:30,071 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:48:30,902 D | Saving results for paper PMC4215301
+2026-05-08 14:48:30,903 D | Saving discussion for paper PMC4215301
+2026-05-08 14:48:30,903 D | Saving methods for paper PMC4215301
+2026-05-08 14:48:30,903 I | Skipping paper PMC4215301: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:30,904 D | No cached abstract for paper PMC2897852
+2026-05-08 14:48:30,904 D | Parsing paper PMC2897852
+2026-05-08 14:48:30,904 D | Downloading paper PMC2897852 from PubMed Central
+2026-05-08 14:48:30,904 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:31,803 D | Saving results for paper PMC2897852
+2026-05-08 14:48:31,803 D | Saving discussion for paper PMC2897852
+2026-05-08 14:48:31,804 D | Saving methods for paper PMC2897852
+2026-05-08 14:48:31,804 I | Skipping paper PMC2897852: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:31,804 D | No cached abstract for paper PMC10936155
+2026-05-08 14:48:31,804 D | Parsing paper PMC10936155
+2026-05-08 14:48:31,805 D | Downloading paper PMC10936155 from PubMed Central
+2026-05-08 14:48:31,805 D | Slowing down requests: sleeping for 0.375s
+2026-05-08 14:48:32,596 D | Saving results for paper PMC10936155
+2026-05-08 14:48:32,597 D | Saving discussion for paper PMC10936155
+2026-05-08 14:48:32,597 D | Saving methods for paper PMC10936155
+2026-05-08 14:48:32,598 I | Skipping paper PMC10936155: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:32,598 D | No cached abstract for paper PMC3093359
+2026-05-08 14:48:32,598 D | Parsing paper PMC3093359
+2026-05-08 14:48:32,598 D | Downloading paper PMC3093359 from PubMed Central
+2026-05-08 14:48:32,598 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:33,434 D | Saving discussion for paper PMC3093359
+2026-05-08 14:48:33,434 D | Saving results for paper PMC3093359
+2026-05-08 14:48:33,434 D | Saving methods for paper PMC3093359
+2026-05-08 14:48:33,435 I | Skipping paper PMC3093359: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:33,435 D | No cached abstract for paper PMC1797278
+2026-05-08 14:48:33,435 D | Parsing paper PMC1797278
+2026-05-08 14:48:33,435 D | Downloading paper PMC1797278 from PubMed Central
+2026-05-08 14:48:33,435 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:48:34,288 D | No paper body available for PMC1797278
+2026-05-08 14:48:34,289 I | Skipping paper PMC1797278: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:34,289 D | No cached abstract for paper PMC316777
+2026-05-08 14:48:34,289 D | Parsing paper PMC316777
+2026-05-08 14:48:34,289 D | Downloading paper PMC316777 from PubMed Central
+2026-05-08 14:48:34,290 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:35,028 D | No paper body available for PMC316777
+2026-05-08 14:48:35,028 I | Skipping paper PMC316777: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:35,029 D | No cached abstract for paper PMC4331801
+2026-05-08 14:48:35,029 D | Parsing paper PMC4331801
+2026-05-08 14:48:35,029 D | Downloading paper PMC4331801 from PubMed Central
+2026-05-08 14:48:35,029 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:35,895 D | Saving discussion for paper PMC4331801
+2026-05-08 14:48:35,895 D | Saving results for paper PMC4331801
+2026-05-08 14:48:35,896 D | Saving methods for paper PMC4331801
+2026-05-08 14:48:35,896 I | Skipping paper PMC4331801: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:35,896 D | No cached abstract for paper PMC1809137
+2026-05-08 14:48:35,896 D | Parsing paper PMC1809137
+2026-05-08 14:48:35,896 D | Downloading paper PMC1809137 from PubMed Central
+2026-05-08 14:48:35,896 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:48:36,624 D | No paper body available for PMC1809137
+2026-05-08 14:48:36,624 I | Skipping paper PMC1809137: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:36,625 D | No cached abstract for paper PMC11984153
+2026-05-08 14:48:36,625 D | Parsing paper PMC11984153
+2026-05-08 14:48:36,625 D | Downloading paper PMC11984153 from PubMed Central
+2026-05-08 14:48:36,625 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:37,479 I | Skipping paper PMC11984153: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:37,479 D | No cached abstract for paper PMC3131351
+2026-05-08 14:48:37,479 D | Parsing paper PMC3131351
+2026-05-08 14:48:37,480 D | Downloading paper PMC3131351 from PubMed Central
+2026-05-08 14:48:37,480 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:38,225 D | No paper body available for PMC3131351
+2026-05-08 14:48:38,225 I | Skipping paper PMC3131351: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:38,226 D | No cached abstract for paper PMC235315
+2026-05-08 14:48:38,226 D | Parsing paper PMC235315
+2026-05-08 14:48:38,226 D | Downloading paper PMC235315 from PubMed Central
+2026-05-08 14:48:38,226 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:48:38,896 D | Paper PMC235315 missing abstract
+2026-05-08 14:48:38,896 I | Skipping paper PMC235315: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:38,897 D | No cached abstract for paper PMC8177556
+2026-05-08 14:48:38,897 D | Parsing paper PMC8177556
+2026-05-08 14:48:38,897 D | Downloading paper PMC8177556 from PubMed Central
+2026-05-08 14:48:38,897 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:48:39,706 I | Skipping paper PMC8177556: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:39,706 D | No cached abstract for paper PMC12547741
+2026-05-08 14:48:39,706 D | Parsing paper PMC12547741
+2026-05-08 14:48:39,706 D | Downloading paper PMC12547741 from PubMed Central
+2026-05-08 14:48:39,706 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:40,513 D | Saving discussion for paper PMC12547741
+2026-05-08 14:48:40,513 D | Saving methods for paper PMC12547741
+2026-05-08 14:48:40,514 I | Skipping paper PMC12547741: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:40,514 D | No cached abstract for paper PMC4451416
+2026-05-08 14:48:40,514 D | Parsing paper PMC4451416
+2026-05-08 14:48:40,514 D | Downloading paper PMC4451416 from PubMed Central
+2026-05-08 14:48:40,514 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:41,294 I | Skipping paper PMC4451416: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:41,294 D | No cached abstract for paper PMC12916000
+2026-05-08 14:48:41,294 D | Parsing paper PMC12916000
+2026-05-08 14:48:41,294 D | Downloading paper PMC12916000 from PubMed Central
+2026-05-08 14:48:41,294 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:48:42,064 I | Skipping paper PMC12916000: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:42,064 D | Using cached abstract for paper PMC177505
+2026-05-08 14:48:42,068 I | Skipping paper PMC177505: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:42,069 D | No cached abstract for paper PMC7502556
+2026-05-08 14:48:42,069 D | Parsing paper PMC7502556
+2026-05-08 14:48:42,069 D | Downloading paper PMC7502556 from PubMed Central
+2026-05-08 14:48:42,069 D | Slowing down requests: sleeping for 0.467s
+2026-05-08 14:48:42,828 D | Saving results for paper PMC7502556
+2026-05-08 14:48:42,828 D | Saving discussion for paper PMC7502556
+2026-05-08 14:48:42,828 D | Saving methods for paper PMC7502556
+2026-05-08 14:48:42,829 I | Skipping paper PMC7502556: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:42,829 D | No cached abstract for paper PMC5001579
+2026-05-08 14:48:42,829 D | Parsing paper PMC5001579
+2026-05-08 14:48:42,829 D | Downloading paper PMC5001579 from PubMed Central
+2026-05-08 14:48:42,829 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:43,853 D | Saving methods for paper PMC5001579
+2026-05-08 14:48:43,853 D | Saving results for paper PMC5001579
+2026-05-08 14:48:43,854 D | Saving discussion for paper PMC5001579
+2026-05-08 14:48:43,855 I | Skipping paper PMC5001579: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:43,855 D | No cached abstract for paper PMC11672760
+2026-05-08 14:48:43,855 D | Parsing paper PMC11672760
+2026-05-08 14:48:43,855 D | Downloading paper PMC11672760 from PubMed Central
+2026-05-08 14:48:43,855 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:48:44,650 D | Saving results for paper PMC11672760
+2026-05-08 14:48:44,650 D | Saving discussion for paper PMC11672760
+2026-05-08 14:48:44,651 I | Skipping paper PMC11672760: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:44,651 D | No cached abstract for paper PMC1143696
+2026-05-08 14:48:44,651 D | Parsing paper PMC1143696
+2026-05-08 14:48:44,651 D | Downloading paper PMC1143696 from PubMed Central
+2026-05-08 14:48:44,651 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:48:46,038 D | Saving methods for paper PMC1143696
+2026-05-08 14:48:46,038 D | Saving results for paper PMC1143696
+2026-05-08 14:48:46,039 D | Saving discussion for paper PMC1143696
+2026-05-08 14:48:46,039 I | Skipping paper PMC1143696: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:46,039 D | No cached abstract for paper PMC6482932
+2026-05-08 14:48:46,039 D | Parsing paper PMC6482932
+2026-05-08 14:48:46,040 D | Downloading paper PMC6482932 from PubMed Central
+2026-05-08 14:48:46,040 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:46,766 D | No paper body available for PMC6482932
+2026-05-08 14:48:46,766 I | Skipping paper PMC6482932: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:46,766 D | No cached abstract for paper PMC10187895
+2026-05-08 14:48:46,766 D | Parsing paper PMC10187895
+2026-05-08 14:48:46,767 D | Downloading paper PMC10187895 from PubMed Central
+2026-05-08 14:48:46,767 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:48:47,589 D | Saving results for paper PMC10187895
+2026-05-08 14:48:47,589 D | Saving methods for paper PMC10187895
+2026-05-08 14:48:47,590 I | Skipping paper PMC10187895: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:47,590 D | No cached abstract for paper PMC3322544
+2026-05-08 14:48:47,590 D | Parsing paper PMC3322544
+2026-05-08 14:48:47,590 D | Downloading paper PMC3322544 from PubMed Central
+2026-05-08 14:48:47,590 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:48,553 I | Skipping paper PMC3322544: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:48,553 D | No cached abstract for paper PMC210765
+2026-05-08 14:48:48,553 D | Parsing paper PMC210765
+2026-05-08 14:48:48,553 D | Downloading paper PMC210765 from PubMed Central
+2026-05-08 14:48:48,553 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:48:49,255 D | Paper PMC210765 missing abstract
+2026-05-08 14:48:49,256 I | Skipping paper PMC210765: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:49,256 D | No cached abstract for paper PMC3280448
+2026-05-08 14:48:49,256 D | Parsing paper PMC3280448
+2026-05-08 14:48:49,256 D | Downloading paper PMC3280448 from PubMed Central
+2026-05-08 14:48:49,256 D | Slowing down requests: sleeping for 0.498s
+2026-05-08 14:48:50,038 D | Saving results for paper PMC3280448
+2026-05-08 14:48:50,038 D | Saving discussion for paper PMC3280448
+2026-05-08 14:48:50,039 D | Saving methods for paper PMC3280448
+2026-05-08 14:48:50,039 I | Skipping paper PMC3280448: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:50,039 D | No cached abstract for paper PMC10530524
+2026-05-08 14:48:50,039 D | Parsing paper PMC10530524
+2026-05-08 14:48:50,039 D | Downloading paper PMC10530524 from PubMed Central
+2026-05-08 14:48:50,039 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:48:50,830 D | Saving results for paper PMC10530524
+2026-05-08 14:48:50,831 D | Saving discussion for paper PMC10530524
+2026-05-08 14:48:50,831 D | Saving methods for paper PMC10530524
+2026-05-08 14:48:50,833 I | Skipping paper PMC10530524: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:50,833 D | No cached abstract for paper PMC3591988
+2026-05-08 14:48:50,833 D | Parsing paper PMC3591988
+2026-05-08 14:48:50,833 D | Downloading paper PMC3591988 from PubMed Central
+2026-05-08 14:48:50,833 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:48:51,554 D | No paper body available for PMC3591988
+2026-05-08 14:48:51,555 I | Skipping paper PMC3591988: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:51,555 D | No cached abstract for paper PMC11019786
+2026-05-08 14:48:51,555 D | Parsing paper PMC11019786
+2026-05-08 14:48:51,555 D | Downloading paper PMC11019786 from PubMed Central
+2026-05-08 14:48:51,555 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:52,342 D | Saving results for paper PMC11019786
+2026-05-08 14:48:52,342 D | Saving discussion for paper PMC11019786
+2026-05-08 14:48:52,343 D | Saving methods for paper PMC11019786
+2026-05-08 14:48:52,343 I | Skipping paper PMC11019786: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:52,343 D | No cached abstract for paper PMC1636229
+2026-05-08 14:48:52,343 D | Parsing paper PMC1636229
+2026-05-08 14:48:52,344 D | Downloading paper PMC1636229 from PubMed Central
+2026-05-08 14:48:52,344 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:53,072 D | No paper body available for PMC1636229
+2026-05-08 14:48:53,073 I | Skipping paper PMC1636229: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:53,073 D | No cached abstract for paper PMC9579286
+2026-05-08 14:48:53,073 D | Parsing paper PMC9579286
+2026-05-08 14:48:53,073 D | Downloading paper PMC9579286 from PubMed Central
+2026-05-08 14:48:53,073 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:48:53,878 I | Skipping paper PMC9579286: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:53,878 D | No cached abstract for paper PMC147859
+2026-05-08 14:48:53,878 D | Parsing paper PMC147859
+2026-05-08 14:48:53,878 D | Downloading paper PMC147859 from PubMed Central
+2026-05-08 14:48:53,878 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:54,585 D | No paper body available for PMC147859
+2026-05-08 14:48:54,585 I | Skipping paper PMC147859: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:54,585 D | No cached abstract for paper PMC7591249
+2026-05-08 14:48:54,585 D | Parsing paper PMC7591249
+2026-05-08 14:48:54,585 D | Downloading paper PMC7591249 from PubMed Central
+2026-05-08 14:48:54,585 D | Slowing down requests: sleeping for 0.499s
+2026-05-08 14:48:55,385 D | Saving results for paper PMC7591249
+2026-05-08 14:48:55,386 D | Saving discussion for paper PMC7591249
+2026-05-08 14:48:55,386 D | Saving methods for paper PMC7591249
+2026-05-08 14:48:55,387 I | Skipping paper PMC7591249: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:55,387 D | No cached abstract for paper PMC6906737
+2026-05-08 14:48:55,387 D | Parsing paper PMC6906737
+2026-05-08 14:48:55,387 D | Downloading paper PMC6906737 from PubMed Central
+2026-05-08 14:48:55,387 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:56,175 D | Saving results for paper PMC6906737
+2026-05-08 14:48:56,175 D | Saving discussion for paper PMC6906737
+2026-05-08 14:48:56,176 D | Saving methods for paper PMC6906737
+2026-05-08 14:48:56,176 I | Skipping paper PMC6906737: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:56,177 D | Using cached abstract for paper PMC4255298
+2026-05-08 14:48:56,180 I | Skipping paper PMC4255298: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:56,181 D | No cached abstract for paper PMC11140050
+2026-05-08 14:48:56,181 D | Parsing paper PMC11140050
+2026-05-08 14:48:56,181 D | Downloading paper PMC11140050 from PubMed Central
+2026-05-08 14:48:56,181 D | Slowing down requests: sleeping for 0.488s
+2026-05-08 14:48:56,952 I | Skipping paper PMC11140050: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:56,952 D | Using cached abstract for paper PMC6917788
+2026-05-08 14:48:56,956 I | Skipping paper PMC6917788: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:56,956 D | Using cached abstract for paper PMC12176192
+2026-05-08 14:48:56,956 D | No discussion available for paper PMC12176192
+2026-05-08 14:48:56,956 D | Using cached results for paper PMC12176192
+2026-05-08 14:48:56,957 I | Skipping paper PMC12176192: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:56,957 D | No cached abstract for paper PMC12593503
+2026-05-08 14:48:56,957 D | Parsing paper PMC12593503
+2026-05-08 14:48:56,957 D | Downloading paper PMC12593503 from PubMed Central
+2026-05-08 14:48:56,957 D | Slowing down requests: sleeping for 0.489s
+2026-05-08 14:48:57,873 I | Skipping paper PMC12593503: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:57,873 D | No cached abstract for paper PMC11782615
+2026-05-08 14:48:57,873 D | Parsing paper PMC11782615
+2026-05-08 14:48:57,873 D | Downloading paper PMC11782615 from PubMed Central
+2026-05-08 14:48:57,873 D | Slowing down requests: sleeping for 0.490s
+2026-05-08 14:48:58,681 D | Saving results for paper PMC11782615
+2026-05-08 14:48:58,681 D | Saving discussion for paper PMC11782615
+2026-05-08 14:48:58,682 D | Saving methods for paper PMC11782615
+2026-05-08 14:48:58,682 I | Skipping paper PMC11782615: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:58,682 D | No cached abstract for paper PMC6788494
+2026-05-08 14:48:58,682 D | Parsing paper PMC6788494
+2026-05-08 14:48:58,682 D | Downloading paper PMC6788494 from PubMed Central
+2026-05-08 14:48:58,682 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:48:59,404 D | Saving methods for paper PMC6788494
+2026-05-08 14:48:59,404 D | Saving discussion for paper PMC6788494
+2026-05-08 14:48:59,404 D | Saving results for paper PMC6788494
+2026-05-08 14:48:59,405 I | Skipping paper PMC6788494: does not pass relevance checks for gene Rv0001
+2026-05-08 14:48:59,405 D | No cached abstract for paper PMC2743062
+2026-05-08 14:48:59,405 D | Parsing paper PMC2743062
+2026-05-08 14:48:59,405 D | Downloading paper PMC2743062 from PubMed Central
+2026-05-08 14:48:59,405 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:00,134 D | No paper body available for PMC2743062
+2026-05-08 14:49:00,135 I | Skipping paper PMC2743062: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:00,135 D | No cached abstract for paper PMC186588
+2026-05-08 14:49:00,136 D | Parsing paper PMC186588
+2026-05-08 14:49:00,136 D | Downloading paper PMC186588 from PubMed Central
+2026-05-08 14:49:00,136 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:00,798 D | No paper body available for PMC186588
+2026-05-08 14:49:00,799 I | Skipping paper PMC186588: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:00,799 D | No cached abstract for paper PMC89126
+2026-05-08 14:49:00,799 D | Parsing paper PMC89126
+2026-05-08 14:49:00,799 D | Downloading paper PMC89126 from PubMed Central
+2026-05-08 14:49:00,799 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:49:01,485 D | No paper body available for PMC89126
+2026-05-08 14:49:01,485 I | Skipping paper PMC89126: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:01,486 D | No cached abstract for paper PMC2395044
+2026-05-08 14:49:01,486 D | Parsing paper PMC2395044
+2026-05-08 14:49:01,486 D | Downloading paper PMC2395044 from PubMed Central
+2026-05-08 14:49:01,486 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:49:02,209 D | No paper body available for PMC2395044
+2026-05-08 14:49:02,210 I | Skipping paper PMC2395044: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:02,210 D | No cached abstract for paper PMC8552512
+2026-05-08 14:49:02,211 D | Parsing paper PMC8552512
+2026-05-08 14:49:02,211 D | Downloading paper PMC8552512 from PubMed Central
+2026-05-08 14:49:02,211 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:02,941 D | Saving results for paper PMC8552512
+2026-05-08 14:49:02,941 D | Saving discussion for paper PMC8552512
+2026-05-08 14:49:02,941 D | Saving methods for paper PMC8552512
+2026-05-08 14:49:02,942 I | Skipping paper PMC8552512: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:02,942 D | No cached abstract for paper PMC8144289
+2026-05-08 14:49:02,942 D | Parsing paper PMC8144289
+2026-05-08 14:49:02,942 D | Downloading paper PMC8144289 from PubMed Central
+2026-05-08 14:49:02,942 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:49:03,904 D | Saving methods for paper PMC8144289
+2026-05-08 14:49:03,904 D | Saving results for paper PMC8144289
+2026-05-08 14:49:03,904 D | Saving discussion for paper PMC8144289
+2026-05-08 14:49:03,905 I | Skipping paper PMC8144289: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:03,905 D | No cached abstract for paper PMC7325237
+2026-05-08 14:49:03,905 D | Parsing paper PMC7325237
+2026-05-08 14:49:03,905 D | Downloading paper PMC7325237 from PubMed Central
+2026-05-08 14:49:03,905 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:49:04,805 D | Saving results for paper PMC7325237
+2026-05-08 14:49:04,806 D | Saving discussion for paper PMC7325237
+2026-05-08 14:49:04,806 D | Saving methods for paper PMC7325237
+2026-05-08 14:49:04,807 I | Skipping paper PMC7325237: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:04,807 D | No cached abstract for paper PMC6051672
+2026-05-08 14:49:04,807 D | Parsing paper PMC6051672
+2026-05-08 14:49:04,807 D | Downloading paper PMC6051672 from PubMed Central
+2026-05-08 14:49:04,807 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:49:05,569 D | Saving results for paper PMC6051672
+2026-05-08 14:49:05,569 D | Saving methods for paper PMC6051672
+2026-05-08 14:49:05,570 I | Skipping paper PMC6051672: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:05,570 D | Using cached abstract for paper PMC3564264
+2026-05-08 14:49:05,573 I | Skipping paper PMC3564264: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:05,574 D | No cached abstract for paper PMC4751796
+2026-05-08 14:49:05,574 D | Parsing paper PMC4751796
+2026-05-08 14:49:05,574 D | Downloading paper PMC4751796 from PubMed Central
+2026-05-08 14:49:05,574 D | Slowing down requests: sleeping for 0.490s
+2026-05-08 14:49:06,227 D | No paper body available for PMC4751796
+2026-05-08 14:49:06,228 I | Skipping paper PMC4751796: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:06,228 D | No cached abstract for paper PMC9865570
+2026-05-08 14:49:06,228 D | Parsing paper PMC9865570
+2026-05-08 14:49:06,228 D | Downloading paper PMC9865570 from PubMed Central
+2026-05-08 14:49:06,228 D | Slowing down requests: sleeping for 0.497s
+2026-05-08 14:49:07,134 D | Saving methods for paper PMC9865570
+2026-05-08 14:49:07,135 D | Saving results for paper PMC9865570
+2026-05-08 14:49:07,136 D | Saving discussion for paper PMC9865570
+2026-05-08 14:49:07,138 I | Skipping paper PMC9865570: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:07,138 D | No cached abstract for paper PMC4804543
+2026-05-08 14:49:07,138 D | Parsing paper PMC4804543
+2026-05-08 14:49:07,139 D | Downloading paper PMC4804543 from PubMed Central
+2026-05-08 14:49:07,139 D | Slowing down requests: sleeping for 0.479s
+2026-05-08 14:49:08,033 D | Saving methods for paper PMC4804543
+2026-05-08 14:49:08,034 D | Saving discussion for paper PMC4804543
+2026-05-08 14:49:08,034 D | Saving methods for paper PMC4804543
+2026-05-08 14:49:08,035 I | Skipping paper PMC4804543: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:08,035 D | No cached abstract for paper PMC9480834
+2026-05-08 14:49:08,035 D | Parsing paper PMC9480834
+2026-05-08 14:49:08,035 D | Downloading paper PMC9480834 from PubMed Central
+2026-05-08 14:49:08,035 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:49:08,821 I | Skipping paper PMC9480834: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:08,821 D | No cached abstract for paper PMC6650194
+2026-05-08 14:49:08,821 D | Parsing paper PMC6650194
+2026-05-08 14:49:08,821 D | Downloading paper PMC6650194 from PubMed Central
+2026-05-08 14:49:08,821 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:49:09,607 D | Saving methods for paper PMC6650194
+2026-05-08 14:49:09,607 D | Saving results for paper PMC6650194
+2026-05-08 14:49:09,607 D | Saving discussion for paper PMC6650194
+2026-05-08 14:49:09,608 I | Skipping paper PMC6650194: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:09,608 D | No cached abstract for paper PMC5827619
+2026-05-08 14:49:09,608 D | Parsing paper PMC5827619
+2026-05-08 14:49:09,608 D | Downloading paper PMC5827619 from PubMed Central
+2026-05-08 14:49:09,608 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:49:10,321 D | No paper body available for PMC5827619
+2026-05-08 14:49:10,322 I | Skipping paper PMC5827619: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:10,322 D | No cached abstract for paper PMC6555402
+2026-05-08 14:49:10,322 D | Parsing paper PMC6555402
+2026-05-08 14:49:10,323 D | Downloading paper PMC6555402 from PubMed Central
+2026-05-08 14:49:10,323 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:11,123 I | Skipping paper PMC6555402: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:11,123 D | No cached abstract for paper PMC3337245
+2026-05-08 14:49:11,123 D | Parsing paper PMC3337245
+2026-05-08 14:49:11,123 D | Downloading paper PMC3337245 from PubMed Central
+2026-05-08 14:49:11,123 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:49:12,020 D | Saving results for paper PMC3337245
+2026-05-08 14:49:12,020 D | Saving discussion for paper PMC3337245
+2026-05-08 14:49:12,021 D | Saving methods for paper PMC3337245
+2026-05-08 14:49:12,021 I | Skipping paper PMC3337245: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:12,021 D | No cached abstract for paper PMC11185795
+2026-05-08 14:49:12,021 D | Parsing paper PMC11185795
+2026-05-08 14:49:12,021 D | Downloading paper PMC11185795 from PubMed Central
+2026-05-08 14:49:12,022 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:49:12,848 D | Saving results for paper PMC11185795
+2026-05-08 14:49:12,848 D | Saving discussion for paper PMC11185795
+2026-05-08 14:49:12,849 D | Saving methods for paper PMC11185795
+2026-05-08 14:49:12,849 I | Skipping paper PMC11185795: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:12,849 D | No cached abstract for paper PMC94417
+2026-05-08 14:49:12,849 D | Parsing paper PMC94417
+2026-05-08 14:49:12,850 D | Downloading paper PMC94417 from PubMed Central
+2026-05-08 14:49:12,850 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:49:13,670 D | No paper body available for PMC94417
+2026-05-08 14:49:13,671 I | Skipping paper PMC94417: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:13,671 D | No cached abstract for paper PMC12005717
+2026-05-08 14:49:13,671 D | Parsing paper PMC12005717
+2026-05-08 14:49:13,672 D | Downloading paper PMC12005717 from PubMed Central
+2026-05-08 14:49:13,672 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:14,415 I | Skipping paper PMC12005717: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:14,415 D | No cached abstract for paper PMC8102297
+2026-05-08 14:49:14,415 D | Parsing paper PMC8102297
+2026-05-08 14:49:14,415 D | Downloading paper PMC8102297 from PubMed Central
+2026-05-08 14:49:14,415 D | Slowing down requests: sleeping for 0.495s
+2026-05-08 14:49:15,280 I | Skipping paper PMC8102297: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:15,280 D | No cached abstract for paper PMC7599038
+2026-05-08 14:49:15,280 D | Parsing paper PMC7599038
+2026-05-08 14:49:15,280 D | Downloading paper PMC7599038 from PubMed Central
+2026-05-08 14:49:15,280 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:49:16,054 D | No paper body available for PMC7599038
+2026-05-08 14:49:16,055 I | Skipping paper PMC7599038: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:16,055 D | No cached abstract for paper PMC16139
+2026-05-08 14:49:16,056 D | Parsing paper PMC16139
+2026-05-08 14:49:16,056 D | Downloading paper PMC16139 from PubMed Central
+2026-05-08 14:49:16,056 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:16,849 D | Saving discussion for paper PMC16139
+2026-05-08 14:49:16,849 D | Saving results for paper PMC16139
+2026-05-08 14:49:16,849 D | Saving methods for paper PMC16139
+2026-05-08 14:49:16,850 I | Skipping paper PMC16139: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:16,850 D | No cached abstract for paper PMC1240074
+2026-05-08 14:49:16,850 D | Parsing paper PMC1240074
+2026-05-08 14:49:16,850 D | Downloading paper PMC1240074 from PubMed Central
+2026-05-08 14:49:16,850 D | Slowing down requests: sleeping for 0.493s
+2026-05-08 14:49:17,717 D | No paper body available for PMC1240074
+2026-05-08 14:49:17,718 I | Skipping paper PMC1240074: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:17,718 D | No cached abstract for paper PMC12430009
+2026-05-08 14:49:17,718 D | Parsing paper PMC12430009
+2026-05-08 14:49:17,718 D | Downloading paper PMC12430009 from PubMed Central
+2026-05-08 14:49:17,718 D | Slowing down requests: sleeping for 0.499s
+2026-05-08 14:49:18,512 D | Saving methods for paper PMC12430009
+2026-05-08 14:49:18,512 D | Saving results for paper PMC12430009
+2026-05-08 14:49:18,513 D | Saving discussion for paper PMC12430009
+2026-05-08 14:49:18,513 I | Skipping paper PMC12430009: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:18,513 D | No cached abstract for paper PMC10604462
+2026-05-08 14:49:18,513 D | Parsing paper PMC10604462
+2026-05-08 14:49:18,513 D | Downloading paper PMC10604462 from PubMed Central
+2026-05-08 14:49:18,513 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:49:19,227 D | Saving results for paper PMC10604462
+2026-05-08 14:49:19,228 D | Saving discussion for paper PMC10604462
+2026-05-08 14:49:19,228 D | Saving methods for paper PMC10604462
+2026-05-08 14:49:19,230 I | Skipping paper PMC10604462: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:19,230 D | No cached abstract for paper PMC3641052
+2026-05-08 14:49:19,230 D | Parsing paper PMC3641052
+2026-05-08 14:49:19,230 D | Downloading paper PMC3641052 from PubMed Central
+2026-05-08 14:49:19,230 D | Slowing down requests: sleeping for 0.488s
+2026-05-08 14:49:19,996 D | Saving methods for paper PMC3641052
+2026-05-08 14:49:19,997 D | Saving results for paper PMC3641052
+2026-05-08 14:49:19,997 D | Saving discussion for paper PMC3641052
+2026-05-08 14:49:19,997 I | Skipping paper PMC3641052: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:19,997 D | No cached abstract for paper PMC7554086
+2026-05-08 14:49:19,998 D | Parsing paper PMC7554086
+2026-05-08 14:49:19,998 D | Downloading paper PMC7554086 from PubMed Central
+2026-05-08 14:49:19,998 D | Slowing down requests: sleeping for 0.494s
+2026-05-08 14:49:20,745 I | Skipping paper PMC7554086: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:20,745 D | No cached abstract for paper PMC8145042
+2026-05-08 14:49:20,745 D | Parsing paper PMC8145042
+2026-05-08 14:49:20,745 D | Downloading paper PMC8145042 from PubMed Central
+2026-05-08 14:49:20,745 D | Slowing down requests: sleeping for 0.487s
+2026-05-08 14:49:21,507 D | Saving discussion for paper PMC8145042
+2026-05-08 14:49:21,508 I | Skipping paper PMC8145042: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:21,508 D | No cached abstract for paper PMC7264889
+2026-05-08 14:49:21,508 D | Parsing paper PMC7264889
+2026-05-08 14:49:21,508 D | Downloading paper PMC7264889 from PubMed Central
+2026-05-08 14:49:21,509 D | Slowing down requests: sleeping for 0.496s
+2026-05-08 14:49:22,361 I | Skipping paper PMC7264889: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:22,361 D | No cached abstract for paper PMC3248407
+2026-05-08 14:49:22,361 D | Parsing paper PMC3248407
+2026-05-08 14:49:22,361 D | Downloading paper PMC3248407 from PubMed Central
+2026-05-08 14:49:22,361 D | Slowing down requests: sleeping for 0.491s
+2026-05-08 14:49:23,144 D | Saving results for paper PMC3248407
+2026-05-08 14:49:23,144 D | Saving discussion for paper PMC3248407
+2026-05-08 14:49:23,144 D | Saving methods for paper PMC3248407
+2026-05-08 14:49:23,145 I | Skipping paper PMC3248407: does not pass relevance checks for gene Rv0001
+2026-05-08 14:49:23,145 D | No cached abstract for paper PMC3993684
+2026-05-08 14:49:23,145 D | Parsing paper PMC3993684
+2026-05-08 14:49:23,145 D | Downloading paper PMC3993684 from PubMed Central
+2026-05-08 14:49:23,145 D | Slowing down requests: sleeping for 0.492s
+2026-05-08 14:49:23,982 D | No paper body available for PMC3993684
+2026-05-08 14:49:23,982 D | No discussion available for paper PMC3993684
+2026-05-08 14:49:23,982 D | No results available for paper PMC3993684
+2026-05-08 14:49:23,982 I | Starting inference process for gene Rv0001 with paper PMC3993684
+2026-05-08 14:49:23,982 D | Using cached abstract for paper PMC3993684
+2026-05-08 14:49:23,983 D | No results available for paper PMC3993684
+2026-05-08 14:49:23,983 D | No discussion available for paper PMC3993684
+2026-05-08 14:49:23,983 D | Obtained 1 relevant section for paper PMC3993684
+2026-05-08 14:49:23,983 D | Starting processing for PMC3993684 abstract
+2026-05-08 14:49:23,983 D | Submitting section-summary job (length 1309 chars) to LLM (model mistral-nemo:12b)

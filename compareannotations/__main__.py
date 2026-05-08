@@ -23,6 +23,7 @@ def main(trusted, generated):
 
     print(f"{len(report["trusted"])}\t: fields in trusted")
     print(f"{len(report["generated"])}\t: fields in generated")
+    print(f"{len(report['ignored'])}\t: ignored fields")
     print(f"{len(report["exact_matches"])}\t: exact field matches")
 	
     non_exact = len(report["field_scores"]) - len(report["exact_matches"])

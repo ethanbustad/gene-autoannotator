@@ -1,15 +1,22 @@
 
 import time
 import os
+from datetime import datetime
+import traceback
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-SERVICE_ACCOUNT_FILE = "path.json"
+COMPLETE_LOG = "completed_genes.txt"
+ERROR_LOG = "error_log.txt"
+
+SERVICE_ACCOUNT_FILE = "creds/gene-annotation-logger-ab193a2da8c6.json"
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-SPREADSHEET_ID = "sheet_id"
-RANGE_NAME = "Sheet1A:E"
+SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1qiLSngYGAUQkTPGC8rLzhcQzU4Lrke7S678pSGXHICs/edit?gid=243893338#gid=243893338"
+SPREADSHEET_ID = "1qiLSngYGAUQkTPGC8rLzhcQzU4Lrke7S678pSGXHICs"
+
+SHEET_NAME = "BaselineScores"
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE,
@@ -22,67 +29,77 @@ sheet = service.spreadsheets()
 from autoannotation.__main__ import main as annotate
 from compareannotations.__main__ import main as compare
 
-"""
-GENES = [
-    "Rv2007c",
-    "Rv2612c",
-    "Rv2070c",
-    "Rv3221A",
-    "Rv3459c",
-    "Rv2057c",
-    "Rv0001",
-    "Rv2418c",
-    "Rv0002",
-    "Rv0003"
-]
-"""
-
-GENES = [
-    "Rv0969",
-    ]
-
 def record_result(gene, comparison_result, duration, num_papers_used, num_total_papers):
-    #print("\n=== RESULT ===\n")
-    #print(f"Gene:\t {gene}")
-    #print(f"Score:\t {comparison_result:.2f}")
-    #print(f"Duration:\t {duration:.2f} sec")
-    #print(f"Total Papers:\t {num_total_papers}")
-    #print(f"Papers used:\t {num_papers_used}")
-    #print(f"\n=== END ===\n")
-
     values = [[gene, comparison_result, duration, num_papers_used, num_total_papers]]
 
-    row = next_empty_row(sheet, col='D', start_row=7)
+    #row = next_empty_row(sheet, col='D', start_row=7)
 
-    range_name = f"D{row}:H{row}"
+    #range_name = f"BaselineScores!D{row}:H{row}"
 
-    body = {"Values": values}
+    body = {"values": values}
 
-    sheet.values().update(
+    result = sheet.values().append(
         spreadsheetId=SPREADSHEET_ID,
-        range=range_name,
-        valueInputOptions="RAW",
+        range=f"{SHEET_NAME}!D:H",
+        valueInputOption="RAW",
+        insertDataOption="INSERT_ROWS",
         body=body
     ).execute()
 
     print(f"Row appended: {result}")
 
-def next_empty_row(sheet, col='D', start_row=7):
-    col_index = ord(col.upper()) -64
-    values = sheet.col_values(col_index)
-
-    return max(start_row, len(values)+1)
-
-
 def mark_complete(gene):
+    with open(COMPLETE_LOG, "a") as f:
+        f.write(gene + "\n")
+
     print(f"Completed {gene}")
 
 def log_error(gene, error):
+    timestamp = datetime.now().isoformat()
+
+    error_message = (
+        f"\n[{timestamp}] ERROR processing {gene}\n"
+        f"{str(error)}\n"
+        f"{traceback.format_exc()}\n"
+        f"{'='*60}\n"
+    )
+
+    with open(ERROR_LOG, "a") as f:
+        f.write(error_message)
+
     print(f"Error processing {gene}")
     print(error)
 
+def load_completed_genes():
+    if not os.path.exists(COMPLETE_LOG):
+        return set()
+
+    with open(COMPLETE_LOG, "r") as f:
+        return set(line.strip() for line in f)
+
+
+GENES = [
+    "Rv0001",
+    "Rv0002",
+    "Rv0003",
+    "Rv2007c",
+    "Rv2057c",
+    "Rv2070c",
+    "Rv2418c",
+    "Rv2612c",
+    "Rv3221A",
+    "Rv3459c"
+
+]
+
+completed_genes = load_completed_genes()
 
 for gene in GENES:
+
+    if gene in completed_genes:
+        print(f"Skipping {gene}: already completed")
+        continue
+
     try:
         print(f"\nStarting {gene}")
 
