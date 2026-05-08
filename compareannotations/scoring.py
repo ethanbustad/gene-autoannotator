@@ -50,19 +50,26 @@ def embedded_similarity(a, b):
 
 def llm_similarity(a, b):
   prompt = f"""
-  You are a strict evaluator of factual equivalence.
+  You are evaluating factual agreement between two biological statements.
 
-  Return ONLY a single float between 0.0 and 1.0
+  Return ONLY a single float between -1.0 and 1.0.
 
-  1.0 = identical facts  
-  -1.0 = contradiction or different facts  
-  Values in between = partial overlap  
-  Only return a negative value if the facts are contradictory or mutually exclusive 
+  Scoring rules:
+  1.0 = same factual claim
+  0.7 to 0.9 = strongly overlapping facts
+  0.3 to 0.6 = partially overlapping or related facts
+  0.0 = unrelated or insufficient information
+  -0.1 to -1.0 = contradictory or mutually exclusive claims
 
-  Ignore wording, grammar, and phrasing completely.
+  IMPORTANT:
+  - Only return a negative value for direct contradictions.
+  - If uncertain, ambiguous, or partially related, bias toward a positive score.
+  - Ignore wording, writing style, and phrasing completely.
+  - Evaluate only factual content.
+
+  Return ONLY the numeric score.
 
   Be conservative: default to a LOW score unless there is clear evidence the facts are equivalent.
-  If any key fact differs, is missing, or is uncertain, score near 0.0.
 
   Compare statements by their core factual components:
   - entities
