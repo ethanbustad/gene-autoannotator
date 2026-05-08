@@ -4,9 +4,9 @@ import os
 import re
 import xml.etree.ElementTree as ET
 
-import http_
-import papers
-import utils
+from . import http_
+from . import papers
+from . import utils
 
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
@@ -187,7 +187,7 @@ class PmcPaperManager(papers.PaperManager):
 
         if results is not None:
             species_in_results = any(re.search(p, results) for p in self.species_incl_patterns)
-            gene_in_results = gene in results or name.lower() in abstract.lower()lsp
+            gene_in_results = gene in results or name.lower() in abstract.lower()
             excl_in_results = any(re.search(p, results) for p in self.species_excl_patterns)
 
             if not species_in_results or not gene_in_results or excl_in_results:

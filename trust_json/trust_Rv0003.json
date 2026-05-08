@@ -1,0 +1,10 @@
+{
+    "rv_id": "Rv0003",
+    "name": "recF",
+    "function": "DNA replication and repair protein involved in recombination and SOS response regulation.",
+    "functional_category": "information pathways",
+    "drug_susc_impact": "DNA repair defects may increase susceptibility to DNA-damaging antibiotics.",
+    "infection_impact": "Supports genome maintenance during host-associated stress.",
+    "essential_in_vitro": false,
+    "essential_in_vivo": null
+}

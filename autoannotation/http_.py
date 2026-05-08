@@ -3,7 +3,7 @@ import time
 
 import cloudscraper as cs
 
-import utils
+from . import utils
 
 COOLDOWN_SECONDS_DEFAULT = 0.5
 TIMEOUT_SECONDS_DEFAULT = 60

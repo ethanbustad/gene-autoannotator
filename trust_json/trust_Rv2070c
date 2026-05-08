@@ -1,0 +1,10 @@
+{
+    "rv_id": "Rv2070c",
+    "name": "cobK",
+    "function": "Precorrin-6X reductase involved in cobalamin (vitamin B12) biosynthesis.",
+    "functional_category": "intermediary metabolism and respiration",
+    "drug_susc_impact": null,
+    "infection_impact": null,
+    "essential_in_vitro": false,
+    "essential_in_vivo": null
+}

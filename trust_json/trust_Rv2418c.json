@@ -1,0 +1,10 @@
+{
+    "rv_id": "Rv2418c",
+    "name": "octT",
+    "function": "Sugar octanoyltransferase involved in methylglucose lipopolysaccharide biosynthesis.",
+    "functional_category": "conserved hypotheticals",
+    "drug_susc_impact": "May influence cell envelope-associated drug tolerance.",
+    "infection_impact": null,
+    "essential_in_vitro": false,
+    "essential_in_vivo": null
+}

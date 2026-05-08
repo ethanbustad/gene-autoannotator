@@ -6,7 +6,7 @@ import re
 
 import ollama
 
-import utils
+from . import utils
 
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)

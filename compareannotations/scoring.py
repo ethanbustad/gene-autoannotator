@@ -55,8 +55,9 @@ def llm_similarity(a, b):
   Return ONLY a single float between 0.0 and 1.0
 
   1.0 = identical facts  
-  0.0 = contradiction or different facts  
+  -1.0 = contradiction or different facts  
   Values in between = partial overlap  
+  Only return a negative value if the facts are contradictory or mutually exclusive 
 
   Ignore wording, grammar, and phrasing completely.
 

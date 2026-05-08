@@ -1,0 +1,10 @@
+{
+    "rv_id": "Rv3221A",
+    "name": "rshA",
+    "function": "Anti-sigma factor that binds and inhibits SigH during oxidative and heat stress response.",
+    "functional_category": "information pathways",
+    "drug_susc_impact": "May influence susceptibility to oxidative stress-inducing compounds.",
+    "infection_impact": "Contributes to stress survival during host infection.",
+    "essential_in_vitro": false,
+    "essential_in_vivo": false
+}

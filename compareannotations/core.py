@@ -7,6 +7,13 @@ from .scoring import is_exact_match, embedded_similarity, llm_similarity
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+FIELD_WEIGHTS = {
+	"rv_id": 0.0,
+	"name": 0.0,
+	"function": 3.0,
+	"infection_impact": 1.5
+}
+
 def load_json(path):
 
 	with open(path, "r") as f:
@@ -39,10 +46,11 @@ def compare(trusted, generated):
 
 	return report, overall_score
 
-EMBED_SCORE_WEIGHT = 0.8
-LLM_SCORE_WEIGHT = 0.8
+EMBED_SCORE_WEIGHT = 0.3
+LLM_SCORE_WEIGHT = 0.7
 
 def compute_overall_score(field_scores):
+	"""
 	total = len(field_scores)
 	if total == 0:
 		return 0.0
@@ -56,6 +64,31 @@ def compute_overall_score(field_scores):
 			score_sum += (EMBED_SCORE_WEIGHT * score["embedding"] + LLM_SCORE_WEIGHT * score["llm"])
 
 	return score_sum / total
+	"""
+	weighted_score_sum = 0.0
+	weight_sum = 0.0
+
+	for key, score in field_scores.items():
+		field_weight = FIELD_WEIGHTS.get(key, 1.0)
+
+		if field_weight == 0:
+			continue
+
+		if score["exact"] == 1:
+			field_score = 1.0
+		else:
+			field_score = (
+				EMBED_SCORE_WEIGHT * score["embedding"] + LLM_SCORE_WEIGHT * score["llm"]
+			)
+
+		weighted_score_sum += (field_weight * field_score)
+
+		weight_sum += field_weight
+
+	if weight_sum == 0:
+		return 0.0
+
+	return weighted_score_sum / weight_sum
 
 def compute_average_scores(field_scores):
 	total = len(field_scores)

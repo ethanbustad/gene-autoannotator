@@ -1,21 +1,43 @@
 import argparse
 import json
 import sys
+import os
 
-import autoannotation
+
+from autoannotation.autoannotation import get_gene_annotation
 
 def main(gene, cache_dir='./.cache'):
-    gene_distillation = autoannotation.get_gene_annotation(gene, cache_dir=cache_dir)
+    result = get_gene_annotation(gene, cache_dir=cache_dir)
 
-    print(gene, json.dumps(gene_distillation, indent=2))
+    if result is None:
+        return
+
+    gene_distillation = result["gene_distillation"]
+    pmc_ids = result["pmc_ids"]
+    used = result["used_ids"]
 
     if gene_distillation is None:
         return
 
-    with open(f"gen_{gene}.json", "w") as f:
-        json.dump(gene_distillation, f, indent=2)
+    parsed = json.loads(gene_distillation)
 
-    return gene_distillation
+    print(gene, json.dumps(parsed, indent=2))
+    print(f"Number of papers used: {len(used)}")
+
+    output_dir = "gen_json"
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = os.path.join(output_dir, f"gen_{gene}.json")
+
+    with open(output_path, "w") as f:
+        json.dump(parsed, f, indent=2)
+
+    return {
+        "annotation": parsed,
+        "papers_used": used,
+        "all_papers": pmc_ids,
+        "output_path": output_path
+    }
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(

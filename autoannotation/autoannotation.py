@@ -3,11 +3,11 @@ import time
 
 import pandas as pd
 
-import llms
-import pmc
-import utils
+from . import llms
+from . import pmc
+from . import utils
 
-from models import MODEL_SUMMARY, MODEL_AGGREGATION, MODEL_CONSENSUS
+from .models import MODEL_SUMMARY, MODEL_AGGREGATION, MODEL_CONSENSUS
 
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
@@ -40,7 +40,9 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         log.warning(f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {gene}')
 
     # speeding up analysis
-    pmc_ids = pmc_ids[:50]
+    #pmc_ids = pmc_ids[:25]
+
+    used = []
     
     for pmc_id in pmc_ids:
         sections = []
@@ -51,6 +53,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
             continue
         else:
             log.info(f'Starting inference process for gene {gene} with paper PMC{pmc_id}')
+            used.append(pmc_id)
 
         abstract = paper_manager.get_abstract(pmc_id)
         if abstract is not None:
@@ -133,4 +136,8 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         f'Finished annotation process for gene {gene} in {utils.seconds_to_str(duration)}'
     )
 
-    return gene_distillation
+    return {
+        "gene_distillation": gene_distillation,
+        "pmc_ids": pmc_ids,
+        "used_ids": used
+    }
