@@ -42,9 +42,11 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     # speeding up analysis
     #pmc_ids = pmc_ids[:25]
 
+    papers_to_analyze, cumulative_relevance = paper_manager.select_papers_to_analyze(pmc_ids, gene, name, target_relevance=4.0, min_score=0.1)
+
     used = []
     
-    for pmc_id in pmc_ids:
+    for pmc_id in papers_to_analyze:
         sections = []
 
         # filter based on established paper relevance criteria
@@ -139,5 +141,6 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     return {
         "gene_distillation": gene_distillation,
         "pmc_ids": pmc_ids,
-        "used_ids": used
+        "used_ids": used,
+        "cumulative_relevance": cumulative_relevance
     }

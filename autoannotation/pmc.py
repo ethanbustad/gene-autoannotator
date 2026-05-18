@@ -2,6 +2,8 @@ import json
 import logging
 import os
 import re
+import math
+from datetime import datetime
 import xml.etree.ElementTree as ET
 
 from . import http_
@@ -194,6 +196,160 @@ class PmcPaperManager(papers.PaperManager):
                 return False
 
         return True
+
+    def relevance_score(self, pmc_id, gene, name):
+
+        abstract = self.get_abstract(pmc_id)
+        if abstract is None:
+            return 0.0
+
+        abstract_lower = abstract.lower()
+        gene_lower = gene.lower()
+        name_lower = name.lower()
+
+        score = 0.0
+
+        try:
+            article_xml = self._get_article_xml(pmc_id)
+
+            title_elem = (
+                article_xml
+                .find('front')
+                .find('article-meta')
+                .find('title-group')
+                .find('article-title')
+            )
+
+            title = ET.tostring(title_elem, encoding='unicode', method='text')
+            title_lower = title.lower()
+
+        except AttributeError:
+            title = ""
+            title_lower = ""
+
+        if gene_lower in title_lower:
+            score += 0.30
+
+        if name_lower != gene_lower and name_lower in title_lower:
+            score += 0.25
+
+        #
+        # --- ABSTRACT SCORE ---
+        #
+
+        gene_mentions_abstract = abstract_lower.count(gene_lower)
+        name_mentions_abstract = abstract_lower.count(name_lower)
+
+        score += min(gene_mentions_abstract * 0.03, 0.25)
+        score += min(name_mentions_abstract * 0.02, 0.15)
+
+        #
+        # --- RESULTS / DISCUSSION SCORE ---
+        #
+
+        results = self.get_results(pmc_id) or ""
+        discussion = self.get_discussion(pmc_id) or ""
+
+        combined_text = (
+            abstract_lower
+            + " "
+            + results.lower()
+            + " "
+            + discussion.lower()
+        )
+
+        total_gene_mentions = combined_text.count(gene_lower)
+        total_name_mentions = combined_text.count(name_lower)
+
+        score += min(math.log1p(total_gene_mentions) * 0.08, 0.20)
+        score += min(math.log1p(total_name_mentions) * 0.05, 0.10)
+
+        #
+        # --- SPECIES BONUS / PENALTY ---
+        #
+
+        species_hits = sum(
+            bool(re.search(p, combined_text))
+            for p in self.species_incl_patterns
+        )
+
+        excl_hits = sum(
+            bool(re.search(p, combined_text))
+            for p in self.species_excl_patterns
+        )
+
+        if species_hits > 0:
+            score += 0.15
+
+        score -= min(excl_hits * 0.20, 0.40)
+
+        #
+        # --- RECENCY SCORE ---
+        #
+
+        try:
+            pub_year_elem = (
+                article_xml
+                .find('front')
+                .find('article-meta')
+                .find('.//pub-date/year')
+            )
+
+            pub_year = int(pub_year_elem.text)
+
+            current_year = datetime.now().year
+            age = current_year - pub_year
+
+            # newer papers get small bonus
+            recency_bonus = max(0.0, 1.0 - (age / 20.0)) * 0.10
+
+            score += recency_bonus
+
+        except Exception:
+            pass
+
+        #
+        # --- NORMALIZE ---
+        #
+
+        score = max(0.0, min(score, 1.0))
+
+        return round(score, 3)
+
+    def select_papers_to_analyze(self, all_ids, gene, name, target_relevance=4.0, min_score=0.1):
+        
+        pmc_scores = {}
+
+        papers_to_analyze = []
+
+        running_relevance = 0.0
+
+        for pmc_id in all_ids:
+
+            pmc_scores[pmc_id] = self.relevance_score(pmc_id, gene, name)
+
+        sorted_pmc_ids = sorted(
+            pmc_scores,
+            key=pmc_scores.get,
+            reverse=True
+        )
+
+        for rank, pmc_id in enumerate(sorted_pmc_ids, start=1):
+
+            score = pmc_scores[pmc_id]
+
+            if score < min_score:
+                continue
+
+            running_relevance += 2 * score / math.log2(rank+1)
+
+            papers_to_analyze.append(pmc_id)
+
+            if running_relevance >= target_relevance or rank > 20:
+                break
+
+        return papers_to_analyze, running_relevance
+
 
     def save_gene_pmc_ids(self, gene, pmc_ids):
         log.debug(

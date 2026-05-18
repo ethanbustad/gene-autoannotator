@@ -1,0 +1,19 @@
+{
+  "rv_id": "Rv2007c",
+  "name": "fdxA",
+  "function": "Ferredoxin A; involved in electron transport chain during respiration, hypoxia response, and DNA excision repair (PMID 18948063, PMID 30810776). Acts as a redox partner for CYP143A1 (PMID 30810776). DosR-regulated (PMID 18948063).",
+  "functional_category": [
+    "Respiration",
+    "Hypoxia response",
+    "DNA replication/repair",
+    "stress response",
+    "electron transport",
+    "endogenous redox partner",
+    "virulence",
+    "persistence"
+  ],
+  "drug_susc_impact": "Potential role in drug resistance (PMID 30810776).",
+  "infection_impact": "May be important for bacillary persistence during latency and early reactivation (PMID 18948063). Essential for host infection (PMID 30810776).",
+  "essential_in_vitro": true,
+  "essential_in_vivo": true
+}

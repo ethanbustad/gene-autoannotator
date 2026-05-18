@@ -1,4 +1,11 @@
 
+"""
+run with:
+
+python -m run_pipeline 2>&1 | tee log.txt
+
+"""
+
 import time
 import os
 from datetime import datetime
@@ -16,7 +23,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1qiLSngYGAUQkTPGC8rLzhcQzU4Lrke7S678pSGXHICs/edit?gid=243893338#gid=243893338"
 SPREADSHEET_ID = "1qiLSngYGAUQkTPGC8rLzhcQzU4Lrke7S678pSGXHICs"
 
-SHEET_NAME = "BaselineScores"
+SHEET_NAME = "V2Scores"
 
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE,
@@ -29,8 +36,8 @@ sheet = service.spreadsheets()
 from autoannotation.__main__ import main as annotate
 from compareannotations.__main__ import main as compare
 
-def record_result(gene, comparison_result, duration, num_papers_used, num_total_papers):
-    values = [[gene, comparison_result, duration, num_papers_used, num_total_papers]]
+def record_result(gene, comparison_result, duration, num_papers_used, num_total_papers, cumulative_relevance=0.0):
+    values = [[gene, comparison_result, duration, num_papers_used, num_total_papers, cumulative_relevance]]
 
     #row = next_empty_row(sheet, col='D', start_row=7)
 
@@ -40,7 +47,7 @@ def record_result(gene, comparison_result, duration, num_papers_used, num_total_
 
     result = sheet.values().append(
         spreadsheetId=SPREADSHEET_ID,
-        range=f"{SHEET_NAME}!D:H",
+        range=f"{SHEET_NAME}!D:I",
         valueInputOption="RAW",
         insertDataOption="INSERT_ROWS",
         body=body
@@ -109,6 +116,7 @@ for gene in GENES:
 
         if annotation_result is None:
             print(f"Skipping {gene}: annotation failed")
+            record_result(gene, "N/A", "N/A", 0, "N/A")
             continue
 
         papers_used = annotation_result["papers_used"]
@@ -117,13 +125,15 @@ for gene in GENES:
 
         generated_json = annotation_result["output_path"]
 
+        cumulative_relevance = annotation_result["cumulative_relevance"]
+
         trusted_json = os.path.join("trust_json", f"trust_{gene}.json")
         
         duration = time.time() - start
 
         comparison_result = compare(trusted_json, generated_json)
 
-        record_result(gene, comparison_result, duration, len(papers_used), len(total_papers))
+        record_result(gene, comparison_result, duration, len(papers_used), len(total_papers), cumulative_relevance)
 
         mark_complete(gene)
 

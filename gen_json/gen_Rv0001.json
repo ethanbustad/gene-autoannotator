@@ -1,0 +1,13 @@
+{
+  "rv_id": "Rv0001",
+  "name": "dnaA",
+  "function": "Initiates chromosomal DNA replication by binding to the origin of replication (oriC) and specific DnaA boxes (PMID 15790315, 22116140, 28702006, 30793043).  It also binds ATP and ADP and exhibits weak ATPase activity (PMID 11931658).  May also act as a transcriptional regulator (PMID 19019143).",
+  "functional_category": [
+    "DNA replication/repair",
+    "growth regulation"
+  ],
+  "drug_susc_impact": "",
+  "infection_impact": "The actively transmitted variant with specific SNPs in dnaA had higher intramacrophage multiplication ratios compared to closely related variants (PMID 34040136).  May be an important element of the complex regulatory system(s) required for tubercle bacilli to survive within macrophages, presumably coordinating the catabolism of host-derived fatty acids with chromosomal replication (PMID 24705740). Contributes to the survival of M. tuberculosis under stress and within macrophages during infection (PMID 30793043). Variants in this gene are associated with INH resistance (PMID 41031815).",
+  "essential_in_vitro": true,
+  "essential_in_vivo": true
+}

@@ -1,0 +1,12 @@
+{
+  "rv_id": "Rv0003",
+  "name": "recF",
+  "function": "DNA repair protein involved in homologous recombination",
+  "functional_category": [
+    "DNA replication/repair"
+  ],
+  "drug_susc_impact": "Inhibition of RecF's activity by fluoroquinolones (ofloxacin and ciprofloxacin) is higher compared to nalidixic acid, which may contribute to their increased efficacy against Mycobacterium tuberculosis.",
+  "infection_impact": "",
+  "essential_in_vitro": false,
+  "essential_in_vivo": false
+}

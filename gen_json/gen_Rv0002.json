@@ -1,0 +1,12 @@
+{
+  "rv_id": "Rv0002",
+  "name": "dnaN",
+  "function": "DNA polymerase III subunit beta, involved in DNA replication and repair (PMID 31608066).",
+  "functional_category": [
+    "DNA replication/repair"
+  ],
+  "drug_susc_impact": "",
+  "infection_impact": "Recognized by \u03b3\u03b4T cells, capable of stimulating activation and proliferation (PMID 31608066), potentially contributing to resistance against Mtb infection (PMID 31608066).",
+  "essential_in_vitro": false,
+  "essential_in_vivo": false
+}
