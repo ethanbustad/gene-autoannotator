@@ -31,7 +31,8 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
 
     name = mycobrowser_df.at[gene, 'Name']
 
-    pmc_ids = paper_manager.get_pmc_ids(gene, name)
+    ranked_papers = paper_manager.get_ranked_papers(gene, name)
+    pmc_ids = [record.pmc_id for record in ranked_papers]
     paper_manager.save_gene_pmc_ids(gene, pmc_ids)
     section_distillation_candidates = []
     section_distillations = []
@@ -42,20 +43,24 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     # speeding up analysis
     #pmc_ids = pmc_ids[:25]
 
-    papers_to_analyze, cumulative_relevance = paper_manager.select_papers_to_analyze(pmc_ids, gene, name, target_relevance=4.0, min_score=0.1)
+    papers_to_analyze, cumulative_relevance = paper_manager.select_papers_to_analyze(ranked_papers, gene, name, target_relevance=4.0, min_score=0.1)
 
     used = []
+    relevance_by_pmc_id = {
+        record.pmc_id: record
+        for record in ranked_papers
+    }
     
     for pmc_id in papers_to_analyze:
         sections = []
 
-        # filter based on established paper relevance criteria
-        if not paper_manager.is_relevant(pmc_id, gene, name):
-            log.info(f'Skipping paper PMC{pmc_id}: does not pass relevance checks for gene {gene}')
-            continue
-        else:
-            log.info(f'Starting inference process for gene {gene} with paper PMC{pmc_id}')
-            used.append(pmc_id)
+        relevance_record = relevance_by_pmc_id.get(pmc_id)
+        relevance_score = relevance_record.score if relevance_record is not None else 0.0
+        log.info(
+            f'Starting inference process for gene {gene} with paper PMC{pmc_id} '
+            f'(relevance score {relevance_score:.3f})'
+        )
+        used.append(pmc_id)
 
         abstract = paper_manager.get_abstract(pmc_id)
         if abstract is not None:

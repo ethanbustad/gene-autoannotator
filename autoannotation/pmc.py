@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import math
+from dataclasses import dataclass, field
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
@@ -24,6 +25,19 @@ search_term_name_tmpl = (
 )
 
 fetch_url_tmpl = base_url + 'efetch.fcgi?db=pmc&id={id}'
+
+@dataclass
+class RelevanceRecord:
+    pmc_id: str
+    pmid: str | None
+    score: float
+    retrieval_sources: list[str]
+    title: str
+    year: int | None
+    section_hits: dict[str, dict[str, int]]
+    evidence_flags: dict[str, bool]
+    score_components: dict[str, float]
+    warnings: list[str] = field(default_factory=list)
 
 class PmcPaperManager(papers.PaperManager):
     path_abstrct = 'abstracts'
@@ -96,7 +110,7 @@ class PmcPaperManager(papers.PaperManager):
         except FileNotFoundError:
             return None
 
-    def get_pmc_ids(self, gene, name):
+    def get_pmc_id_sources(self, gene, name):
         log.info(f'Searching PubMed Central for gene {gene}')
 
         search_term_locus = search_term_locus_tmpl.format(locus=gene)
@@ -112,7 +126,7 @@ class PmcPaperManager(papers.PaperManager):
 
         if name == gene:
             log.debug(f'No name available for gene {gene}; moving on with obtained papers')
-            return idlist1
+            return {pmc_id: {'locus'} for pmc_id in idlist1}
 
         log.debug(f'Searching PubMed Central by gene name {name}')
 
@@ -124,7 +138,11 @@ class PmcPaperManager(papers.PaperManager):
         idlist2 = result2['esearchresult']['idlist']
         log.debug(f'Found {len(idlist2)} papers by name ({name}) for gene {gene}')
 
-        combined = list(set(idlist1 + idlist2))
+        combined = {}
+        for pmc_id in idlist1:
+            combined.setdefault(pmc_id, set()).add('locus')
+        for pmc_id in idlist2:
+            combined.setdefault(pmc_id, set()).add('name')
 
         if len(combined) < 3:
             log.warning(
@@ -137,6 +155,9 @@ class PmcPaperManager(papers.PaperManager):
             )
 
         return combined
+
+    def get_pmc_ids(self, gene, name):
+        return list(self.get_pmc_id_sources(gene, name).keys())
 
     def get_pmid(self, pmc_id):
         if pmc_id.startswith('PMC'):
@@ -166,189 +187,219 @@ class PmcPaperManager(papers.PaperManager):
             return None
 
     def is_relevant(self, pmc_id, gene, name):
-        abstract = self.get_abstract(pmc_id)
-        if abstract is None:
-            return False
-
-        species_in_abstract = any(re.search(p, abstract) for p in self.species_incl_patterns)
-        gene_in_abstract = gene in abstract or name.lower() in abstract.lower()
-
-        if not species_in_abstract or not gene_in_abstract:
-            return False
-
-        discussion = self.get_discussion(pmc_id)
-
-        if discussion is not None:
-            species_in_discussion = any(re.search(p, discussion) for p in self.species_incl_patterns)
-            gene_in_discussion = gene in discussion or name.lower() in abstract.lower()
-
-            if not species_in_discussion or not gene_in_discussion:
-                return False
-
-        results = self.get_results(pmc_id)
-
-        if results is not None:
-            species_in_results = any(re.search(p, results) for p in self.species_incl_patterns)
-            gene_in_results = gene in results or name.lower() in abstract.lower()
-            excl_in_results = any(re.search(p, results) for p in self.species_excl_patterns)
-
-            if not species_in_results or not gene_in_results or excl_in_results:
-                return False
-
-        return True
+        record = self.score_paper_relevance(pmc_id, gene, name)
+        return (
+            record.score >= 0.25
+            and record.evidence_flags['has_organism_hit']
+            and (record.evidence_flags['has_locus_hit'] or record.evidence_flags['has_name_hit'])
+            and not record.evidence_flags['has_excluded_species_hit']
+        )
 
     def relevance_score(self, pmc_id, gene, name):
+        return self.score_paper_relevance(pmc_id, gene, name).score
+
+    def score_paper_relevance(self, pmc_id, gene, name, retrieval_sources=None):
+        retrieval_sources = set(retrieval_sources or [])
+        title = self._get_title(pmc_id)
+        year = self._get_publication_year(pmc_id)
 
         abstract = self.get_abstract(pmc_id)
-        if abstract is None:
-            return 0.0
-
-        abstract_lower = abstract.lower()
         gene_lower = gene.lower()
         name_lower = name.lower()
+        sections = {
+            'title': title or '',
+            'abstract': abstract or '',
+            'results': self.get_results(pmc_id) or '',
+            'discussion': self.get_discussion(pmc_id) or '',
+        }
+        section_hits = {
+            label: {
+                'locus': text.lower().count(gene_lower),
+                'name': 0 if name_lower == gene_lower else text.lower().count(name_lower),
+                'organism': self._count_patterns(text, self.species_incl_patterns),
+                'excluded_species': self._count_patterns(text, self.species_excl_patterns),
+            }
+            for label, text in sections.items()
+        }
 
-        score = 0.0
+        has_locus_hit = any(hits['locus'] > 0 for hits in section_hits.values())
+        has_name_hit = any(hits['name'] > 0 for hits in section_hits.values())
+        has_organism_hit = any(hits['organism'] > 0 for hits in section_hits.values())
+        has_excluded_species_hit = any(
+            hits['excluded_species'] > 0 for hits in section_hits.values()
+        )
+        has_results_hit = (
+            section_hits['results']['locus'] + section_hits['results']['name']
+        ) > 0
+        has_discussion_hit = (
+            section_hits['discussion']['locus'] + section_hits['discussion']['name']
+        ) > 0
 
+        score_components = {
+            'retrieval_locus': 0.18 if 'locus' in retrieval_sources else 0.0,
+            'retrieval_name': 0.08 if 'name' in retrieval_sources else 0.0,
+            'title_locus': 0.35 if section_hits['title']['locus'] else 0.0,
+            'title_name': 0.25 if section_hits['title']['name'] else 0.0,
+            'title_organism': 0.08 if section_hits['title']['organism'] else 0.0,
+            'abstract_locus': min(section_hits['abstract']['locus'] * 0.08, 0.24),
+            'abstract_name': min(section_hits['abstract']['name'] * 0.05, 0.15),
+            'abstract_organism': 0.12 if section_hits['abstract']['organism'] else 0.0,
+            'section_locus': min(
+                (section_hits['results']['locus'] + section_hits['discussion']['locus']) * 0.07,
+                0.21,
+            ),
+            'section_name': min(
+                (section_hits['results']['name'] + section_hits['discussion']['name']) * 0.05,
+                0.15,
+            ),
+            'section_organism': 0.08 if (
+                section_hits['results']['organism'] or section_hits['discussion']['organism']
+            ) else 0.0,
+            'organism_gene_comention': 0.15 if (
+                has_organism_hit and (has_locus_hit or has_name_hit)
+            ) else 0.0,
+            'recency': self._recency_bonus(year),
+            'missing_abstract_penalty': -0.08 if abstract is None else 0.0,
+            'missing_organism_penalty': -0.18 if not has_organism_hit else 0.0,
+            'name_only_penalty': -0.12 if (
+                has_name_hit and not has_locus_hit and 'locus' not in retrieval_sources
+            ) else 0.0,
+            'excluded_species_penalty': -0.25 if has_excluded_species_hit else 0.0,
+        }
+
+        warnings = []
+        if abstract is None:
+            warnings.append('missing_abstract')
+        if has_excluded_species_hit:
+            warnings.append('excluded_species')
+        if has_name_hit and not has_locus_hit:
+            warnings.append('name_only_match')
+        if not has_organism_hit:
+            warnings.append('missing_organism')
+
+        score = max(0.0, min(sum(score_components.values()), 1.0))
+        return RelevanceRecord(
+            pmc_id=pmc_id,
+            pmid=self.get_pmid(pmc_id),
+            score=round(score, 3),
+            retrieval_sources=sorted(retrieval_sources),
+            title=title,
+            year=year,
+            section_hits=section_hits,
+            evidence_flags={
+                'has_locus_hit': has_locus_hit,
+                'has_name_hit': has_name_hit,
+                'has_organism_hit': has_organism_hit,
+                'has_excluded_species_hit': has_excluded_species_hit,
+                'has_results_hit': has_results_hit,
+                'has_discussion_hit': has_discussion_hit,
+            },
+            score_components={
+                key: round(value, 3)
+                for key, value in score_components.items()
+                if value != 0
+            },
+            warnings=warnings,
+        )
+
+    def get_ranked_papers(self, gene, name):
+        pmc_sources = self.get_pmc_id_sources(gene, name)
+        records = [
+            self.score_paper_relevance(pmc_id, gene, name, sources)
+            for pmc_id, sources in pmc_sources.items()
+        ]
+        return sorted(records, key=lambda record: record.score, reverse=True)
+
+    def select_papers_to_analyze(
+        self, all_ids, gene, name, target_relevance=4.0, min_score=0.1, max_rank=20
+    ):
+        if all(isinstance(record, RelevanceRecord) for record in all_ids):
+            records = list(all_ids)
+        else:
+            source_map = {}
+            try:
+                source_map = self.get_pmc_id_sources(gene, name)
+            except Exception:
+                log.debug('Unable to fetch PMC ID sources during selection; scoring without provenance')
+            records = [
+                self.score_paper_relevance(pmc_id, gene, name, source_map.get(pmc_id, set()))
+                for pmc_id in all_ids
+            ]
+            records = sorted(records, key=lambda record: record.score, reverse=True)
+
+        selected_records, running_relevance = self.select_relevance_records(
+            records,
+            target_relevance=target_relevance,
+            min_score=min_score,
+            max_rank=max_rank,
+        )
+        return [record.pmc_id for record in selected_records], running_relevance
+
+    def select_relevance_records(
+        self, records, target_relevance=4.0, min_score=0.1, max_rank=20,
+        excluded_warnings=None,
+    ):
+        excluded_warnings = set(excluded_warnings or {'excluded_species'})
+        selected_records = []
+        running_relevance = 0.0
+        selected_rank = 0
+
+        for rank, record in enumerate(records, start=1):
+            if rank > max_rank:
+                break
+
+            score = record.score
+
+            if score < min_score:
+                continue
+
+            if excluded_warnings.intersection(record.warnings):
+                continue
+
+            selected_rank += 1
+            running_relevance += 2 * score / math.log2(selected_rank+1)
+
+            selected_records.append(record)
+
+            if running_relevance >= target_relevance:
+                break
+
+        return selected_records, running_relevance
+
+    def _get_title(self, pmc_id):
         try:
-            article_xml = self._get_article_xml(pmc_id)
-
             title_elem = (
-                article_xml
+                self._get_article_xml(pmc_id)
                 .find('front')
                 .find('article-meta')
                 .find('title-group')
                 .find('article-title')
             )
-
-            title = ET.tostring(title_elem, encoding='unicode', method='text')
-            title_lower = title.lower()
-
+            return ET.tostring(title_elem, encoding='unicode', method='text')
         except AttributeError:
-            title = ""
-            title_lower = ""
+            return ''
 
-        if gene_lower in title_lower:
-            score += 0.30
-
-        if name_lower != gene_lower and name_lower in title_lower:
-            score += 0.25
-
-        #
-        # --- ABSTRACT SCORE ---
-        #
-
-        gene_mentions_abstract = abstract_lower.count(gene_lower)
-        name_mentions_abstract = abstract_lower.count(name_lower)
-
-        score += min(gene_mentions_abstract * 0.03, 0.25)
-        score += min(name_mentions_abstract * 0.02, 0.15)
-
-        #
-        # --- RESULTS / DISCUSSION SCORE ---
-        #
-
-        results = self.get_results(pmc_id) or ""
-        discussion = self.get_discussion(pmc_id) or ""
-
-        combined_text = (
-            abstract_lower
-            + " "
-            + results.lower()
-            + " "
-            + discussion.lower()
-        )
-
-        total_gene_mentions = combined_text.count(gene_lower)
-        total_name_mentions = combined_text.count(name_lower)
-
-        score += min(math.log1p(total_gene_mentions) * 0.08, 0.20)
-        score += min(math.log1p(total_name_mentions) * 0.05, 0.10)
-
-        #
-        # --- SPECIES BONUS / PENALTY ---
-        #
-
-        species_hits = sum(
-            bool(re.search(p, combined_text))
-            for p in self.species_incl_patterns
-        )
-
-        excl_hits = sum(
-            bool(re.search(p, combined_text))
-            for p in self.species_excl_patterns
-        )
-
-        if species_hits > 0:
-            score += 0.15
-
-        score -= min(excl_hits * 0.20, 0.40)
-
-        #
-        # --- RECENCY SCORE ---
-        #
-
+    def _get_publication_year(self, pmc_id):
         try:
             pub_year_elem = (
-                article_xml
+                self._get_article_xml(pmc_id)
                 .find('front')
                 .find('article-meta')
                 .find('.//pub-date/year')
             )
-
-            pub_year = int(pub_year_elem.text)
-
-            current_year = datetime.now().year
-            age = current_year - pub_year
-
-            # newer papers get small bonus
-            recency_bonus = max(0.0, 1.0 - (age / 20.0)) * 0.10
-
-            score += recency_bonus
-
+            return int(pub_year_elem.text)
         except Exception:
-            pass
+            return None
 
-        #
-        # --- NORMALIZE ---
-        #
+    def _recency_bonus(self, pub_year):
+        if pub_year is None:
+            return 0.0
+        current_year = datetime.now().year
+        age = current_year - pub_year
+        return max(0.0, 1.0 - (age / 20.0)) * 0.05
 
-        score = max(0.0, min(score, 1.0))
-
-        return round(score, 3)
-
-    def select_papers_to_analyze(self, all_ids, gene, name, target_relevance=4.0, min_score=0.1):
-        
-        pmc_scores = {}
-
-        papers_to_analyze = []
-
-        running_relevance = 0.0
-
-        for pmc_id in all_ids:
-
-            pmc_scores[pmc_id] = self.relevance_score(pmc_id, gene, name)
-
-        sorted_pmc_ids = sorted(
-            pmc_scores,
-            key=pmc_scores.get,
-            reverse=True
-        )
-
-        for rank, pmc_id in enumerate(sorted_pmc_ids, start=1):
-
-            score = pmc_scores[pmc_id]
-
-            if score < min_score:
-                continue
-
-            running_relevance += 2 * score / math.log2(rank+1)
-
-            papers_to_analyze.append(pmc_id)
-
-            if running_relevance >= target_relevance or rank > 20:
-                break
-
-        return papers_to_analyze, running_relevance
+    def _count_patterns(self, text, patterns):
+        return sum(len(re.findall(pattern, text, flags=re.IGNORECASE)) for pattern in patterns)
 
 
     def save_gene_pmc_ids(self, gene, pmc_ids):
