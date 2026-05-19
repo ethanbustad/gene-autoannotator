@@ -31,6 +31,8 @@ def main(trusted, generated):
 
     print(f"{report["avg_embed"]:.2f}\t: AVG embed score")
     print(f"{report["avg_llm"]:.2f}\t: AVG llm score")
+    print(f"{report.get("avg_coverage", 0):.2f}\t: AVG trusted-coverage score")
+    print(f"{report.get("scoring_mode", "legacy")}\t: scoring mode")
 
     print(f"{len(report["missing"])}\t: missing fields")
     print(f"{len(report["extra"])}\t: extra fields")
@@ -38,7 +40,14 @@ def main(trusted, generated):
     print("\n=== FIELD SCORES ===\n")
 
     for field, scores in report["field_scores"].items():
-        print(f"overall score: {(scores['embedding'] + scores['llm']) / 2:.2f} exact score: {scores['exact']} embed score: {scores['embedding']:.2f} llm score: {scores['llm']:.2f}\t: field: {field}")
+        combined = (scores['embedding'] + scores['llm']) / 2
+        coverage = scores.get('coverage', 0.0)
+        verbosity = scores.get('verbosity_length_ratio', 1.0)
+        print(
+            f"combined: {combined:.2f} coverage: {coverage:.2f} exact: {scores['exact']} "
+            f"embed: {scores['embedding']:.2f} llm: {scores['llm']:.2f} "
+            f"len_ratio: {verbosity:.1f}\t: {field}"
+        )
 
     print(f"\nOverall Score: {score:.2f}\n")
 

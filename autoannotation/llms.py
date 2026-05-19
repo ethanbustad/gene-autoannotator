@@ -12,9 +12,126 @@ logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-json_schema_default = {
-    'type': 'object',
-    'properties': {
+BIOLOGY_FIELDS = (
+    'function',
+    'functional_category',
+    'drug_susc_impact',
+    'infection_impact',
+    'essential_in_vitro',
+    'essential_in_vivo',
+)
+
+UNKNOWN_STRINGS = frozenset({
+    '',
+    'unknown',
+    'missing',
+    'n/a',
+    'na',
+    'not available',
+    'insufficient',
+    'insufficient evidence',
+    'not stated',
+    'not reported',
+})
+
+SECTION_HINTS = {
+    'abstract': (
+        'This excerpt is an abstract. Prioritize mechanism and functional category when '
+        'explicitly stated. Do not infer essentiality or drug/infection impacts unless '
+        'this text clearly reports them.'
+    ),
+    'results': (
+        'This excerpt is from results. Prioritize experimental essentiality, drug '
+        'susceptibility phenotypes, and measured infection phenotypes when explicitly '
+        'reported.'
+    ),
+    'discussion': (
+        'This excerpt is from discussion. Prioritize infection impact and mechanistic '
+        'interpretation when explicitly stated; do not treat speculation as established fact.'
+    ),
+}
+
+
+def is_unknown_value(value):
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in UNKNOWN_STRINGS
+    if isinstance(value, list):
+        return len(value) == 0
+    return False
+
+
+def normalize_annotation_fields(parsed, *, require_biology_keys=False):
+    """Map empty or placeholder values to JSON null; keep rv_id and name as strings."""
+    normalized = {
+        'rv_id': parsed.get('rv_id'),
+        'name': parsed.get('name'),
+    }
+    for field in BIOLOGY_FIELDS:
+        if field not in parsed and not require_biology_keys:
+            continue
+        value = parsed.get(field)
+        if is_unknown_value(value):
+            normalized[field] = None
+        elif field == 'functional_category' and isinstance(value, list):
+            categories = [item for item in value if item and str(item).strip()]
+            normalized[field] = categories if categories else None
+        else:
+            normalized[field] = value
+    if 'annotation_notes' in parsed:
+        notes = parsed.get('annotation_notes')
+        normalized['annotation_notes'] = None if is_unknown_value(notes) else notes
+    return normalized
+
+
+def _nullable_string(description):
+    return {
+        'type': ['string', 'null'],
+        'description': description + ' Use null when the source text does not support this field.',
+    }
+
+
+def _nullable_bool(description):
+    return {
+        'type': ['boolean', 'null'],
+        'description': (
+            description
+            + ' Use null when the source text does not report experimental evidence for this field.'
+        ),
+    }
+
+
+def _biology_properties():
+    return {
+        'function': _nullable_string(
+            'What the gene product does for the cell (one or two concise sentences).'
+        ),
+        'functional_category': {
+            'type': ['array', 'null'],
+            'items': {'type': 'string'},
+            'description': (
+                'One or more general cellular functions (e.g., cell wall, respiration, '
+                'virulence, DNA replication/repair). Use null if not supported.'
+            ),
+        },
+        'drug_susc_impact': _nullable_string(
+            'Impact on Mtb drug susceptibility (one or two concise sentences).'
+        ),
+        'infection_impact': _nullable_string(
+            'Impact on Mtb infection (one or two concise sentences).'
+        ),
+        'essential_in_vitro': _nullable_bool(
+            'Whether the gene is essential for Mtb survival in vitro.'
+        ),
+        'essential_in_vivo': _nullable_bool(
+            'Whether the gene is essential for Mtb survival in vivo.'
+        ),
+    }
+
+
+def _identity_properties():
+    return {
         'rv_id': {
             'type': 'string',
             'description': (
@@ -29,49 +146,24 @@ json_schema_default = {
                 'possibly with a "_" or "." included'
             ),
         },
-        'function': {
-            'type': 'string',
-            'description': (
-                'A description of what the product of this gene accomplishes for the cell (as '
-                'short, concise prose of just one or two sentences)'
-            ),
-        },
-        'functional_category': {
-            'type': 'array',
-            'items': {
-                'type': 'string',
-            },
-            'minItems': 1,
-            'description': 'One or more general cellular functions contributed to by this gene',
-        },
-        'drug_susc_impact': {
-            'type': 'string',
-            'description': (
-                'Any impact the gene has on Mtb drug susceptibility (as short, concise prose of '
-                'just one or two sentences)'
-            ),
-        },
-        'infection_impact': {
-            'type': 'string',
-            'description': (
-                'Any impact the gene has on Mtb infection (as short, concise prose of just one or '
-                'two sentences)'
-            ),
-        },
-        'essential_in_vitro': {
-            'type': 'boolean',
-            'description': (
-                'Whether the gene is essential for Mtb survival in vitro (i.e., in artificial '
-                'growth medium)'
-            ),
-        },
-        'essential_in_vivo': {
-            'type': 'boolean',
-            'description': (
-                'Whether the gene is essential for Mtb survival in vivo (i.e., in the context '
-                'of an infection)'
-            ),
-        },
+    }
+
+
+json_schema_section = {
+    'type': 'object',
+    'properties': {
+        **_identity_properties(),
+        **_biology_properties(),
+    },
+    'required': ['rv_id', 'name'],
+    'additionalProperties': False,
+}
+
+json_schema_default = {
+    'type': 'object',
+    'properties': {
+        **_identity_properties(),
+        **_biology_properties(),
     },
     'required': [
         'rv_id',
@@ -90,42 +182,50 @@ json_schema_aggregate = {
     **json_schema_default,
     'properties': {
         **json_schema_default['properties'],
-        'annotation_notes': {
-            'type': 'string',
-            'description': (
-                'Transparency notes for curators: how many papers were analyzed, whether '
-                'the literature base was strong or weak, limitations, missing evidence, '
-                'conflicts, and caveats. Do not repeat the full annotation fields here.'
-            ),
-        },
+        'annotation_notes': _nullable_string(
+            'Transparency notes for curators: papers analyzed, literature strength, fields left '
+            'unknown due to insufficient evidence, limitations, conflicts, and caveats.'
+        ),
     },
     'required': json_schema_default['required'] + ['annotation_notes'],
 }
 
 prompt1_tmpl = '''
-Using only the supplied information, return a JSON object describing the Mycobacterium
-tuberculosis gene {0} (named {1}) with the following fields:
-the Rv gene ID (as just supplied), the abbreviated gene name (as just supplied),
-the function of the gene,
-the gene's functional category (or multiple categories; e.g., cell wall, respiration,
-growth regulation, virulence, DNA replication/repair, stress response),
-impact on Mtb's drug susceptibility,
-impact on Mtb infection,
-whether the gene is essential for Mtb's survival in vitro,
-and whether the gene is essential for Mtb's survival in vivo.
+Using ONLY the supplied excerpt, return a JSON object for Mycobacterium tuberculosis gene {0}
+(named {1}).
 
-If any required information isn't supplied in the text, set that field to the empty string.
+Section type: {3}
+{4}
 
-Use the following informational text to complete your JSON response:
+Rules:
+- Always set rv_id and name exactly as supplied above.
+- Include every biology field key listed below. Use JSON null for any field this excerpt does
+  NOT explicitly support. Do not guess, infer from gene class, or use general Mtb knowledge.
+- Do not use empty strings for unknown fields; use null.
+- For essential_in_vitro and essential_in_vivo, use true or false only when this excerpt reports
+  direct experimental evidence (e.g., deletion, transposon, CRISPRi). Otherwise use null.
+- Prefer null over weak or speculative statements.
+
+Fields: function, functional_category, drug_susc_impact, infection_impact, essential_in_vitro,
+essential_in_vivo.
+
+Excerpt:
 {2}
 '''
 
 prompt2_tmpl = '''
-The following candidate JSON objects were generated from the same underlying data but with
-different generation methods. All methods involved a similar chance of error.
-Return a consensus JSON object with the same fields as provided in each candidate, but with each
-field containing the most likely true answer given the candidate answers provided. Where two of the
-supplied candidates agree, assume their agreement reveals the truth.
+The following candidate JSON objects were generated from the same excerpt with different models.
+Each candidate uses null for fields not supported by that excerpt.
+
+Return one consensus JSON object with the same keys. Per field:
+- If every candidate is null, output null.
+- If only one candidate has a non-null value and the others are null, output that value.
+- If two or more non-null candidates agree, output their shared value.
+- If non-null candidates conflict (including true vs false), output null.
+
+Never invent information not present in the candidates. Do not replace null with a guess.
+
+Section type: {3}
 
 First candidate: {0}
 
@@ -135,21 +235,25 @@ Third candidate: {2}
 '''
 
 prompt3_prefix = '''
-The following candidate JSON objects were generated concerning the same gene but based off of
-different source material. Return a JSON object aggregating the following supplied objects into a
-single consensus output. If supplied objects supply different details for the same field, harmonize
-those multiple points in the output response. If supplied objects directly contradict each other,
-note that a disagreement exists and include the gist of each perspective. Keep responses as concise
-as possible while still including all relevant details.
+The following JSON objects describe the same gene from different paper sections. Each object uses
+null for fields that section did not support. Objects are labeled with PMID and literature
+relevance score (higher = more relevant to this gene).
 
-Cite sources as much as possible using the PMID provided with each object, with a format like
-"interesting detail (PMID 00000)".
+Aggregate into one final annotation:
+- For each field, synthesize only from non-null contributions. Prefer higher-relevance sources when
+  harmonizing details.
+- If no object supports a field, output null for that field (not empty string).
+- If objects conflict, output null for that field and describe the conflict in annotation_notes.
+- For booleans, require consistent experimental support; do not infer essentiality without evidence.
+- Cite PMIDs inline for supported prose fields, e.g. "detail (PMID 12345)".
 
-Fill annotation_notes using the literature-selection context below when provided. Summarize how
-many papers were analyzed, whether the literature was abundant and high relevance or sparse and
-weaker, important limitations, missing evidence, and confidence caveats. Do not invent paper counts.
+Fill annotation_notes using the literature-selection context when provided. State how many papers
+were analyzed, literature strength, which annotation fields remain unknown (null) due to
+insufficient evidence, limitations, and conflicts. Do not invent paper counts or PMIDs.
 
-Supplied objects:'''
+Supplied section objects:
+'''
+
 
 class LlmHandler:
     @staticmethod
@@ -160,13 +264,22 @@ class LlmHandler:
         name_ptrn += '|' + rv_ptrn
         try:
             gene_info = json.loads(gene_json)
-            if re.fullmatch(rv_ptrn, gene_info['rv_id']) and \
-                    re.fullmatch(name_ptrn, gene_info['name']):
-                return True
-            else:
+            if not re.fullmatch(rv_ptrn, gene_info.get('rv_id', '')):
                 return False
-        except json.JSONDecodeError:
+            if not re.fullmatch(name_ptrn, gene_info.get('name', '')):
+                return False
+            return True
+        except (json.JSONDecodeError, TypeError):
             return False
+
+    @staticmethod
+    def normalize_response_json(gene_json, *, require_biology_keys=False):
+        parsed = json.loads(gene_json)
+        normalized = normalize_annotation_fields(
+            parsed,
+            require_biology_keys=require_biology_keys,
+        )
+        return json.dumps(normalized)
 
     def __init__(self, cache_dir='./.cache'):
         self.cache_dir = cache_dir
@@ -174,26 +287,36 @@ class LlmHandler:
     def get_llm_aggregate_json(
         self, json_responses, pmids, model='gemma3:12b',
         json_schema=json_schema_aggregate, retry=True, literature_context=None,
+        relevance_scores=None,
     ):
         prompt = prompt3_prefix
         if literature_context:
             prompt += f'\n\n{literature_context}\n'
-        for pmid, json_response in zip(pmids, json_responses):
-            prompt += f'\n\nPMID {pmid}: ' + json_response
+        if relevance_scores is None:
+            relevance_scores = [None] * len(json_responses)
+        for pmid, json_response, relevance in zip(pmids, json_responses, relevance_scores):
+            normalized = self.normalize_response_json(json_response)
+            relevance_label = (
+                f'{relevance:.3f}' if relevance is not None else 'not available'
+            )
+            prompt += f'\n\nPMID {pmid} (relevance {relevance_label}): {normalized}'
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
         if cached_response is not None:
             log.debug((
                 f'Returning cached section-aggregation response ({len(cached_response)} chars)'
             ))
-            return cached_response, cached_dur
+            return self.normalize_response_json(
+                cached_response,
+                require_biology_keys=True,
+            ), cached_dur
 
         log.debug((
             f'Submitting section-aggregation job ({len(json_responses)} blurbs; total '
             f'{len(prompt)} chars) to LLM (model {model})'
         ))
         try:
-            response: ChatResponse = ollama.chat(
+            response = ollama.chat(
                 model=model,
                 messages=[
                     {
@@ -207,10 +330,14 @@ class LlmHandler:
                 },
             )
             response_text = response['message']['content']
-            duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
+            duration_sec = response['total_duration'] / 1_000_000_000
             log.debug(
                 f'Got response ({len(response_text)} chars) back from {model} in ' + \
                     utils.seconds_to_str(duration_sec)
+            )
+            response_text = self.normalize_response_json(
+                response_text,
+                require_biology_keys=True,
             )
             self._write_cache(model, prompt, json_schema, response_text, duration_sec)
         except KeyError as ke:
@@ -218,29 +345,34 @@ class LlmHandler:
                 return self.get_llm_aggregate_json(
                     json_responses, pmids, model=model, json_schema=json_schema,
                     retry=False, literature_context=literature_context,
+                    relevance_scores=relevance_scores,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
         return response_text, duration_sec
 
     def get_llm_consensus_json(
-        self, json1, json2, json3, model='gemma3:12b', json_schema=json_schema_default, retry=True,
+        self, json1, json2, json3, model='gemma3:12b', json_schema=json_schema_section,
+        retry=True, section_type='unknown',
     ):
-        prompt = prompt2_tmpl.format(json1, json2, json3)
+        json1 = self.normalize_response_json(json1)
+        json2 = self.normalize_response_json(json2)
+        json3 = self.normalize_response_json(json3)
+        prompt = prompt2_tmpl.format(json1, json2, json3, section_type)
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
         if cached_response is not None:
             log.debug((
                 f'Returning cached candidate-aggregation response ({len(cached_response)} chars)'
             ))
-            return cached_response, cached_dur
+            return self.normalize_response_json(cached_response), cached_dur
 
         log.debug((
             f'Submitting candidate-aggregation job (length {len(prompt)} chars) to LLM (model ' + \
                 f'{model})'
         ))
         try:
-            response: ChatResponse = ollama.chat(
+            response = ollama.chat(
                 model=model,
                 messages=[
                     {
@@ -254,38 +386,44 @@ class LlmHandler:
                 },
             )
             response_text = response['message']['content']
-            duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
+            duration_sec = response['total_duration'] / 1_000_000_000
             log.debug(
                 f'Got response ({len(response_text)} chars) back from {model} in ' + \
                     utils.seconds_to_str(duration_sec)
             )
+            response_text = self.normalize_response_json(response_text)
             self._write_cache(model, prompt, json_schema, response_text, duration_sec)
         except KeyError as ke:
             if retry:
-                return get_llm_consensus_json(
+                return self.get_llm_consensus_json(
                     json1, json2, json3, model=model, json_schema=json_schema, retry=False,
+                    section_type=section_type,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
         return response_text, duration_sec
 
     def get_llm_gene_info_json(
-        self, gene_id, gene_name, info_text, model, json_schema=json_schema_default, retry=True,
+        self, gene_id, gene_name, info_text, model, json_schema=json_schema_section,
+        retry=True, section_type='unknown',
     ):
-        prompt = prompt1_tmpl.format(gene_id, gene_name, info_text)
+        section_hint = SECTION_HINTS.get(section_type, '')
+        prompt = prompt1_tmpl.format(
+            gene_id, gene_name, info_text, section_type, section_hint,
+        )
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
         if cached_response is not None:
             log.debug((
                 f'Returning cached section-summary response ({len(cached_response)} chars)'
             ))
-            return cached_response, cached_dur
+            return self.normalize_response_json(cached_response), cached_dur
 
         log.debug((
             f'Submitting section-summary job (length {len(prompt)} chars) to LLM (model {model})'
         ))
         try:
-            response: ChatResponse = ollama.chat(
+            response = ollama.chat(
                 model=model,
                 messages=[
                     {
@@ -299,16 +437,18 @@ class LlmHandler:
                 },
             )
             response_text = response['message']['content']
-            duration_sec = response['total_duration'] / 1_000_000_000 # nanoseconds -> seconds
+            duration_sec = response['total_duration'] / 1_000_000_000
             log.debug(
                 f'Got response ({len(response_text)} chars) back from {model} in ' + \
                     utils.seconds_to_str(duration_sec)
             )
+            response_text = self.normalize_response_json(response_text)
             self._write_cache(model, prompt, json_schema, response_text, duration_sec)
         except KeyError as ke:
             if retry:
                 return self.get_llm_gene_info_json(
                     gene_id, gene_name, info_text, model, json_schema=json_schema, retry=False,
+                    section_type=section_type,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
@@ -338,7 +478,7 @@ class LlmHandler:
 
         cache_parent = os.path.dirname(cache_path)
         if not os.path.exists(cache_parent):
-            os.makedirs(cache_parent, exist_ok=True) # prevent race condition issue with exist_ok
+            os.makedirs(cache_parent, exist_ok=True)
 
         content = dict(
             duration_sec=duration_sec,
@@ -348,5 +488,5 @@ class LlmHandler:
             with open(cache_path, 'w') as cache_file:
                 json.dump(content, cache_file)
             return True
-        except Exception as e:
+        except Exception:
             log.exception('Error encountered while writing cache file')

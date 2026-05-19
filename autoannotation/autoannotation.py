@@ -100,7 +100,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
             section_distillation_candidates_cur = []
             for model in (MODEL_SUMMARY): #for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
                 section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
-                    gene, name, section, model
+                    gene, name, section, model, section_type=label,
                 )
                 section_distillation_candidates_cur.append(section_distillation_candidate)
                 section_distillation_candidates.append((
@@ -109,7 +109,8 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
                 ))
             section_distillation, duration_sec = llm_handler.get_llm_consensus_json(
                 section_distillation_candidates_cur[0], section_distillation_candidates_cur[1],
-                section_distillation_candidates_cur[2], model=MODEL_CONSENSUS
+                section_distillation_candidates_cur[2], model=MODEL_CONSENSUS,
+                section_type=label,
             )
             section_distillations.append((
                 f'PMC{pmc_id}', label, MODEL_CONSENSUS, gene, name, section_distillation, duration_sec
@@ -162,11 +163,18 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     )
 
     if len(section_distillation_filtered_df) >= 1:
+        def _relevance_for_pmc_label(pmc_label):
+            pmc_id = str(pmc_label).removeprefix('PMC')
+            record = relevance_by_pmc_id.get(pmc_id)
+            return record.score if record is not None else None
+
+        relevance_scores = section_distillation_filtered_df['PmcId'].map(_relevance_for_pmc_label)
         gene_distillation, duration_sec = llm_handler.get_llm_aggregate_json(
             section_distillation_filtered_df['Response'],
             section_distillation_filtered_df['PMID'],
             model=MODEL_AGGREGATION,
             literature_context=literature_context,
+            relevance_scores=relevance_scores.tolist(),
         )
     else:
         gene_distillation = None

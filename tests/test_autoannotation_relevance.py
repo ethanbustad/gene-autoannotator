@@ -27,15 +27,20 @@ class FakeLlmHandler:
     def json_regex_filter(gene_json):
         return True
 
-    def get_llm_gene_info_json(self, gene_id, gene_name, info_text, model):
+    def get_llm_gene_info_json(self, gene_id, gene_name, info_text, model, section_type='abstract'):
+        assert section_type == 'abstract'
         return GENE_JSON, 0.1
 
-    def get_llm_consensus_json(self, json1, json2, json3, model):
+    def get_llm_consensus_json(self, json1, json2, json3, model, section_type='abstract'):
+        assert section_type == 'abstract'
         return GENE_JSON, 0.1
 
-    def get_llm_aggregate_json(self, json_responses, pmids, model, literature_context=None):
+    def get_llm_aggregate_json(
+        self, json_responses, pmids, model, literature_context=None, relevance_scores=None,
+    ):
         assert literature_context is not None
         assert "Papers selected for analysis" in literature_context
+        assert relevance_scores is not None
         return GENE_JSON, 0.1
 
 

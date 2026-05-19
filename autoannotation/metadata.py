@@ -72,7 +72,7 @@ def build_field_coverage(annotation_fields):
     )
     for field in biology_fields:
         value = annotation_fields.get(field)
-        if value is None or value == '' or value == []:
+        if field not in annotation_fields or value is None or value == '' or value == []:
             coverage[field] = 'insufficient_evidence'
         elif field in ('essential_in_vitro', 'essential_in_vivo'):
             coverage[field] = 'supported'
@@ -137,8 +137,9 @@ def build_literature_context_for_notes(
 
     lines.append(
         'In annotation_notes, briefly explain how many papers were analyzed, whether the '
-        'literature base was strong or weak, notable limitations, missing evidence, and any '
-        'conflicts. Write for a curator reviewing this annotation.'
+        'literature base was strong or weak, which annotation fields could not be populated '
+        '(left as null due to insufficient evidence), notable limitations, and any conflicts. '
+        'Write for a curator reviewing this annotation.'
     )
     return '\n'.join(lines)
 
@@ -213,6 +214,6 @@ def merge_annotation_output(gene_distillation_json, annotation_metadata, field_c
     parsed['annotation_metadata'] = annotation_metadata
     if field_coverage is not None:
         parsed['annotation_metadata']['field_coverage'] = field_coverage
-    if not parsed.get('annotation_notes'):
-        parsed['annotation_notes'] = ''
+    if 'annotation_notes' not in parsed:
+        parsed['annotation_notes'] = None
     return parsed
