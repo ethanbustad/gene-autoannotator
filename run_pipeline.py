@@ -84,6 +84,18 @@ def load_completed_genes():
     with open(COMPLETE_LOG, "r") as f:
         return set(line.strip() for line in f)
 
+"""
+Rv0001:     1133: 3
+Rv0002:     518: 4
+Rv0003:     375: 4
+Rv2007c:    177 : 3
+Rv2057c:
+Rv2070c:
+Rv2418c:
+Rv2612c:
+Rv3221A:
+Rv3459c:
+"""
 
 GENES = [
     "Rv0001",

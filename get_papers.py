@@ -153,7 +153,7 @@ def main():
         max_rank=args.max_rank,
     )
 
-    print(f"Gene: {args.gene}")
+    print(f"\n\nGene: {args.gene}")
     print(f"Name: {name}")
     print_summary(summary)
 
