@@ -12,17 +12,19 @@ def main(gene, cache_dir='./.cache'):
     if result is None:
         return
 
-    gene_distillation = result["gene_distillation"]
     pmc_ids = result["pmc_ids"]
     used = result["used_ids"]
+    parsed = result.get("gene_annotation")
 
-    if gene_distillation is None:
-        return
-
-    parsed = json.loads(gene_distillation)
+    if parsed is None:
+        if result.get("gene_distillation") is None:
+            print(f"No annotation produced for {gene}")
+            return
+        parsed = json.loads(result["gene_distillation"])
 
     print(gene, json.dumps(parsed, indent=2))
     print(f"Number of papers used: {len(used)}")
+    print(f"Selection mode: {result.get('selection_mode', 'unknown')}")
 
     output_dir = "gen_json"
     os.makedirs(output_dir, exist_ok=True)

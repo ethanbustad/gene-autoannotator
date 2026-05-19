@@ -2,6 +2,8 @@
 import json
 import logging
 
+from autoannotation.metadata import COMPARISON_IGNORE_FIELDS
+
 from .scoring import is_exact_match, embedded_similarity, llm_similarity
 
 log = logging.getLogger(__name__)
@@ -29,6 +31,10 @@ def compare(trusted, generated):
 	ignored = []
 
 	for key in trusted:
+		if key in COMPARISON_IGNORE_FIELDS:
+			ignored.append(key)
+			continue
+
 		trusted_val = trusted.get(key)
 
 		if is_unknown(trusted_val):

@@ -15,6 +15,7 @@ GENE_JSON = json.dumps({
     "infection_impact": "",
     "essential_in_vitro": True,
     "essential_in_vivo": True,
+    "annotation_notes": "Analyzed one paper with moderate support.",
 })
 
 
@@ -32,7 +33,9 @@ class FakeLlmHandler:
     def get_llm_consensus_json(self, json1, json2, json3, model):
         return GENE_JSON, 0.1
 
-    def get_llm_aggregate_json(self, json_responses, pmids, model):
+    def get_llm_aggregate_json(self, json_responses, pmids, model, literature_context=None):
+        assert literature_context is not None
+        assert "Papers selected for analysis" in literature_context
         return GENE_JSON, 0.1
 
 
@@ -62,9 +65,17 @@ class FakePmcPaperManager:
     def save_gene_pmc_ids(self, gene, pmc_ids):
         self.saved_ids = pmc_ids
 
-    def select_papers_to_analyze(self, records, gene, name, target_relevance=4.0, min_score=0.1):
+    def select_relevance_records(self, records, **kwargs):
+        from autoannotation.pmc import PaperSelectionResult
+
         assert isinstance(records[0], RelevanceRecord)
-        return ["1"], 1.6
+        return PaperSelectionResult(
+            selected_records=records,
+            cumulative_relevance=1.6,
+            selection_mode="all_eligible_limited_literature",
+            eligible_count=1,
+            total_retrieved=1,
+        )
 
     def is_relevant(self, pmc_id, gene, name):
         raise AssertionError("ranked selection should replace the legacy hard relevance gate")
@@ -95,3 +106,6 @@ def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch):
     assert result["used_ids"] == ["1"]
     assert result["pmc_ids"] == ["1"]
     assert result["cumulative_relevance"] == 1.6
+    assert result["selection_mode"] == "all_eligible_limited_literature"
+    assert result["gene_annotation"]["annotation_metadata"]["literature"]["papers_analyzed"] == 1
+    assert result["gene_annotation"]["annotation_notes"]

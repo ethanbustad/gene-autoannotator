@@ -2,7 +2,14 @@ import argparse
 from collections import Counter
 import json
 import pandas as pd
-from autoannotation.pmc import PmcPaperManager
+from autoannotation.pmc import (
+    PmcPaperManager,
+    DEFAULT_MAX_PAPERS,
+    DEFAULT_MAX_RANK,
+    DEFAULT_MIN_PAPERS,
+    DEFAULT_MIN_SCORE,
+    DEFAULT_TARGET_RELEVANCE,
+)
 
 
 def load_myco_df():
@@ -128,9 +135,11 @@ def main():
     parser.add_argument("--cache", default="./.cache")
     parser.add_argument("--top", type=int, default=10, help="Number of top ranked papers to print")
     parser.add_argument("--bottom", type=int, default=5, help="Number of bottom ranked papers to print")
-    parser.add_argument("--target-relevance", type=float, default=4.0)
-    parser.add_argument("--min-score", type=float, default=0.1)
-    parser.add_argument("--max-rank", type=int, default=20)
+    parser.add_argument("--target-relevance", type=float, default=DEFAULT_TARGET_RELEVANCE)
+    parser.add_argument("--min-score", type=float, default=DEFAULT_MIN_SCORE)
+    parser.add_argument("--min-papers", type=int, default=DEFAULT_MIN_PAPERS)
+    parser.add_argument("--max-papers", type=int, default=DEFAULT_MAX_PAPERS)
+    parser.add_argument("--max-rank", type=int, default=DEFAULT_MAX_RANK)
     parser.add_argument("--json-out", help="Optional path for full ranked relevance JSON")
 
     args = parser.parse_args()
@@ -146,12 +155,16 @@ def main():
     manager = PmcPaperManager(args.cache)
     ranked_records = manager.get_ranked_papers(args.gene, name)
     summary = summarize_ranked_records(ranked_records)
-    selected, cumulative = manager.select_relevance_records(
+    selection = manager.select_relevance_records(
         ranked_records,
         target_relevance=args.target_relevance,
         min_score=args.min_score,
         max_rank=args.max_rank,
+        min_papers=args.min_papers,
+        max_papers=args.max_papers,
     )
+    selected = selection.selected_records
+    cumulative = selection.cumulative_relevance
 
     print(f"\n\nGene: {args.gene}")
     print(f"Name: {name}")
@@ -166,7 +179,11 @@ def main():
         print(format_record(record))
 
     print("\nCumulative relevance simulation:")
+    print(f"  selection mode: {selection.selection_mode}")
+    print(f"  eligible papers: {selection.eligible_count}")
     print(f"  target relevance: {args.target_relevance:.3f}")
+    print(f"  min papers: {args.min_papers}")
+    print(f"  max papers: {args.max_papers}")
     print(f"  min score: {args.min_score:.3f}")
     print(f"  max rank: {args.max_rank}")
     print(f"  selected papers: {len(selected)}")
