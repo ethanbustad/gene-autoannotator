@@ -1,16 +1,17 @@
 
+import json
+import logging
+import time
+
+import numpy as np
+import ollama
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import pipeline
-import numpy as np
-import spacy
-import re
-import math
-
-import ollama
-import json
 
 from .metrics import stringify_field_value
+
+log = logging.getLogger(__name__)
 
 """
 qwen2.5:32b-instruct  20. GB  10:47 8/9
@@ -20,12 +21,34 @@ qwen2.5:3b-instruct   1.9 GB  01:21 8/9
 """
 MODEL = "qwen2.5:7b-instruct"
 
-embedder = SentenceTransformer("all-mpnet-base-v2")
+_embedder = None
+_nli = None
+_models_loaded = False
 
-nli = pipeline("text-classification", model="roberta-large-mnli")
+
+def ensure_models_loaded():
+	global _embedder, _nli, _models_loaded
+	if _models_loaded:
+		return
+
+	log.info('Loading comparison ML models (first run can take several minutes)...')
+	start = time.time()
+
+	log.info('Loading SentenceTransformer: all-mpnet-base-v2')
+	_embedder = SentenceTransformer('all-mpnet-base-v2')
+	log.info('SentenceTransformer ready (%.1fs)', time.time() - start)
+
+	nli_start = time.time()
+	log.info('Loading NLI pipeline: roberta-large-mnli')
+	_nli = pipeline('text-classification', model='roberta-large-mnli')
+	log.info('NLI pipeline ready (%.1fs)', time.time() - nli_start)
+
+	_models_loaded = True
+	log.info('All comparison models loaded (total %.1fs)', time.time() - start)
+
 
 def is_exact_match(a, b):
-	return " ".join(str(a).lower().split()) == " ".join(str(b).lower().split())
+	return ' '.join(str(a).lower().split()) == ' '.join(str(b).lower().split())
 
 
 def field_values_equal(trusted_val, generated_val):
@@ -35,7 +58,8 @@ def field_values_equal(trusted_val, generated_val):
 
 
 def _nli_pair(premise, hypothesis):
-	return nli(f"{premise} </s></s> {hypothesis}")[0]
+	ensure_models_loaded()
+	return _nli(f'{premise} </s></s> {hypothesis}')[0]
 
 
 def trusted_coverage_similarity(trusted, generated):
@@ -43,6 +67,7 @@ def trusted_coverage_similarity(trusted, generated):
 	Asymmetric score: does generated cover the facts in trusted (0-1)?
 	Higher when generated is a superset in meaning; not rewarded for extra length alone.
 	"""
+	ensure_models_loaded()
 	trusted_s = stringify_field_value(trusted).strip()
 	generated_s = stringify_field_value(generated).strip()
 
@@ -54,7 +79,6 @@ def trusted_coverage_similarity(trusted, generated):
 	if field_values_equal(trusted, generated):
 		return 1.0
 
-	# Generated (premise) should entail trusted (hypothesis): trusted facts appear in generated.
 	forward = _nli_pair(generated_s, trusted_s)
 	label = forward['label']
 	score = forward['score']
@@ -64,10 +88,9 @@ def trusted_coverage_similarity(trusted, generated):
 	elif label == 'CONTRADICTION':
 		coverage = float(np.clip(1 - score, 0, 1))
 	else:
-		emb = embedder.encode([trusted_s, generated_s])
+		emb = _embedder.encode([trusted_s, generated_s])
 		coverage = float(np.clip(cosine_similarity([emb[0]], [emb[1]])[0][0], 0, 1))
 
-	# Penalize direct contradiction between trusted and generated statements.
 	reverse = _nli_pair(trusted_s, generated_s)
 	if reverse['label'] == 'CONTRADICTION':
 		coverage *= float(np.clip(1 - reverse['score'] * 0.5, 0, 1))
@@ -76,29 +99,28 @@ def trusted_coverage_similarity(trusted, generated):
 
 
 def embedded_similarity(a, b):
-
+	ensure_models_loaded()
 	a = str(a)
 	b = str(b)
 
-	res = nli(f"{a} </s></s> {b}")[0]
+	res = _nli_pair(a, b)
+	label = res['label']
+	score = res['score']
 
-	#print(f"a: {a}\nb: {b}\nres: {res}")
-
-	label = res["label"]
-	score = res["score"]
-
-	emb = embedder.encode([a,b])
+	emb = _embedder.encode([a, b])
 	sem_sim = cosine_similarity([emb[0]], [emb[1]])[0][0]
 
-	if label == "ENTAILMENT":
+	if label == 'ENTAILMENT':
 		return float(np.clip(score, 0, 1))
-	elif label == "CONTRADICTION":
-	  return float(np.clip(1-score,0,1))
+	if label == 'CONTRADICTION':
+		return float(np.clip(1 - score, 0, 1))
 
 	return float(np.clip(sem_sim, 0, 1))
 
 
 def llm_coverage_similarity(trusted, generated):
+	log.info('Ollama coverage score (%s)...', MODEL)
+	start = time.time()
 	prompt = f"""
   You are evaluating whether a GENERATED biological annotation field covers a TRUSTED
   reference field.
@@ -137,11 +159,15 @@ def llm_coverage_similarity(trusted, generated):
 
 	content = response['message']['content']
 	raw = json.loads(content)['score']
-	return float(np.clip(raw, 0, 1))
+	score = float(np.clip(raw, 0, 1))
+	log.info('Ollama coverage score done: %.3f (%.1fs)', score, time.time() - start)
+	return score
 
 
 def llm_similarity(a, b):
-  prompt = f"""
+	log.info('Ollama symmetric agreement score (%s)...', MODEL)
+	start = time.time()
+	prompt = f"""
   You are evaluating factual agreement between two biological statements.
 
   Return ONLY a single float between -1.0 and 1.0.
@@ -172,40 +198,30 @@ def llm_similarity(a, b):
   All key components must match for a high score.
 
   When comparing numerical values:
-  
+
   - Be tolerant of small differences when they likely reflect approximation, measurement noise, or rounding.
   - Be strict when numbers define discrete, categorical, or identity-critical facts.
   - Do NOT be tolerant when small differences change category, count, or meaning.
   - Consider whether the difference changes the real-world implication. If it does, score low.
-  
+
   Statement A: {a}
   Statement B: {b}
   """
 
-  response = ollama.chat(
-  model = MODEL,
-  messages = [{"role": "user", "content": prompt}],
-  format = {
-    "type": "object",
-    "properties": {
-      "score": {"type": "number"}
-    },
-    "required": ["score"]
-  },
-  options = {"temperature": 0},
-  )
+	response = ollama.chat(
+		model=MODEL,
+		messages=[{'role': 'user', 'content': prompt}],
+		format={
+			'type': 'object',
+			'properties': {
+				'score': {'type': 'number'},
+			},
+			'required': ['score'],
+		},
+		options={'temperature': 0},
+	)
 
-  content = response["message"]["content"]
-  return json.loads(content)["score"]
-
-
-
-
-
-
-
-
-
-
-
-
+	content = response['message']['content']
+	score = json.loads(content)['score']
+	log.info('Ollama symmetric score done: %.3f (%.1fs)', score, time.time() - start)
+	return score

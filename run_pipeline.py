@@ -128,9 +128,10 @@ for gene in GENES:
         cumulative_relevance = annotation_result["cumulative_relevance"]
 
         trusted_json = os.path.join("trust_json", f"trust_{gene}.json")
-        
+
         duration = time.time() - start
 
+        print(f"\nComparing {gene}: {trusted_json} vs {generated_json}")
         comparison_result = compare(trusted_json, generated_json)
 
         record_result(gene, comparison_result, duration, len(papers_used), len(total_papers), cumulative_relevance)

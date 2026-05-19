@@ -38,7 +38,9 @@ def main(gene, cache_dir='./.cache'):
         "annotation": parsed,
         "papers_used": used,
         "all_papers": pmc_ids,
-        "output_path": output_path
+        "output_path": output_path,
+        "cumulative_relevance": result.get("cumulative_relevance", 0.0),
+        "selection_mode": result.get("selection_mode"),
     }
 
 if __name__ == '__main__':
