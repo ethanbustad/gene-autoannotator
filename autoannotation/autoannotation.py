@@ -1,9 +1,11 @@
+import json
 import logging
 import time
 
 import pandas as pd
 
 from . import llms
+from . import metadata
 from . import pmc
 from . import utils
 
@@ -43,14 +45,30 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     # speeding up analysis
     #pmc_ids = pmc_ids[:25]
 
-    papers_to_analyze, cumulative_relevance = paper_manager.select_papers_to_analyze(ranked_papers, gene, name, target_relevance=4.0, min_score=0.1)
+    selection = paper_manager.select_relevance_records(
+        ranked_papers,
+        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
+        min_score=pmc.DEFAULT_MIN_SCORE,
+        max_rank=pmc.DEFAULT_MAX_RANK,
+        min_papers=pmc.DEFAULT_MIN_PAPERS,
+        max_papers=pmc.DEFAULT_MAX_PAPERS,
+    )
+    papers_to_analyze = [record.pmc_id for record in selection.selected_records]
+    cumulative_relevance = selection.cumulative_relevance
+
+    if selection.selection_mode == metadata.SELECTION_MODE_LIMITED:
+        log.warning(
+            f'Limited literature for gene {gene}: analyzing all '
+            f'{len(papers_to_analyze)} eligible paper{utils.s_if_plural(papers_to_analyze)} '
+            f'(fewer than minimum {pmc.DEFAULT_MIN_PAPERS})'
+        )
 
     used = []
     relevance_by_pmc_id = {
         record.pmc_id: record
         for record in ranked_papers
     }
-    
+
     for pmc_id in papers_to_analyze:
         sections = []
 
@@ -127,14 +145,29 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
             f'section{utils.s_if_plural(section_distillation_filtered_df)} for gene {gene}'
     )
 
-    if len(section_distillation_filtered_df) > 1:
+    pmids_analyzed = []
+    if len(section_distillation_filtered_df) > 0:
+        pmids_analyzed = [
+            str(pmid) for pmid in section_distillation_filtered_df['PMID'].dropna().unique()
+        ]
+
+    literature_context = metadata.build_literature_context_for_notes(
+        ranked_records=ranked_papers,
+        selected_records=selection.selected_records,
+        selection_mode=selection.selection_mode,
+        eligible_count=selection.eligible_count,
+        cumulative_relevance=cumulative_relevance,
+        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
+        min_papers=pmc.DEFAULT_MIN_PAPERS,
+    )
+
+    if len(section_distillation_filtered_df) >= 1:
         gene_distillation, duration_sec = llm_handler.get_llm_aggregate_json(
             section_distillation_filtered_df['Response'],
             section_distillation_filtered_df['PMID'],
-            model=MODEL_AGGREGATION
+            model=MODEL_AGGREGATION,
+            literature_context=literature_context,
         )
-    elif len(section_distillation_filtered_df) == 1:
-        gene_distillation = section_distillation_filtered_df['Response'].iat[0]
     else:
         gene_distillation = None
 
@@ -143,9 +176,38 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         f'Finished annotation process for gene {gene} in {utils.seconds_to_str(duration)}'
     )
 
+    annotation_metadata = metadata.build_annotation_metadata(
+        gene=gene,
+        gene_name=name,
+        ranked_records=ranked_papers,
+        selected_records=selection.selected_records,
+        analyzed_pmc_ids=used,
+        pmids_analyzed=pmids_analyzed,
+        sections_analyzed=len(section_distillation_filtered_df),
+        selection_mode=selection.selection_mode,
+        eligible_count=selection.eligible_count,
+        cumulative_relevance=cumulative_relevance,
+        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
+        min_papers=pmc.DEFAULT_MIN_PAPERS,
+        max_papers=pmc.DEFAULT_MAX_PAPERS,
+        duration_sec=duration,
+    )
+
+    merged_annotation = None
+    if gene_distillation is not None:
+        field_coverage = metadata.build_field_coverage(json.loads(gene_distillation))
+        merged_annotation = metadata.merge_annotation_output(
+            gene_distillation,
+            annotation_metadata,
+            field_coverage=field_coverage,
+        )
+
     return {
         "gene_distillation": gene_distillation,
+        "gene_annotation": merged_annotation,
         "pmc_ids": pmc_ids,
         "used_ids": used,
-        "cumulative_relevance": cumulative_relevance
+        "cumulative_relevance": cumulative_relevance,
+        "selection_mode": selection.selection_mode,
+        "annotation_metadata": annotation_metadata,
     }

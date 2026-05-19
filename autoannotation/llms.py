@@ -86,6 +86,22 @@ json_schema_default = {
     'additionalProperties': False,
 }
 
+json_schema_aggregate = {
+    **json_schema_default,
+    'properties': {
+        **json_schema_default['properties'],
+        'annotation_notes': {
+            'type': 'string',
+            'description': (
+                'Transparency notes for curators: how many papers were analyzed, whether '
+                'the literature base was strong or weak, limitations, missing evidence, '
+                'conflicts, and caveats. Do not repeat the full annotation fields here.'
+            ),
+        },
+    },
+    'required': json_schema_default['required'] + ['annotation_notes'],
+}
+
 prompt1_tmpl = '''
 Using only the supplied information, return a JSON object describing the Mycobacterium
 tuberculosis gene {0} (named {1}) with the following fields:
@@ -129,6 +145,10 @@ as possible while still including all relevant details.
 Cite sources as much as possible using the PMID provided with each object, with a format like
 "interesting detail (PMID 00000)".
 
+Fill annotation_notes using the literature-selection context below when provided. Summarize how
+many papers were analyzed, whether the literature was abundant and high relevance or sparse and
+weaker, important limitations, missing evidence, and confidence caveats. Do not invent paper counts.
+
 Supplied objects:'''
 
 class LlmHandler:
@@ -152,10 +172,12 @@ class LlmHandler:
         self.cache_dir = cache_dir
 
     def get_llm_aggregate_json(
-        self, json_responses, pmids, model='gemma3:12b', json_schema=json_schema_default,
-        retry=True,
+        self, json_responses, pmids, model='gemma3:12b',
+        json_schema=json_schema_aggregate, retry=True, literature_context=None,
     ):
         prompt = prompt3_prefix
+        if literature_context:
+            prompt += f'\n\n{literature_context}\n'
         for pmid, json_response in zip(pmids, json_responses):
             prompt += f'\n\nPMID {pmid}: ' + json_response
 
@@ -193,8 +215,9 @@ class LlmHandler:
             self._write_cache(model, prompt, json_schema, response_text, duration_sec)
         except KeyError as ke:
             if retry:
-                return get_llm_aggregate_json(
-                    json_responses, pmids, model=model, json_schema=json_schema, retry=False,
+                return self.get_llm_aggregate_json(
+                    json_responses, pmids, model=model, json_schema=json_schema,
+                    retry=False, literature_context=literature_context,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke

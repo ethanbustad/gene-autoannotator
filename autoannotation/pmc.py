@@ -8,6 +8,7 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 
 from . import http_
+from . import metadata
 from . import papers
 from . import utils
 
@@ -25,6 +26,21 @@ search_term_name_tmpl = (
 )
 
 fetch_url_tmpl = base_url + 'efetch.fcgi?db=pmc&id={id}'
+
+DEFAULT_TARGET_RELEVANCE = 9.0
+DEFAULT_MIN_PAPERS = 5
+DEFAULT_MAX_PAPERS = 20
+DEFAULT_MIN_SCORE = 0.1
+DEFAULT_MAX_RANK = 20
+
+@dataclass
+class PaperSelectionResult:
+    selected_records: list
+    cumulative_relevance: float
+    selection_mode: str
+    eligible_count: int
+    total_retrieved: int
+
 
 @dataclass
 class RelevanceRecord:
@@ -311,7 +327,12 @@ class PmcPaperManager(papers.PaperManager):
         return sorted(records, key=lambda record: record.score, reverse=True)
 
     def select_papers_to_analyze(
-        self, all_ids, gene, name, target_relevance=4.0, min_score=0.1, max_rank=20
+        self, all_ids, gene, name,
+        target_relevance=DEFAULT_TARGET_RELEVANCE,
+        min_score=DEFAULT_MIN_SCORE,
+        max_rank=DEFAULT_MAX_RANK,
+        min_papers=DEFAULT_MIN_PAPERS,
+        max_papers=DEFAULT_MAX_PAPERS,
     ):
         if all(isinstance(record, RelevanceRecord) for record in all_ids):
             records = list(all_ids)
@@ -327,44 +348,76 @@ class PmcPaperManager(papers.PaperManager):
             ]
             records = sorted(records, key=lambda record: record.score, reverse=True)
 
-        selected_records, running_relevance = self.select_relevance_records(
+        selection = self.select_relevance_records(
             records,
             target_relevance=target_relevance,
             min_score=min_score,
             max_rank=max_rank,
+            min_papers=min_papers,
+            max_papers=max_papers,
         )
-        return [record.pmc_id for record in selected_records], running_relevance
+        return (
+            [record.pmc_id for record in selection.selected_records],
+            selection.cumulative_relevance,
+        )
 
     def select_relevance_records(
-        self, records, target_relevance=4.0, min_score=0.1, max_rank=20,
+        self, records,
+        target_relevance=DEFAULT_TARGET_RELEVANCE,
+        min_score=DEFAULT_MIN_SCORE,
+        max_rank=DEFAULT_MAX_RANK,
+        min_papers=DEFAULT_MIN_PAPERS,
+        max_papers=DEFAULT_MAX_PAPERS,
         excluded_warnings=None,
     ):
         excluded_warnings = set(excluded_warnings or {'excluded_species'})
+        eligible_records = metadata.filter_eligible_records(
+            records, min_score=min_score, excluded_warnings=excluded_warnings,
+        )
+        total_retrieved = len(records)
+
+        if len(eligible_records) <= min_papers:
+            selected_records = eligible_records[:max_papers]
+            return PaperSelectionResult(
+                selected_records=selected_records,
+                cumulative_relevance=metadata.compute_cumulative_relevance(selected_records),
+                selection_mode=metadata.SELECTION_MODE_LIMITED,
+                eligible_count=len(eligible_records),
+                total_retrieved=total_retrieved,
+            )
+
         selected_records = []
         running_relevance = 0.0
         selected_rank = 0
+        eligible_ids = {record.pmc_id for record in eligible_records}
 
         for rank, record in enumerate(records, start=1):
             if rank > max_rank:
                 break
 
-            score = record.score
-
-            if score < min_score:
-                continue
-
-            if excluded_warnings.intersection(record.warnings):
+            if record.pmc_id not in eligible_ids:
                 continue
 
             selected_rank += 1
-            running_relevance += 2 * score / math.log2(selected_rank+1)
-
+            running_relevance += 2 * record.score / math.log2(selected_rank + 1)
             selected_records.append(record)
 
-            if running_relevance >= target_relevance:
+            if len(selected_records) >= max_papers:
                 break
 
-        return selected_records, running_relevance
+            if (
+                running_relevance >= target_relevance
+                and len(selected_records) >= min_papers
+            ):
+                break
+
+        return PaperSelectionResult(
+            selected_records=selected_records,
+            cumulative_relevance=running_relevance,
+            selection_mode=metadata.SELECTION_MODE_BUDGET,
+            eligible_count=len(eligible_records),
+            total_retrieved=total_retrieved,
+        )
 
     def _get_title(self, pmc_id):
         try:

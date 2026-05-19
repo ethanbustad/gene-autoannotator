@@ -136,12 +136,12 @@ def test_select_papers_to_analyze_uses_ranked_records_and_cumulative_budget():
     )
 
     selected, cumulative = manager.select_papers_to_analyze(
-        ["3", "2", "1"], "Rv0001", "dnaA", target_relevance=1.0, min_score=0.1
+        ["3", "2", "1"], "Rv0001", "dnaA",
+        target_relevance=10.0, min_score=0.1, min_papers=3,
     )
 
-    assert selected[0] == "1"
-    assert cumulative >= 1.0
-    assert len(selected) < 3
+    assert selected == ["1", "2", "3"]
+    assert cumulative > 0
 
 
 def test_select_papers_to_analyze_accepts_precomputed_ranked_records():
@@ -174,7 +174,8 @@ def test_select_papers_to_analyze_accepts_precomputed_ranked_records():
     ]
 
     selected, cumulative = manager.select_papers_to_analyze(
-        ranked_records, "Rv0001", "dnaA", target_relevance=1.0, min_score=0.1
+        ranked_records, "Rv0001", "dnaA",
+        target_relevance=1.0, min_score=0.1, min_papers=1,
     )
 
     assert selected == ["1"]
@@ -218,6 +219,64 @@ def test_selection_skips_excluded_species_records():
     assert cumulative >= 1.0
 
 
+def test_limited_literature_selects_all_eligible_when_below_min_papers():
+    manager = FakePmcPaperManager({})
+    ranked_records = [
+        RelevanceRecord(
+            pmc_id=str(index),
+            pmid=None,
+            score=0.9,
+            retrieval_sources=["locus"],
+            title="",
+            year=None,
+            section_hits={},
+            evidence_flags={},
+            score_components={},
+            warnings=[],
+        )
+        for index in range(1, 4)
+    ]
+
+    selection = manager.select_relevance_records(
+        ranked_records, min_papers=5, target_relevance=9.0,
+    )
+
+    assert selection.selection_mode == "all_eligible_limited_literature"
+    assert len(selection.selected_records) == 3
+    assert selection.eligible_count == 3
+
+
+def test_selection_continues_until_min_papers_even_after_target_met():
+    manager = FakePmcPaperManager({})
+    ranked_records = [
+        RelevanceRecord(
+            pmc_id=str(index),
+            pmid=None,
+            score=1.0,
+            retrieval_sources=["locus"],
+            title="",
+            year=None,
+            section_hits={},
+            evidence_flags={},
+            score_components={},
+            warnings=[],
+        )
+        for index in range(1, 8)
+    ]
+
+    selection = manager.select_relevance_records(
+        ranked_records,
+        target_relevance=4.0,
+        min_papers=5,
+        min_score=0.1,
+    )
+
+    assert len(selection.selected_records) == 5
+    assert selection.cumulative_relevance >= 4.0
+    assert selection.selected_records[0].pmc_id == "1"
+    assert selection.selected_records[4].pmc_id == "5"
+
+
 def test_selection_respects_configurable_max_rank_boundary():
     manager = FakePmcPaperManager({})
     ranked_records = [
@@ -236,10 +295,10 @@ def test_selection_respects_configurable_max_rank_boundary():
         for index in range(1, 22)
     ]
 
-    selected_records, cumulative = manager.select_relevance_records(
+    selection = manager.select_relevance_records(
         ranked_records, target_relevance=10.0, min_score=0.1, max_rank=20
     )
 
-    assert len(selected_records) == 20
-    assert selected_records[-1].pmc_id == "20"
-    assert cumulative > 0
+    assert len(selection.selected_records) == 20
+    assert selection.selected_records[-1].pmc_id == "20"
+    assert selection.cumulative_relevance > 0
