@@ -3,3 +3,4 @@ __pycache__/**
 **/*.pyc
 
 creds/
+data/go-basic.obo

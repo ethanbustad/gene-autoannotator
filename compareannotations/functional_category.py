@@ -1,12 +1,14 @@
 """Graph-aware scoring for functional category annotations.
 
-This is intentionally small and curated: it bridges the project's current
-free-text category labels to representative GO terms, then scores by graph
-relationship instead of sentence similarity.
+When a real go-basic.obo file is available, labels and synonyms are resolved
+against official GO terms. The curated aliases remain as bridges for existing
+project labels like "information pathways" that are useful but not GO names.
 """
 
+import os
 import re
 from collections import deque
+from dataclasses import dataclass
 
 
 SAME_TERM_SCORE = 1.0
@@ -16,8 +18,15 @@ CLOSE_SIBLING_SCORE = 0.4
 
 UNINFORMATIVE_SHARED_ANCESTORS = frozenset({
 	'GO:0008150',  # biological_process
+	'GO:0003674',  # molecular_function
+	'GO:0005575',  # cellular_component
 	'GO:0009987',  # cellular process
 })
+
+GO_BASIC_OBO_ENV_VAR = 'GO_BASIC_OBO_PATH'
+DEFAULT_GO_BASIC_OBO_PATH = os.path.join('data', 'go-basic.obo')
+
+_default_ontology = None
 
 CATEGORY_ALIASES = {
 	'information pathways': {'GO:0006259', 'GO:0006351', 'GO:0006412'},
@@ -106,10 +115,19 @@ GO_PARENTS = {
 }
 
 
-def functional_category_similarity(trusted_value, generated_value):
+@dataclass(frozen=True)
+class GoOntology:
+	parents: dict
+	label_index: dict
+
+
+def functional_category_similarity(trusted_value, generated_value, ontology=None):
 	"""Return graph similarity for mapped categories, or None when fallback is needed."""
-	trusted_groups = _mapped_category_groups(trusted_value)
-	generated_groups = _mapped_category_groups(generated_value)
+	if ontology is None:
+		ontology = get_default_ontology()
+
+	trusted_groups = _mapped_category_groups(trusted_value, ontology)
+	generated_groups = _mapped_category_groups(generated_value, ontology)
 
 	if not trusted_groups or not generated_groups:
 		return None
@@ -117,7 +135,7 @@ def functional_category_similarity(trusted_value, generated_value):
 	scores = []
 	for trusted_nodes in trusted_groups:
 		best = max(
-			_score_node_groups(trusted_nodes, generated_nodes)
+			_score_node_groups(trusted_nodes, generated_nodes, ontology)
 			for generated_nodes in generated_groups
 		)
 		scores.append(best)
@@ -125,13 +143,117 @@ def functional_category_similarity(trusted_value, generated_value):
 	return round(sum(scores) / len(scores), 3)
 
 
-def _mapped_category_groups(value):
+def get_default_ontology():
+	global _default_ontology
+	if _default_ontology is not None:
+		return _default_ontology
+
+	path = os.environ.get(GO_BASIC_OBO_ENV_VAR, DEFAULT_GO_BASIC_OBO_PATH)
+	_default_ontology = load_go_ontology(path)
+	return _default_ontology
+
+
+def load_go_ontology(path):
+	if not path or not os.path.exists(path):
+		return GoOntology(parents={}, label_index={})
+	with open(path) as obo_file:
+		return parse_go_obo(obo_file)
+
+
+def parse_go_obo(lines):
+	parents = {}
+	label_index = {}
+	term = None
+
+	for raw_line in lines:
+		line = raw_line.strip()
+		if line == '[Term]':
+			_add_term_to_ontology(term, parents, label_index)
+			term = _new_term()
+			continue
+		if line.startswith('['):
+			_add_term_to_ontology(term, parents, label_index)
+			term = None
+			continue
+		if term is None or not line:
+			continue
+		_apply_obo_line(term, line)
+
+	_add_term_to_ontology(term, parents, label_index)
+	return GoOntology(parents=parents, label_index=label_index)
+
+
+def _new_term():
+	return {
+		'id': None,
+		'name': None,
+		'synonyms': [],
+		'parents': set(),
+		'alt_ids': [],
+		'is_obsolete': False,
+	}
+
+
+def _apply_obo_line(term, line):
+	if line.startswith('id: '):
+		term['id'] = line.removeprefix('id: ').strip()
+	elif line.startswith('name: '):
+		term['name'] = line.removeprefix('name: ').strip()
+	elif line.startswith('alt_id: '):
+		term['alt_ids'].append(line.removeprefix('alt_id: ').strip())
+	elif line.startswith('is_a: '):
+		term['parents'].add(line.removeprefix('is_a: ').split()[0])
+	elif line.startswith('relationship: part_of '):
+		term['parents'].add(line.removeprefix('relationship: part_of ').split()[0])
+	elif line == 'is_obsolete: true':
+		term['is_obsolete'] = True
+	elif line.startswith('synonym: '):
+		match = re.search(r'"([^"]+)"', line)
+		if match:
+			term['synonyms'].append(match.group(1))
+
+
+def _add_term_to_ontology(term, parents, label_index):
+	if not term or not term['id'] or term['is_obsolete']:
+		return
+
+	term_id = term['id']
+	parents[term_id] = set(term['parents'])
+
+	for label in [term['name'], *term['synonyms']]:
+		if not label:
+			continue
+		_add_label_mapping(label_index, label, term_id)
+
+	for alt_id in term['alt_ids']:
+		_add_label_mapping(label_index, alt_id, term_id)
+
+
+def _add_label_mapping(label_index, label, term_id):
+	label_index.setdefault(_normalize_category(label), set()).add(term_id)
+
+
+def _mapped_category_groups(value, ontology):
 	groups = []
 	for category in _iter_category_values(value):
-		nodes = CATEGORY_ALIASES.get(_normalize_category(category))
+		nodes = _map_category(category, ontology)
 		if nodes:
 			groups.append(nodes)
 	return groups
+
+
+def _map_category(category, ontology):
+	go_id_match = re.search(r'GO:\d{7}', category.strip(), flags=re.IGNORECASE)
+	if go_id_match:
+		go_id = go_id_match.group(0).upper()
+		if go_id in ontology.parents or go_id in GO_PARENTS:
+			return {go_id}
+
+	normalized = _normalize_category(category)
+	return (
+		CATEGORY_ALIASES.get(normalized)
+		or ontology.label_index.get(normalized)
+	)
 
 
 def _iter_category_values(value):
@@ -156,25 +278,25 @@ def _normalize_category(category):
 	return ' '.join(category.split())
 
 
-def _score_node_groups(trusted_nodes, generated_nodes):
+def _score_node_groups(trusted_nodes, generated_nodes, ontology):
 	return max(
-		_score_nodes(trusted_node, generated_node)
+		_score_nodes(trusted_node, generated_node, ontology)
 		for trusted_node in trusted_nodes
 		for generated_node in generated_nodes
 	)
 
 
-def _score_nodes(trusted_node, generated_node):
+def _score_nodes(trusted_node, generated_node, ontology):
 	if trusted_node == generated_node:
 		return SAME_TERM_SCORE
 
-	generated_ancestors = _ancestor_distances(generated_node)
+	generated_ancestors = _ancestor_distances(generated_node, ontology)
 	if trusted_node in generated_ancestors:
 		if trusted_node in UNINFORMATIVE_SHARED_ANCESTORS:
 			return 0.0
 		return GENERATED_DESCENDANT_SCORE
 
-	trusted_ancestors = _ancestor_distances(trusted_node)
+	trusted_ancestors = _ancestor_distances(trusted_node, ontology)
 	if generated_node in trusted_ancestors:
 		if generated_node in UNINFORMATIVE_SHARED_ANCESTORS:
 			return 0.0
@@ -191,16 +313,20 @@ def _score_nodes(trusted_node, generated_node):
 	return 0.0
 
 
-def _ancestor_distances(node):
+def _ancestor_distances(node, ontology):
 	distances = {node: 0}
 	queue = deque([node])
 
 	while queue:
 		current = queue.popleft()
-		for parent in GO_PARENTS.get(current, set()):
+		for parent in _parents_for_node(current, ontology):
 			if parent in distances:
 				continue
 			distances[parent] = distances[current] + 1
 			queue.append(parent)
 
 	return distances
+
+
+def _parents_for_node(node, ontology):
+	return set(ontology.parents.get(node, set())) | set(GO_PARENTS.get(node, set()))
