@@ -166,7 +166,7 @@ def main():
     selected = selection.selected_records
     cumulative = selection.cumulative_relevance
 
-    print(f"Gene: {args.gene}")
+    print(f"\n\nGene: {args.gene}")
     print(f"Name: {name}")
     print_summary(summary)
 
