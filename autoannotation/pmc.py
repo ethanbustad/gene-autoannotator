@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import math
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 import xml.etree.ElementTree as ET
@@ -32,6 +33,8 @@ DEFAULT_MIN_PAPERS = 5
 DEFAULT_MAX_PAPERS = 20
 DEFAULT_MIN_SCORE = 0.1
 DEFAULT_MAX_RANK = 20
+PMC_SEARCH_MAX_ATTEMPTS = 3
+PMC_SEARCH_RETRY_BACKOFF_SECONDS = 1.0
 
 
 @dataclass(frozen=True)
@@ -93,6 +96,8 @@ class PmcPaperManager(papers.PaperManager):
     species_incl_patterns = organism_profile.target_patterns
     species_excl_patterns = organism_profile.excluded_species_patterns
     off_target_species_patterns = organism_profile.off_target_patterns
+    search_max_attempts = PMC_SEARCH_MAX_ATTEMPTS
+    search_retry_backoff_seconds = PMC_SEARCH_RETRY_BACKOFF_SECONDS
 
     def __init__(self, cache_dir):
         super().__init__(cache_dir)
@@ -157,9 +162,7 @@ class PmcPaperManager(papers.PaperManager):
         search_url1 = search_url_tmpl.format(term=search_term_locus)
 
         log.debug(f'Searching PubMed Central by gene locus {gene}')
-        response1 = self.throttler.get(search_url1, base_url)
-        result1 = json.loads(response1.text)
-        idlist1 = result1['esearchresult']['idlist']
+        idlist1 = self._search_pmc_ids(search_url1, f'{gene} locus query')
         log.debug(
             f'Found {len(idlist1)} paper{utils.s_if_plural(idlist1)} by locus for gene {gene}'
         )
@@ -173,9 +176,7 @@ class PmcPaperManager(papers.PaperManager):
         search_term_name = search_term_name_tmpl.format(name=name)
         search_url2 = search_url_tmpl.format(term=search_term_name)
 
-        response2 = self.throttler.get(search_url2, base_url)
-        result2 = json.loads(response2.text)
-        idlist2 = result2['esearchresult']['idlist']
+        idlist2 = self._search_pmc_ids(search_url2, f'{gene} name query ({name})')
         log.debug(f'Found {len(idlist2)} papers by name ({name}) for gene {gene}')
 
         combined = {}
@@ -195,6 +196,45 @@ class PmcPaperManager(papers.PaperManager):
             )
 
         return combined
+
+    def _search_pmc_ids(self, search_url, query_label):
+        last_error = None
+        for attempt in range(1, self.search_max_attempts + 1):
+            try:
+                response = self.throttler.get(search_url, base_url)
+                result = json.loads(response.text)
+                return self._extract_esearch_idlist(result, query_label)
+            except (json.JSONDecodeError, RuntimeError) as exc:
+                last_error = exc
+                if attempt == self.search_max_attempts:
+                    break
+                log.warning(
+                    f'PMC search failed for {query_label} on attempt {attempt}/'
+                    f'{self.search_max_attempts}: {exc}; retrying'
+                )
+                self._sleep_before_pmc_search_retry(attempt)
+
+        message = (
+            f'PMC search failed for {query_label} after {self.search_max_attempts} '
+            f'attempts: {last_error}'
+        )
+        raise RuntimeError(message) from last_error
+
+    def _extract_esearch_idlist(self, result, query_label):
+        esearch_result = result.get('esearchresult') if isinstance(result, dict) else None
+        if not isinstance(esearch_result, dict):
+            raise RuntimeError(f'NCBI ESearch returned malformed response for {query_label}')
+        if 'idlist' in esearch_result:
+            idlist = esearch_result['idlist']
+            if not isinstance(idlist, list):
+                raise RuntimeError(f'NCBI ESearch returned non-list idlist for {query_label}')
+            return idlist
+        if 'ERROR' in esearch_result:
+            raise RuntimeError(f"NCBI ESearch error for {query_label}: {esearch_result['ERROR']}")
+        raise RuntimeError(f'NCBI ESearch response missing idlist for {query_label}')
+
+    def _sleep_before_pmc_search_retry(self, attempt):
+        time.sleep(self.search_retry_backoff_seconds * attempt)
 
     def get_pmc_ids(self, gene, name):
         return list(self.get_pmc_id_sources(gene, name).keys())

@@ -1,6 +1,21 @@
 from autoannotation.pmc import PmcPaperManager, RelevanceRecord
 
 
+class FakeResponse:
+    def __init__(self, text):
+        self.text = text
+
+
+class FakeThrottler:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.urls = []
+
+    def get(self, url, base_url):
+        self.urls.append(url)
+        return FakeResponse(self.responses.pop(0))
+
+
 class FakePmcPaperManager(PmcPaperManager):
     def __init__(self, papers, sources=None):
         self.papers = papers
@@ -26,6 +41,43 @@ class FakePmcPaperManager(PmcPaperManager):
 
     def _get_publication_year(self, pmc_id):
         return self.papers[pmc_id].get("year")
+
+
+class FakeSearchPmcPaperManager(PmcPaperManager):
+    search_retry_backoff_seconds = 0
+
+    def __init__(self, responses):
+        self.throttler = FakeThrottler(responses)
+
+
+def test_get_pmc_id_sources_retries_transient_esearch_error():
+    manager = FakeSearchPmcPaperManager([
+        '{"esearchresult": {"ERROR": "Search Backend failed: HTTP request returned 503 status."}}',
+        '{"esearchresult": {"idlist": ["123"]}}',
+    ])
+
+    sources = manager.get_pmc_id_sources("Rv0003", "Rv0003")
+
+    assert sources == {"123": {"locus"}}
+    assert len(manager.throttler.urls) == 2
+
+
+def test_get_pmc_id_sources_raises_clear_error_when_esearch_never_recovers():
+    manager = FakeSearchPmcPaperManager([
+        '{"esearchresult": {"ERROR": "Search Backend failed: HTTP request returned 503 status."}}',
+        '{"esearchresult": {"ERROR": "Search Backend failed: HTTP request returned 503 status."}}',
+        '{"esearchresult": {"ERROR": "Search Backend failed: HTTP request returned 503 status."}}',
+    ])
+
+    try:
+        manager.get_pmc_id_sources("Rv0003", "Rv0003")
+    except RuntimeError as exc:
+        message = str(exc)
+    else:
+        assert False, "Expected a clear RuntimeError for repeated PMC search failures"
+
+    assert "PMC search failed for Rv0003 locus query" in message
+    assert "503" in message
 
 
 def test_locus_title_hit_scores_above_name_only_abstract_hit():
