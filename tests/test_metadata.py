@@ -31,6 +31,18 @@ def test_filter_eligible_records_excludes_low_score_and_excluded_species():
     assert [record.pmc_id for record in eligible] == ["1"]
 
 
+def test_filter_eligible_records_excludes_target_organism_warnings():
+    records = [
+        make_record("1", 0.8),
+        make_record("2", 0.8, warnings=["missing_target_organism"]),
+        make_record("3", 0.8, warnings=["off_target_organism_dominant"]),
+    ]
+
+    eligible = metadata.filter_eligible_records(records)
+
+    assert [record.pmc_id for record in eligible] == ["1"]
+
+
 def test_merge_annotation_output_adds_metadata_and_preserves_notes():
     gene_json = json.dumps({
         "rv_id": "Rv0001",

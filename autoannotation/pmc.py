@@ -33,6 +33,32 @@ DEFAULT_MAX_PAPERS = 20
 DEFAULT_MIN_SCORE = 0.1
 DEFAULT_MAX_RANK = 20
 
+
+@dataclass(frozen=True)
+class OrganismProfile:
+    canonical_name: str
+    target_patterns: tuple[str, ...]
+    off_target_patterns: tuple[str, ...] = ()
+    excluded_species_patterns: tuple[str, ...] = ()
+
+
+MTB_TARGET_ORGANISM_PATTERNS = (
+    r'Mycobacterium\stuberculosis', r'M.\stuberculosis', r'M.\stb', 'MTB', 'Mtb', 'MTb', 'mTB'
+)
+MTB_EXCLUDED_SPECIES_PATTERNS = (
+    r'Mycobacterium\ssmegmatis', r'M.\ssmegmatis', r'M.\ssmeg'
+)
+COMMON_OFF_TARGET_ORGANISM_PATTERNS = (
+    r'\bEscherichia\s+coli\b', r'\bE\.?\s*coli\b',
+)
+DEFAULT_ORGANISM_PROFILE = OrganismProfile(
+    canonical_name='Mycobacterium tuberculosis',
+    target_patterns=MTB_TARGET_ORGANISM_PATTERNS,
+    off_target_patterns=COMMON_OFF_TARGET_ORGANISM_PATTERNS + MTB_EXCLUDED_SPECIES_PATTERNS,
+    excluded_species_patterns=MTB_EXCLUDED_SPECIES_PATTERNS,
+)
+
+
 @dataclass
 class PaperSelectionResult:
     selected_records: list
@@ -63,12 +89,10 @@ class PmcPaperManager(papers.PaperManager):
     path_fulltxt = 'fulltxt'
     path_mapping = 'mapping'
     path_parsed = 'parsed'
-    species_incl_patterns = (
-        r'Mycobacterium\stuberculosis', r'M.\stuberculosis', r'M.\stb', 'MTB', 'Mtb', 'MTb', 'mTB'
-    )
-    species_excl_patterns = (
-        r'Mycobacterium\ssmegmatis', r'M.\ssmegmatis', r'M.\ssmeg'
-    )
+    organism_profile = DEFAULT_ORGANISM_PROFILE
+    species_incl_patterns = organism_profile.target_patterns
+    species_excl_patterns = organism_profile.excluded_species_patterns
+    off_target_species_patterns = organism_profile.off_target_patterns
 
     def __init__(self, cache_dir):
         super().__init__(cache_dir)
@@ -232,7 +256,11 @@ class PmcPaperManager(papers.PaperManager):
             label: {
                 'locus': text.lower().count(gene_lower),
                 'name': 0 if name_lower == gene_lower else text.lower().count(name_lower),
+                'target_organism': self._count_patterns(text, self.species_incl_patterns),
                 'organism': self._count_patterns(text, self.species_incl_patterns),
+                'off_target_organism': self._count_patterns(
+                    text, self.off_target_species_patterns,
+                ),
                 'excluded_species': self._count_patterns(text, self.species_excl_patterns),
             }
             for label, text in sections.items()
@@ -240,7 +268,14 @@ class PmcPaperManager(papers.PaperManager):
 
         has_locus_hit = any(hits['locus'] > 0 for hits in section_hits.values())
         has_name_hit = any(hits['name'] > 0 for hits in section_hits.values())
-        has_organism_hit = any(hits['organism'] > 0 for hits in section_hits.values())
+        target_organism_hits = sum(
+            hits['target_organism'] for hits in section_hits.values()
+        )
+        off_target_organism_hits = sum(
+            hits['off_target_organism'] for hits in section_hits.values()
+        )
+        has_organism_hit = target_organism_hits > 0
+        has_off_target_organism_hit = off_target_organism_hits > 0
         has_excluded_species_hit = any(
             hits['excluded_species'] > 0 for hits in section_hits.values()
         )
@@ -250,6 +285,20 @@ class PmcPaperManager(papers.PaperManager):
         has_discussion_hit = (
             section_hits['discussion']['locus'] + section_hits['discussion']['name']
         ) > 0
+        has_strong_target_gene_evidence = any(
+            hits['target_organism'] > 0 and (hits['locus'] > 0 or hits['name'] > 0)
+            for hits in section_hits.values()
+        )
+        is_off_target_organism_dominant = (
+            has_off_target_organism_hit
+            and (
+                not has_organism_hit
+                or (
+                    off_target_organism_hits > target_organism_hits
+                    and not has_strong_target_gene_evidence
+                )
+            )
+        )
 
         score_components = {
             'retrieval_locus': 0.18 if 'locus' in retrieval_sources else 0.0,
@@ -280,6 +329,7 @@ class PmcPaperManager(papers.PaperManager):
             'name_only_penalty': -0.12 if (
                 has_name_hit and not has_locus_hit and 'locus' not in retrieval_sources
             ) else 0.0,
+            'off_target_organism_penalty': -0.20 if is_off_target_organism_dominant else 0.0,
             'excluded_species_penalty': -0.25 if has_excluded_species_hit else 0.0,
         }
 
@@ -291,7 +341,10 @@ class PmcPaperManager(papers.PaperManager):
         if has_name_hit and not has_locus_hit:
             warnings.append('name_only_match')
         if not has_organism_hit:
+            warnings.append('missing_target_organism')
             warnings.append('missing_organism')
+        if is_off_target_organism_dominant:
+            warnings.append('off_target_organism_dominant')
 
         score = max(0.0, min(sum(score_components.values()), 1.0))
         return RelevanceRecord(
@@ -306,7 +359,11 @@ class PmcPaperManager(papers.PaperManager):
                 'has_locus_hit': has_locus_hit,
                 'has_name_hit': has_name_hit,
                 'has_organism_hit': has_organism_hit,
+                'has_target_organism_hit': has_organism_hit,
+                'has_off_target_organism_hit': has_off_target_organism_hit,
                 'has_excluded_species_hit': has_excluded_species_hit,
+                'has_strong_target_gene_evidence': has_strong_target_gene_evidence,
+                'is_off_target_organism_dominant': is_off_target_organism_dominant,
                 'has_results_hit': has_results_hit,
                 'has_discussion_hit': has_discussion_hit,
             },
@@ -370,7 +427,7 @@ class PmcPaperManager(papers.PaperManager):
         max_papers=DEFAULT_MAX_PAPERS,
         excluded_warnings=None,
     ):
-        excluded_warnings = set(excluded_warnings or {'excluded_species'})
+        excluded_warnings = set(excluded_warnings or metadata.DEFAULT_EXCLUDED_WARNINGS)
         eligible_records = metadata.filter_eligible_records(
             records, min_score=min_score, excluded_warnings=excluded_warnings,
         )

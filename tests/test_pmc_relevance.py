@@ -70,6 +70,50 @@ def test_excluded_species_penalty_adds_warning():
     assert "excluded_species" in record.warnings
 
 
+def test_e_coli_only_gene_match_is_flagged_as_off_target():
+    manager = FakePmcPaperManager(
+        {
+            "1": {
+                "title": "dnaA replication initiation in Escherichia coli",
+                "abstract": "The dnaA protein controls chromosome replication in E. coli.",
+            }
+        }
+    )
+
+    record = manager.score_paper_relevance("1", "Rv0001", "dnaA", {"name"})
+
+    assert record.evidence_flags["has_target_organism_hit"] is False
+    assert record.evidence_flags["has_off_target_organism_hit"] is True
+    assert record.evidence_flags["is_off_target_organism_dominant"] is True
+    assert "missing_target_organism" in record.warnings
+    assert "off_target_organism_dominant" in record.warnings
+
+
+def test_comparative_e_coli_expression_with_target_gene_evidence_remains_eligible():
+    manager = FakePmcPaperManager(
+        {
+            "1": {
+                "title": "Rv0001 dnaA from Mycobacterium tuberculosis",
+                "abstract": (
+                    "The Mycobacterium tuberculosis Rv0001 dnaA protein was expressed in "
+                    "Escherichia coli for biochemical characterization."
+                ),
+            }
+        }
+    )
+
+    record = manager.score_paper_relevance("1", "Rv0001", "dnaA", {"locus", "name"})
+    selection = manager.select_relevance_records(
+        [record], min_score=0.1, min_papers=1,
+    )
+
+    assert record.evidence_flags["has_target_organism_hit"] is True
+    assert record.evidence_flags["has_off_target_organism_hit"] is True
+    assert record.evidence_flags["has_strong_target_gene_evidence"] is True
+    assert "off_target_organism_dominant" not in record.warnings
+    assert selection.selected_records == [record]
+
+
 def test_section_hits_use_section_text_not_abstract_text():
     manager = FakePmcPaperManager(
         {

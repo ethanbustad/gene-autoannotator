@@ -5,10 +5,15 @@ SELECTION_MODE_BUDGET = 'cumulative_relevance_budget'
 
 METADATA_FIELDS = ('annotation_metadata', 'annotation_notes')
 COMPARISON_IGNORE_FIELDS = frozenset(METADATA_FIELDS)
+DEFAULT_EXCLUDED_WARNINGS = frozenset({
+    'excluded_species',
+    'missing_target_organism',
+    'off_target_organism_dominant',
+})
 
 
 def filter_eligible_records(records, min_score=0.1, excluded_warnings=None):
-    excluded_warnings = set(excluded_warnings or {'excluded_species'})
+    excluded_warnings = set(excluded_warnings or DEFAULT_EXCLUDED_WARNINGS)
     eligible = []
     for record in records:
         if record.score < min_score:
