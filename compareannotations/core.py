@@ -5,6 +5,7 @@ import time
 
 from autoannotation.metadata import COMPARISON_IGNORE_FIELDS
 
+from .functional_category import functional_category_similarity
 from .metrics import (
 	combine_similarity_scores,
 	is_unknown,
@@ -13,7 +14,6 @@ from .metrics import (
 )
 from .scoring import (
 	embedded_similarity,
-	ensure_models_loaded,
 	field_values_equal,
 	llm_coverage_similarity,
 	llm_similarity,
@@ -39,8 +39,6 @@ def compare(trusted, generated):
 	start = time.time()
 	log.info('Starting annotation comparison (%d trusted keys, %d generated keys)',
 		len(trusted), len(generated))
-
-	ensure_models_loaded()
 
 	field_scores = {}
 	ignored = []
@@ -185,6 +183,19 @@ def score_field(key, trusted, generated):
 		log.warning('Field %s: generated value is unknown/empty', key)
 		scores['missing'] = True
 		return scores
+
+	if key == 'functional_category':
+		category_score = functional_category_similarity(trusted_val, generated_val)
+		if category_score is not None:
+			log.info('Field %s: graph category score %.3f', key, category_score)
+			scores.update({
+				'exact': 1 if category_score == 1.0 else 0,
+				'coverage': category_score,
+				'embedding': category_score,
+				'llm': category_score,
+			})
+			return scores
+		log.info('Field %s: no graph mapping; falling back to semantic scoring', key)
 
 	if field_values_equal(trusted_val, generated_val):
 		log.info('Field %s: exact match', key)
