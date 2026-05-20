@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import math
+from urllib.parse import urlencode
 from dataclasses import dataclass, field
 from datetime import datetime
 import xml.etree.ElementTree as ET
@@ -19,6 +20,7 @@ log.setLevel(logging.DEBUG)
 base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/'
 
 search_url_tmpl = base_url + 'esearch.fcgi?db=pmc&retmax=5000&retmode=json&term={term}'
+pubmed_search_url_tmpl = base_url + 'esearch.fcgi?db=pubmed&retmax=5000&retmode=json&term={term}'
 search_term_locus_tmpl = '{locus}[title]+OR+{locus}[abstract]'
 search_term_name_tmpl = (
     '(Mycobacterium+tuberculosis[abstract]+OR+Mycobacterium+tuberculosis[title])'
@@ -26,6 +28,7 @@ search_term_name_tmpl = (
 )
 
 fetch_url_tmpl = base_url + 'efetch.fcgi?db=pmc&id={id}'
+pubmed_to_pmc_url_tmpl = base_url + 'elink.fcgi?dbfrom=pubmed&db=pmc&retmode=json&{ids}'
 
 DEFAULT_TARGET_RELEVANCE = 9.0
 DEFAULT_MIN_PAPERS = 5
@@ -157,9 +160,7 @@ class PmcPaperManager(papers.PaperManager):
         search_url1 = search_url_tmpl.format(term=search_term_locus)
 
         log.debug(f'Searching PubMed Central by gene locus {gene}')
-        response1 = self.throttler.get(search_url1, base_url)
-        result1 = json.loads(response1.text)
-        idlist1 = result1['esearchresult']['idlist']
+        idlist1 = self._search_pmc_idlist(search_url1, search_term_locus, f'{gene} locus')
         log.debug(
             f'Found {len(idlist1)} paper{utils.s_if_plural(idlist1)} by locus for gene {gene}'
         )
@@ -173,9 +174,7 @@ class PmcPaperManager(papers.PaperManager):
         search_term_name = search_term_name_tmpl.format(name=name)
         search_url2 = search_url_tmpl.format(term=search_term_name)
 
-        response2 = self.throttler.get(search_url2, base_url)
-        result2 = json.loads(response2.text)
-        idlist2 = result2['esearchresult']['idlist']
+        idlist2 = self._search_pmc_idlist(search_url2, search_term_name, f'{gene} name')
         log.debug(f'Found {len(idlist2)} papers by name ({name}) for gene {gene}')
 
         combined = {}
@@ -195,6 +194,58 @@ class PmcPaperManager(papers.PaperManager):
             )
 
         return combined
+
+    def _search_pmc_idlist(self, pmc_search_url, search_term, query_label):
+        response = self.throttler.get(pmc_search_url, base_url)
+        result = json.loads(response.text)
+        try:
+            return self._extract_esearch_idlist(result, query_label)
+        except RuntimeError as exc:
+            log.warning(
+                f'PMC search unavailable for {query_label} query ({exc}); '
+                'falling back to PubMed-to-PMC links'
+            )
+            return self._search_pubmed_for_pmc_ids(search_term, query_label)
+
+    def _search_pubmed_for_pmc_ids(self, search_term, query_label):
+        pubmed_search_url = pubmed_search_url_tmpl.format(term=search_term)
+        response = self.throttler.get(pubmed_search_url, base_url)
+        result = json.loads(response.text)
+        pubmed_ids = self._extract_esearch_idlist(result, f'{query_label} PubMed fallback')
+        return self._get_pmc_ids_for_pubmed_ids(pubmed_ids)
+
+    def _extract_esearch_idlist(self, result, query_label):
+        esearch_result = result.get('esearchresult') if isinstance(result, dict) else None
+        if not isinstance(esearch_result, dict):
+            raise RuntimeError(f'NCBI ESearch returned malformed response for {query_label}')
+        if 'idlist' in esearch_result:
+            idlist = esearch_result['idlist']
+            if not isinstance(idlist, list):
+                raise RuntimeError(f'NCBI ESearch returned non-list idlist for {query_label}')
+            return idlist
+        if 'ERROR' in esearch_result:
+            raise RuntimeError(f"NCBI ESearch error for {query_label}: {esearch_result['ERROR']}")
+        raise RuntimeError(f'NCBI ESearch response missing idlist for {query_label}')
+
+    def _get_pmc_ids_for_pubmed_ids(self, pubmed_ids):
+        if not pubmed_ids:
+            return []
+        query = urlencode([('id', pubmed_id) for pubmed_id in pubmed_ids])
+        url = pubmed_to_pmc_url_tmpl.format(ids=query)
+        response = self.throttler.get(url, base_url)
+        result = json.loads(response.text)
+        pmc_ids = []
+        seen = set()
+        for linkset in result.get('linksets', []):
+            for linksetdb in linkset.get('linksetdbs', []):
+                if linksetdb.get('linkname') != 'pubmed_pmc':
+                    continue
+                for pmc_id in linksetdb.get('links', []):
+                    if pmc_id in seen:
+                        continue
+                    pmc_ids.append(pmc_id)
+                    seen.add(pmc_id)
+        return pmc_ids
 
     def get_pmc_ids(self, gene, name):
         return list(self.get_pmc_id_sources(gene, name).keys())
