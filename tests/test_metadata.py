@@ -85,3 +85,44 @@ def test_build_literature_context_mentions_selected_paper_count():
     assert "Papers selected for analysis: 3" in context
     assert "PMC0" in context
     assert "annotation_notes" in context
+
+
+def test_build_annotation_metadata_includes_profile_fields():
+    record = make_record("1", 0.8)
+
+    annotation_metadata = metadata.build_annotation_metadata(
+        gene="TcCLB.503799.4",
+        gene_name="TcCLB.503799.4",
+        ranked_records=[record],
+        selected_records=[record],
+        analyzed_pmc_ids=["1"],
+        pmids_analyzed=["PMID1"],
+        sections_analyzed=1,
+        selection_mode=metadata.SELECTION_MODE_LIMITED,
+        eligible_count=1,
+        cumulative_relevance=1.6,
+        target_relevance=9.0,
+        min_papers=5,
+        max_papers=20,
+        duration_sec=2.0,
+        profile_id="tcruzi-clbrener",
+        canonical_name="Trypanosoma cruzi CL Brener",
+        species_name="Trypanosoma cruzi",
+        strain="CL Brener",
+        gene_name_source="manual_cache",
+        gene_name_source_detail="Curated from literature",
+        gene_name_candidates=["TcUBP1"],
+        gene_name_confidence="curated",
+        gene_name_aliases=["UBP1"],
+        gene_name_warnings=[],
+    )
+
+    assert annotation_metadata["profile_id"] == "tcruzi-clbrener"
+    assert annotation_metadata["canonical_name"] == "Trypanosoma cruzi CL Brener"
+    assert annotation_metadata["species_name"] == "Trypanosoma cruzi"
+    assert annotation_metadata["strain"] == "CL Brener"
+    assert annotation_metadata["gene_name_source"] == "manual_cache"
+    assert annotation_metadata["gene_name_source_detail"] == "Curated from literature"
+    assert annotation_metadata["gene_name_candidates"] == ["TcUBP1"]
+    assert annotation_metadata["gene_name_confidence"] == "curated"
+    assert annotation_metadata["gene_name_aliases"] == ["UBP1"]

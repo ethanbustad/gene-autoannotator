@@ -1,3 +1,4 @@
+from autoannotation import organisms
 from autoannotation.pmc import PmcPaperManager, RelevanceRecord
 
 
@@ -17,9 +18,10 @@ class FakeThrottler:
 
 
 class FakePmcPaperManager(PmcPaperManager):
-    def __init__(self, papers, sources=None):
+    def __init__(self, papers, sources=None, organism_profile=None):
         self.papers = papers
         self.sources = sources or {}
+        self._configure_organism_profile(organism_profile)
 
     def get_abstract(self, pmc_id):
         return self.papers[pmc_id].get("abstract")
@@ -44,7 +46,8 @@ class FakePmcPaperManager(PmcPaperManager):
 
 
 class FakeSearchPmcPaperManager(PmcPaperManager):
-    def __init__(self, responses):
+    def __init__(self, responses, organism_profile=None):
+        self._configure_organism_profile(organism_profile)
         self.throttler = FakeThrottler(responses)
 
 
@@ -78,6 +81,41 @@ def test_get_pmc_id_sources_falls_back_to_pubmed_when_pmc_search_errors():
     assert "db=pmc" in manager.throttler.urls[0]
     assert "db=pubmed" in manager.throttler.urls[1]
     assert "elink.fcgi" in manager.throttler.urls[2]
+
+
+def test_name_search_uses_active_profile_species_terms():
+    manager = FakeSearchPmcPaperManager(
+        [
+            '{"esearchresult": {"idlist": []}}',
+            '{"esearchresult": {"idlist": ["321"]}}',
+        ],
+        organism_profile=organisms.resolve_profile("tcruzi-clbrener"),
+    )
+
+    sources = manager.get_pmc_id_sources("TcCLB.503799.4", "trans-sialidase")
+
+    assert sources == {"321": {"name"}}
+    assert "Trypanosoma+cruzi" in manager.throttler.urls[1]
+    assert "Mycobacterium+tuberculosis" not in manager.throttler.urls[1]
+
+
+def test_tcruzi_profile_scores_tcruzi_text_as_target_organism():
+    manager = FakePmcPaperManager(
+        {
+            "1": {
+                "title": "TcCLB.503799.4 in Trypanosoma cruzi",
+                "abstract": "TcCLB.503799.4 is studied in T. cruzi CL Brener.",
+            }
+        },
+        organism_profile=organisms.resolve_profile("tcruzi-clbrener"),
+    )
+
+    record = manager.score_paper_relevance(
+        "1", "TcCLB.503799.4", "TcCLB.503799.4", {"locus"},
+    )
+
+    assert record.evidence_flags["has_target_organism_hit"] is True
+    assert "missing_target_organism" not in record.warnings
 
 
 def test_locus_title_hit_scores_above_name_only_abstract_hit():

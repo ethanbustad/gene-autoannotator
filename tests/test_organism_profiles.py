@@ -1,7 +1,9 @@
 import json
 
+import pandas as pd
 import pytest
 
+from autoannotation import gene_names
 from autoannotation import organisms
 from autoannotation import validate
 
@@ -139,6 +141,140 @@ def test_tcruzi_species_can_infer_strain_from_locus_schema():
 
     assert result.valid is True
     assert result.profile_id == "tcruzi-clbrener"
+
+
+def test_resolve_gene_context_uses_mtb_annotation_table(monkeypatch):
+    mycobrowser_df = pd.DataFrame([
+        {"Feature": "CDS", "Locus": "Rv0001", "Name": "dnaA"}
+    ])
+    monkeypatch.setattr(gene_names.pd, "read_csv", lambda *args, **kwargs: mycobrowser_df)
+
+    context = organisms.resolve_gene_context(
+        profile_identifier="mtb-h37rv",
+        locus="Rv0001",
+        allow_online_name_lookup=False,
+    )
+
+    assert context.profile.profile_id == "mtb-h37rv"
+    assert context.locus == "Rv0001"
+    assert context.gene_name == "dnaA"
+    assert context.gene_name_source == "annotation_table"
+
+
+def test_resolve_gene_context_uses_supplied_name_before_table(monkeypatch):
+    def fail_read_csv(*args, **kwargs):
+        raise AssertionError("supplied name should avoid table lookup")
+
+    monkeypatch.setattr(gene_names.pd, "read_csv", fail_read_csv)
+
+    context = organisms.resolve_gene_context(
+        profile_identifier="mtb-h37rv",
+        locus="Rv0001",
+        name="customName",
+        allow_online_name_lookup=False,
+    )
+
+    assert context.gene_name == "customName"
+    assert context.gene_name_source == "supplied"
+    assert context.gene_name_source_detail == "supplied argument"
+
+
+def test_resolve_gene_context_caches_supplied_name_when_requested(tmp_path):
+    context = organisms.resolve_gene_context(
+        profile_identifier="tcruzi-clbrener",
+        locus="TcCLB.507093.220",
+        name="TcUBP1",
+        gene_name_cache_dir=tmp_path,
+        cache_supplied_name=True,
+        allow_online_name_lookup=False,
+    )
+
+    cached = gene_names.lookup_cached_gene_name(
+        context.profile,
+        "TcCLB.507093.220",
+        tmp_path,
+    )
+
+    assert context.gene_name == "TcUBP1"
+    assert context.gene_name_source == "supplied"
+    assert cached.gene_name == "TcUBP1"
+    assert cached.source == "manual_cache"
+    assert cached.aliases == ["UBP1"]
+
+
+def test_resolve_gene_context_allows_tcruzi_without_annotation_table(tmp_path):
+    context = organisms.resolve_gene_context(
+        profile_identifier="tcruzi-clbrener",
+        locus="TcCLB.503799.4",
+        gene_name_cache_dir=tmp_path,
+        allow_online_name_lookup=False,
+    )
+
+    assert context.profile.profile_id == "tcruzi-clbrener"
+    assert context.gene_name == "TcCLB.503799.4"
+    assert context.gene_name_source == "locus_fallback"
+
+
+def test_resolve_gene_context_uses_cached_gene_name(tmp_path):
+    gene_names.write_cached_gene_name(
+        gene_names.GeneNameRecord(
+            profile_id="tcruzi-clbrener",
+            locus="TcCLB.507093.220",
+            gene_name="TcUBP1",
+            source="manual_cache",
+            source_detail="Curated from literature",
+            confidence="curated",
+            aliases=["UBP1"],
+            looked_up_at="2026-05-20T00:00:00+00:00",
+        ),
+        tmp_path,
+    )
+
+    context = organisms.resolve_gene_context(
+        profile_identifier="tcruzi-clbrener",
+        locus="TcCLB.507093.220",
+        gene_name_cache_dir=tmp_path,
+        allow_online_name_lookup=False,
+    )
+
+    assert context.gene_name == "TcUBP1"
+    assert context.gene_name_source == "manual_cache"
+    assert context.gene_name_source_detail == "Curated from literature"
+    assert context.gene_name_aliases == ["UBP1"]
+
+
+def test_resolve_gene_context_uses_online_source_and_records_candidates(tmp_path):
+    class FakeSource:
+        def lookup(self, profile, locus):
+            return gene_names.GeneNameLookupResult(
+                gene_name="TcUBP1",
+                source="ncbi_gene",
+                source_detail="fake ncbi url",
+                confidence="clear",
+                aliases=["UBP1"],
+            )
+
+    context = organisms.resolve_gene_context(
+        profile_identifier="tcruzi-clbrener",
+        locus="TcCLB.507093.220",
+        gene_name_cache_dir=tmp_path,
+        allow_online_name_lookup=True,
+        gene_name_sources=[FakeSource()],
+    )
+
+    assert context.gene_name == "TcUBP1"
+    assert context.gene_name_source == "ncbi_gene"
+    assert context.gene_name_source_detail == "fake ncbi url"
+    assert context.gene_name_aliases == ["UBP1"]
+
+
+def test_resolve_gene_context_rejects_invalid_locus_before_retrieval():
+    with pytest.raises(organisms.InvalidLocusError):
+        organisms.resolve_gene_context(
+            profile_identifier="tcruzi-clbrener",
+            locus="Rv0001",
+            allow_online_name_lookup=False,
+        )
 
 
 def test_validate_cli_emits_json_for_success(capsys):

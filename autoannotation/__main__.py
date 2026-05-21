@@ -5,31 +5,60 @@ import os
 
 
 from autoannotation.autoannotation import get_gene_annotation
+from autoannotation import gene_names
 
-def main(gene, cache_dir='./.cache'):
-    result = get_gene_annotation(gene, cache_dir=cache_dir)
+def main(
+    gene=None, cache_dir='./.cache', profile=None, organism=None, strain=None,
+    locus=None, name=None, output_dir='gen_json',
+    gene_name_cache=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
+    no_online_name_lookup=False,
+    refresh_gene_name_cache=False,
+    cache_supplied_name=False,
+):
+    if profile and organism:
+        raise ValueError('use either profile or organism, not both')
+    result = get_gene_annotation(
+        gene=gene,
+        cache_dir=cache_dir,
+        profile=profile,
+        organism=organism,
+        strain=strain,
+        locus=locus,
+        name=name,
+        gene_name_cache_dir=gene_name_cache,
+        allow_online_name_lookup=not no_online_name_lookup,
+        refresh_gene_name_cache=refresh_gene_name_cache,
+        cache_supplied_name=cache_supplied_name,
+    )
 
     if result is None:
         return
 
+    output_gene = locus or gene
     pmc_ids = result["pmc_ids"]
     used = result["used_ids"]
     parsed = result.get("gene_annotation")
 
     if parsed is None:
         if result.get("gene_distillation") is None:
-            print(f"No annotation produced for {gene}")
+            print(f"No annotation produced for {output_gene}")
             return
         parsed = json.loads(result["gene_distillation"])
 
-    print(gene, json.dumps(parsed, indent=2))
+    if output_gene is None:
+        output_gene = parsed.get("gene_id") or parsed.get("rv_id")
+
+    print(output_gene, json.dumps(parsed, indent=2))
     print(f"Number of papers used: {len(used)}")
     print(f"Selection mode: {result.get('selection_mode', 'unknown')}")
 
-    output_dir = "gen_json"
-    os.makedirs(output_dir, exist_ok=True)
+    profile_id = parsed.get("annotation_metadata", {}).get("profile_id", "mtb-h37rv")
+    output_parent = output_dir
+    if profile_id != "mtb-h37rv":
+        output_parent = os.path.join(output_parent, profile_id)
+    os.makedirs(output_parent, exist_ok=True)
 
-    output_path = os.path.join(output_dir, f"gen_{gene}.json")
+    output_path = os.path.join(output_parent, f"gen_{output_gene}.json")
 
     with open(output_path, "w") as f:
         json.dump(parsed, f, indent=2)
@@ -52,7 +81,28 @@ if __name__ == '__main__':
     )
 
     parser.add_argument('gene',
-        help='The gene to gather and summarize information on. An Rv gene locus.',
+        nargs='?',
+        help='Legacy MTB gene locus shorthand, e.g. Rv0001.',
+    )
+
+    parser.add_argument('--profile',
+        help='Configured organism profile, e.g. mtb-h37rv or tcruzi-clbrener.',
+    )
+
+    parser.add_argument('--organism',
+        help='Organism/species name or synonym.',
+    )
+
+    parser.add_argument('--strain',
+        help='Optional strain/isolate/reference name or synonym.',
+    )
+
+    parser.add_argument('--locus',
+        help='Gene locus to gather and summarize information on.',
+    )
+
+    parser.add_argument('--name',
+        help='Optional gene name/symbol for paper retrieval and prompts.',
     )
 
     parser.add_argument('-c', '--cache-dir',
@@ -61,6 +111,31 @@ if __name__ == '__main__':
             'The directory where paper contents should be written (and read from, if already '
             'present). Default is %(default)s.'
         )
+    )
+
+    parser.add_argument('--gene-name-cache',
+        default=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
+        help='Directory for cached locus-to-gene-name records.',
+    )
+
+    parser.add_argument('--no-online-name-lookup',
+        action='store_true',
+        help='Disable NCBI/UniProt gene-name lookup before annotation.',
+    )
+
+    parser.add_argument('--refresh-gene-name-cache',
+        action='store_true',
+        help='Ignore cached online gene-name records and refresh from online sources.',
+    )
+
+    parser.add_argument('--cache-supplied-name',
+        action='store_true',
+        help='Write --name into the gene-name cache as a manual curated record.',
+    )
+
+    parser.add_argument('--output-dir',
+        default='gen_json',
+        help='Directory where generated annotation JSON should be written.',
     )
 
     args = parser.parse_args(sys.argv[1:])

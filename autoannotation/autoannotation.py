@@ -5,7 +5,9 @@ import time
 import pandas as pd
 
 from . import llms
+from . import gene_names
 from . import metadata
+from . import organisms
 from . import pmc
 from . import utils
 
@@ -15,23 +17,37 @@ logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-def get_gene_annotation(gene, cache_dir='./.cache'):
-    log.info(f'Starting annotation process for gene {gene}')
+def get_gene_annotation(
+    gene=None, cache_dir='./.cache', profile=None, organism=None, strain=None,
+    locus=None, name=None, gene_name_cache_dir=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
+    allow_online_name_lookup=True, refresh_gene_name_cache=False,
+    cache_supplied_name=False,
+):
+    locus = locus or gene
+    if locus is None:
+        raise ValueError('A gene locus is required')
+    if profile is None and organism is None:
+        profile = 'mtb-h37rv'
+    context = organisms.resolve_gene_context(
+        profile_identifier=profile,
+        organism_identifier=organism,
+        strain_identifier=strain,
+        locus=locus,
+        name=name,
+        gene_name_cache_dir=gene_name_cache_dir,
+        allow_online_name_lookup=allow_online_name_lookup,
+        refresh_gene_name_cache=refresh_gene_name_cache,
+        cache_supplied_name=cache_supplied_name,
+    )
+    gene = context.locus
+    name = context.gene_name
+
+    log.info(
+        f'Starting annotation process for {context.profile.canonical_name} gene {gene}'
+    )
     start = time.time()
     llm_handler = llms.LlmHandler(cache_dir)
-    paper_manager = pmc.PmcPaperManager(cache_dir)
-
-    mycobrowser_df = pd.read_csv(
-        './Mycobacterium_tuberculosis_H37Rv_txt_v5.txt',
-        sep='\t'
-    )
-    mycobrowser_df = mycobrowser_df.loc[
-        mycobrowser_df['Feature'].eq('CDS'), :
-    ].set_index(
-        'Locus', drop=True
-    ).sort_index()
-
-    name = mycobrowser_df.at[gene, 'Name']
+    paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=context.profile)
 
     ranked_papers = paper_manager.get_ranked_papers(gene, name)
     pmc_ids = [record.pmc_id for record in ranked_papers]
@@ -101,6 +117,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
             for model in (MODEL_SUMMARY): #for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
                 section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
                     gene, name, section, model, section_type=label,
+                    organism_profile=context.profile,
                 )
                 section_distillation_candidates_cur.append(section_distillation_candidate)
                 section_distillation_candidates.append((
@@ -110,7 +127,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
             section_distillation, duration_sec = llm_handler.get_llm_consensus_json(
                 section_distillation_candidates_cur[0], section_distillation_candidates_cur[1],
                 section_distillation_candidates_cur[2], model=MODEL_CONSENSUS,
-                section_type=label,
+                section_type=label, organism_profile=context.profile,
             )
             section_distillations.append((
                 f'PMC{pmc_id}', label, MODEL_CONSENSUS, gene, name, section_distillation, duration_sec
@@ -138,7 +155,12 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
     )
 
     section_distillation_filtered_df = section_distillation_df.loc[
-        section_distillation_df['Response'].map(llm_handler.json_regex_filter),
+        section_distillation_df['Response'].map(
+            lambda response: llm_handler.json_regex_filter(
+                response,
+                organism_profile=context.profile,
+            )
+        ),
         :
     ]
     log.debug(
@@ -175,6 +197,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
             model=MODEL_AGGREGATION,
             literature_context=literature_context,
             relevance_scores=relevance_scores.tolist(),
+            organism_profile=context.profile,
         )
     else:
         gene_distillation = None
@@ -199,6 +222,16 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         min_papers=pmc.DEFAULT_MIN_PAPERS,
         max_papers=pmc.DEFAULT_MAX_PAPERS,
         duration_sec=duration,
+        profile_id=context.profile.profile_id,
+        canonical_name=context.profile.canonical_name,
+        species_name=context.profile.species_name,
+        strain=context.profile.strain,
+        gene_name_source=context.gene_name_source,
+        gene_name_source_detail=context.gene_name_source_detail,
+        gene_name_candidates=context.gene_name_candidates,
+        gene_name_confidence=context.gene_name_confidence,
+        gene_name_aliases=context.gene_name_aliases,
+        gene_name_warnings=context.gene_name_warnings,
     )
 
     merged_annotation = None

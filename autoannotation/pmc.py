@@ -3,13 +3,14 @@ import logging
 import os
 import re
 import math
-from urllib.parse import urlencode
+from urllib.parse import quote_plus, urlencode
 from dataclasses import dataclass, field
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
 from . import http_
 from . import metadata
+from . import organisms
 from . import papers
 from . import utils
 
@@ -22,10 +23,6 @@ base_url = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/'
 search_url_tmpl = base_url + 'esearch.fcgi?db=pmc&retmax=5000&retmode=json&term={term}'
 pubmed_search_url_tmpl = base_url + 'esearch.fcgi?db=pubmed&retmax=5000&retmode=json&term={term}'
 search_term_locus_tmpl = '{locus}[title]+OR+{locus}[abstract]'
-search_term_name_tmpl = (
-    '(Mycobacterium+tuberculosis[abstract]+OR+Mycobacterium+tuberculosis[title])'
-    '+AND+({name}[abstract]+OR+{name}[title])'
-)
 
 fetch_url_tmpl = base_url + 'efetch.fcgi?db=pmc&id={id}'
 pubmed_to_pmc_url_tmpl = base_url + 'elink.fcgi?dbfrom=pubmed&db=pmc&retmode=json&{ids}'
@@ -37,29 +34,7 @@ DEFAULT_MIN_SCORE = 0.1
 DEFAULT_MAX_RANK = 20
 
 
-@dataclass(frozen=True)
-class OrganismProfile:
-    canonical_name: str
-    target_patterns: tuple[str, ...]
-    off_target_patterns: tuple[str, ...] = ()
-    excluded_species_patterns: tuple[str, ...] = ()
-
-
-MTB_TARGET_ORGANISM_PATTERNS = (
-    r'Mycobacterium\stuberculosis', r'M.\stuberculosis', r'M.\stb', 'MTB', 'Mtb', 'MTb', 'mTB'
-)
-MTB_EXCLUDED_SPECIES_PATTERNS = (
-    r'Mycobacterium\ssmegmatis', r'M.\ssmegmatis', r'M.\ssmeg'
-)
-COMMON_OFF_TARGET_ORGANISM_PATTERNS = (
-    r'\bEscherichia\s+coli\b', r'\bE\.?\s*coli\b',
-)
-DEFAULT_ORGANISM_PROFILE = OrganismProfile(
-    canonical_name='Mycobacterium tuberculosis',
-    target_patterns=MTB_TARGET_ORGANISM_PATTERNS,
-    off_target_patterns=COMMON_OFF_TARGET_ORGANISM_PATTERNS + MTB_EXCLUDED_SPECIES_PATTERNS,
-    excluded_species_patterns=MTB_EXCLUDED_SPECIES_PATTERNS,
-)
+DEFAULT_ORGANISM_PROFILE = organisms.resolve_profile('mtb-h37rv')
 
 
 @dataclass
@@ -97,10 +72,39 @@ class PmcPaperManager(papers.PaperManager):
     species_excl_patterns = organism_profile.excluded_species_patterns
     off_target_species_patterns = organism_profile.off_target_patterns
 
-    def __init__(self, cache_dir):
+    def __init__(self, cache_dir, organism_profile=None):
         super().__init__(cache_dir)
+        self._configure_organism_profile(organism_profile)
         log.info(f'Using dir {cache_dir} for caching PMC papers')
         self.throttler = http_.Throttler()
+
+    def _configure_organism_profile(self, organism_profile=None):
+        self.organism_profile = organism_profile or DEFAULT_ORGANISM_PROFILE
+        self.species_incl_patterns = self.organism_profile.target_patterns
+        self.species_excl_patterns = self.organism_profile.excluded_species_patterns
+        self.off_target_species_patterns = self.organism_profile.off_target_patterns
+
+    def _build_name_search_term(self, name):
+        organism_terms = (
+            self.organism_profile.species_name,
+            *self.organism_profile.species_synonyms,
+        )
+        organism_query_parts = []
+        seen = set()
+        for term in organism_terms:
+            normalized = organisms.normalize_identifier(term)
+            if normalized in seen:
+                continue
+            organism_query_parts.append(
+                f'{quote_plus(term)}[abstract]+OR+{quote_plus(term)}[title]'
+            )
+            seen.add(normalized)
+        organism_query = '+OR+'.join(organism_query_parts)
+        encoded_name = quote_plus(name)
+        return (
+            f'({organism_query})'
+            f'+AND+({encoded_name}[abstract]+OR+{encoded_name}[title])'
+        )
 
     def get_abstract(self, pmc_id):
         abstrct_path = os.path.join(self.abstrct_dir, f'PMC{pmc_id}_abstract.txt')
@@ -171,7 +175,7 @@ class PmcPaperManager(papers.PaperManager):
 
         log.debug(f'Searching PubMed Central by gene name {name}')
 
-        search_term_name = search_term_name_tmpl.format(name=name)
+        search_term_name = self._build_name_search_term(name)
         search_url2 = search_url_tmpl.format(term=search_term_name)
 
         idlist2 = self._search_pmc_idlist(search_url2, search_term_name, f'{gene} name')

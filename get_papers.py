@@ -1,7 +1,8 @@
 import argparse
 from collections import Counter
 import json
-import pandas as pd
+from autoannotation import gene_names
+from autoannotation import organisms
 from autoannotation.pmc import (
     PmcPaperManager,
     DEFAULT_MAX_PAPERS,
@@ -11,20 +12,6 @@ from autoannotation.pmc import (
     DEFAULT_TARGET_RELEVANCE,
 )
 
-
-def load_myco_df():
-    df = pd.read_csv(
-        "./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt",
-        sep="\t"
-    )
-
-    df = (
-        df.loc[df["Feature"].eq("CDS"), :]
-        .set_index("Locus", drop=True)
-        .sort_index()
-    )
-
-    return df
 
 def summarize_ranked_records(records):
     scores = [record.score for record in records]
@@ -127,12 +114,75 @@ def print_summary(summary):
         for warning, count in sorted(summary["warnings"].items()):
             print(f"  {warning}: {count}")
 
-def main():
+def _resolve_context_from_args(args, parser):
+    locus = args.locus or args.gene
+    if locus is None:
+        parser.error("a gene locus is required")
+    if args.profile and args.organism:
+        parser.error("use either --profile or --organism, not both")
+    if args.profile:
+        return organisms.resolve_gene_context(
+            profile_identifier=args.profile,
+            locus=locus,
+            name=args.name,
+            gene_name_cache_dir=args.gene_name_cache,
+            allow_online_name_lookup=not args.no_online_name_lookup,
+            refresh_gene_name_cache=args.refresh_gene_name_cache,
+            cache_supplied_name=args.cache_supplied_name,
+        )
+    if args.organism:
+        return organisms.resolve_gene_context(
+            organism_identifier=args.organism,
+            strain_identifier=args.strain,
+            locus=locus,
+            name=args.name,
+            gene_name_cache_dir=args.gene_name_cache,
+            allow_online_name_lookup=not args.no_online_name_lookup,
+            refresh_gene_name_cache=args.refresh_gene_name_cache,
+            cache_supplied_name=args.cache_supplied_name,
+        )
+    return organisms.resolve_gene_context(
+        profile_identifier="mtb-h37rv",
+        locus=locus,
+        name=args.name,
+        gene_name_cache_dir=args.gene_name_cache,
+        allow_online_name_lookup=not args.no_online_name_lookup,
+        refresh_gene_name_cache=args.refresh_gene_name_cache,
+        cache_supplied_name=args.cache_supplied_name,
+    )
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(
         description="Fetch PMC IDs for a gene locus"
     )
-    parser.add_argument("gene", help="Gene locus (e.g. Rv0001)")
+    parser.add_argument("gene", nargs="?", help="Legacy gene locus shorthand (e.g. Rv0001)")
+    parser.add_argument("--profile", help="Configured organism profile, e.g. mtb-h37rv")
+    parser.add_argument("--organism", help="Organism/species name or synonym")
+    parser.add_argument("--strain", help="Optional strain/isolate/reference name or synonym")
+    parser.add_argument("--locus", help="Gene locus to fetch papers for")
+    parser.add_argument("--name", help="Optional gene name/symbol for name-based retrieval")
     parser.add_argument("--cache", default="./.cache")
+    parser.add_argument(
+        "--gene-name-cache",
+        default=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
+        help="Directory for cached locus-to-gene-name records",
+    )
+    parser.add_argument(
+        "--no-online-name-lookup",
+        action="store_true",
+        help="Disable NCBI/UniProt gene-name lookup before paper retrieval",
+    )
+    parser.add_argument(
+        "--refresh-gene-name-cache",
+        action="store_true",
+        help="Ignore cached online gene-name records and refresh from online sources",
+    )
+    parser.add_argument(
+        "--cache-supplied-name",
+        action="store_true",
+        help="Write --name into the gene-name cache as a manual curated record",
+    )
     parser.add_argument("--top", type=int, default=10, help="Number of top ranked papers to print")
     parser.add_argument("--bottom", type=int, default=5, help="Number of bottom ranked papers to print")
     parser.add_argument("--target-relevance", type=float, default=DEFAULT_TARGET_RELEVANCE)
@@ -142,18 +192,11 @@ def main():
     parser.add_argument("--max-rank", type=int, default=DEFAULT_MAX_RANK)
     parser.add_argument("--json-out", help="Optional path for full ranked relevance JSON")
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    context = _resolve_context_from_args(args, parser)
 
-    # load annotation table
-    mycobrowser_df = load_myco_df()
-
-    if args.gene not in mycobrowser_df.index:
-        raise KeyError(f"Gene not found: {args.gene}")
-
-    name = mycobrowser_df.at[args.gene, "Name"]
-
-    manager = PmcPaperManager(args.cache)
-    ranked_records = manager.get_ranked_papers(args.gene, name)
+    manager = PmcPaperManager(args.cache, organism_profile=context.profile)
+    ranked_records = manager.get_ranked_papers(context.locus, context.gene_name)
     summary = summarize_ranked_records(ranked_records)
     selection = manager.select_relevance_records(
         ranked_records,
@@ -166,8 +209,15 @@ def main():
     selected = selection.selected_records
     cumulative = selection.cumulative_relevance
 
-    print(f"\n\nGene: {args.gene}")
-    print(f"Name: {name}")
+    print(f"\n\nProfile: {context.profile.profile_id}")
+    print(f"Organism: {context.profile.canonical_name}")
+    print(f"Gene: {context.locus}")
+    print(f"Name: {context.gene_name}")
+    print(f"Name source: {context.gene_name_source}")
+    if context.gene_name_source_detail:
+        print(f"Name source detail: {context.gene_name_source_detail}")
+    if context.gene_name_candidates:
+        print("Name candidates:", ", ".join(context.gene_name_candidates))
     print_summary(summary)
 
     print(f"\nTop {args.top} PMC papers by relevance:")
@@ -194,8 +244,12 @@ def main():
         with open(args.json_out, "w", encoding="utf8") as output_file:
             json.dump(
                 {
-                    "gene": args.gene,
-                    "name": name,
+                    "gene": context.locus,
+                    "name": context.gene_name,
+                    "gene_name_source": context.gene_name_source,
+                    "gene_name_source_detail": context.gene_name_source_detail,
+                    "gene_name_candidates": context.gene_name_candidates,
+                    **context.to_metadata(),
                     "summary": summary,
                     "ranked_records": [
                         relevance_record_to_dict(record)
@@ -206,6 +260,21 @@ def main():
                 indent=2,
             )
         print(f"\nWrote ranked relevance data to {args.json_out}")
+
+    return {
+        "gene": context.locus,
+        "name": context.gene_name,
+        "gene_name_source": context.gene_name_source,
+        "gene_name_source_detail": context.gene_name_source_detail,
+        "gene_name_candidates": context.gene_name_candidates,
+        "profile_id": context.profile.profile_id,
+        "canonical_name": context.profile.canonical_name,
+        "species_name": context.profile.species_name,
+        "strain": context.profile.strain,
+        "summary": summary,
+        "ranked_records": ranked_records,
+        "selection": selection,
+    }
 
 if __name__ == "__main__":
     main()

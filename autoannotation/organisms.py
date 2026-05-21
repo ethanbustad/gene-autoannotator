@@ -1,6 +1,8 @@
 import re
 from dataclasses import asdict, dataclass
 
+from . import gene_names
+
 
 class UnknownOrganismError(ValueError):
     """Raised when an organism identifier does not resolve to a configured profile."""
@@ -8,6 +10,10 @@ class UnknownOrganismError(ValueError):
 
 class DuplicateOrganismSynonymError(ValueError):
     """Raised when two profiles claim the same normalized organism synonym."""
+
+
+class InvalidLocusError(ValueError):
+    """Raised when a locus does not match the resolved organism profile."""
 
 
 @dataclass(frozen=True)
@@ -21,6 +27,41 @@ class OrganismProfile:
     strain_synonyms: tuple[str, ...]
     locus_regex: str
     search_terms: tuple[str, ...]
+    target_patterns: tuple[str, ...] = ()
+    off_target_patterns: tuple[str, ...] = ()
+    excluded_species_patterns: tuple[str, ...] = ()
+    annotation_table_path: str | None = None
+    annotation_id_column: str | None = None
+    annotation_name_column: str | None = None
+    annotation_feature_column: str | None = None
+    annotation_feature_value: str | None = None
+
+
+@dataclass(frozen=True)
+class GeneContext:
+    profile: OrganismProfile
+    locus: str
+    gene_name: str
+    gene_name_source: str
+    gene_name_source_detail: str | None = None
+    gene_name_confidence: str | None = None
+    gene_name_aliases: list[str] | None = None
+    gene_name_candidates: list[str] | None = None
+    gene_name_warnings: list[str] | None = None
+
+    def to_metadata(self):
+        return {
+            'profile_id': self.profile.profile_id,
+            'canonical_name': self.profile.canonical_name,
+            'species_name': self.profile.species_name,
+            'strain': self.profile.strain,
+            'gene_name_source': self.gene_name_source,
+            'gene_name_source_detail': self.gene_name_source_detail,
+            'gene_name_confidence': self.gene_name_confidence,
+            'gene_name_aliases': list(self.gene_name_aliases or []),
+            'gene_name_candidates': list(self.gene_name_candidates or []),
+            'gene_name_warnings': list(self.gene_name_warnings or []),
+        }
 
 
 @dataclass(frozen=True)
@@ -72,6 +113,32 @@ PROFILES = (
             "Mtb",
             "H37Rv",
         ),
+        target_patterns=(
+            r'Mycobacterium\stuberculosis',
+            r'M.\stuberculosis',
+            r'M.\stb',
+            'MTB',
+            'Mtb',
+            'MTb',
+            'mTB',
+        ),
+        off_target_patterns=(
+            r'\bEscherichia\s+coli\b',
+            r'\bE\.?\s*coli\b',
+            r'Mycobacterium\ssmegmatis',
+            r'M.\ssmegmatis',
+            r'M.\ssmeg',
+        ),
+        excluded_species_patterns=(
+            r'Mycobacterium\ssmegmatis',
+            r'M.\ssmegmatis',
+            r'M.\ssmeg',
+        ),
+        annotation_table_path='./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt',
+        annotation_id_column='Locus',
+        annotation_name_column='Name',
+        annotation_feature_column='Feature',
+        annotation_feature_value='CDS',
     ),
     OrganismProfile(
         profile_id="morygis-51145",
@@ -97,6 +164,14 @@ PROFILES = (
             "M. orygis",
             "51145",
         ),
+        target_patterns=(
+            r'Mycobacterium\sorygis',
+            r'M.\sorygis',
+        ),
+        off_target_patterns=(
+            r'\bEscherichia\s+coli\b',
+            r'\bE\.?\s*coli\b',
+        ),
     ),
     OrganismProfile(
         profile_id="mmarinum-m",
@@ -120,6 +195,14 @@ PROFILES = (
         search_terms=(
             "Mycobacterium marinum",
             "M. marinum",
+        ),
+        target_patterns=(
+            r'Mycobacterium\smarinum',
+            r'M.\smarinum',
+        ),
+        off_target_patterns=(
+            r'\bEscherichia\s+coli\b',
+            r'\bE\.?\s*coli\b',
         ),
     ),
     OrganismProfile(
@@ -149,6 +232,17 @@ PROFILES = (
             "T. cruzi",
             "CL Brener",
         ),
+        target_patterns=(
+            r'Trypanosoma\scruzi',
+            r'T.\scruzi',
+            r'T\scruzi',
+        ),
+        off_target_patterns=(
+            r'\bEscherichia\s+coli\b',
+            r'\bE\.?\s*coli\b',
+            r'Trypanosoma\sbrucei',
+            r'T.\sbrucei',
+        ),
     ),
     OrganismProfile(
         profile_id="tcruzi-dm28c",
@@ -173,6 +267,17 @@ PROFILES = (
             "Trypanosoma cruzi",
             "T. cruzi",
             "Dm28c",
+        ),
+        target_patterns=(
+            r'Trypanosoma\scruzi',
+            r'T.\scruzi',
+            r'T\scruzi',
+        ),
+        off_target_patterns=(
+            r'\bEscherichia\s+coli\b',
+            r'\bE\.?\s*coli\b',
+            r'Trypanosoma\sbrucei',
+            r'T.\sbrucei',
         ),
     ),
 )
@@ -333,4 +438,75 @@ def validate_organism_locus(organism_identifier, locus):
     return validate_locus_request(
         profile_identifier=organism_identifier,
         locus=locus,
+    )
+
+
+def _profile_from_validation_result(result):
+    if not result.valid:
+        raise InvalidLocusError(
+            f"Invalid locus {result.supplied_locus!r} for organism/profile "
+            f"{result.supplied_organism!r}: {result.reason}"
+        )
+    return resolve_profile(result.profile_id)
+
+
+def resolve_gene_context(
+    *,
+    locus,
+    profile_identifier=None,
+    organism_identifier=None,
+    strain_identifier=None,
+    name=None,
+    gene_name_cache_dir=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
+    allow_online_name_lookup=False,
+    refresh_gene_name_cache=False,
+    gene_name_sources=None,
+    cache_supplied_name=False,
+):
+    result = validate_locus_request(
+        locus=locus,
+        profile_identifier=profile_identifier,
+        organism_identifier=organism_identifier,
+        strain_identifier=strain_identifier,
+    )
+    profile = _profile_from_validation_result(result)
+
+    if name:
+        if cache_supplied_name:
+            gene_names.cache_supplied_gene_name(
+                profile,
+                locus,
+                name,
+                cache_dir=gene_name_cache_dir,
+            )
+        return GeneContext(
+            profile=profile,
+            locus=locus,
+            gene_name=name,
+            gene_name_source='supplied',
+            gene_name_source_detail='supplied argument',
+            gene_name_confidence='curator_supplied',
+            gene_name_aliases=[],
+            gene_name_candidates=[],
+            gene_name_warnings=[],
+        )
+
+    lookup_result = gene_names.resolve_gene_name(
+        profile,
+        locus,
+        cache_dir=gene_name_cache_dir,
+        allow_online_lookup=allow_online_name_lookup,
+        refresh_cache=refresh_gene_name_cache,
+        sources=gene_name_sources,
+    )
+    return GeneContext(
+        profile=profile,
+        locus=locus,
+        gene_name=lookup_result.gene_name,
+        gene_name_source=lookup_result.source,
+        gene_name_source_detail=lookup_result.source_detail,
+        gene_name_confidence=lookup_result.confidence,
+        gene_name_aliases=list(lookup_result.aliases),
+        gene_name_candidates=list(lookup_result.candidates),
+        gene_name_warnings=list(lookup_result.warnings),
     )

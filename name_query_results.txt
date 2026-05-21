@@ -1,0 +1,384 @@
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$ python get_papers.py --profile tcruzi-clbrener --locus TcCLB.507093.220
+2026-05-20 17:03:00,822 I | Using dir ./.cache for caching papers
+2026-05-20 17:03:00,822 I | Using dir ./.cache for caching PMC papers
+2026-05-20 17:03:00,852 I | Using throttler to make no more than 2 requests per second
+2026-05-20 17:03:00,852 I | Searching PubMed Central for gene TcCLB.507093.220
+2026-05-20 17:03:00,852 D | Searching PubMed Central by gene locus TcCLB.507093.220
+2026-05-20 17:03:01,165 D | Found 7 papers by locus for gene TcCLB.507093.220
+2026-05-20 17:03:01,166 D | No name available for gene TcCLB.507093.220; moving on with obtained papers
+2026-05-20 17:03:01,175 D | Using cached abstract for paper PMC11139272
+2026-05-20 17:03:01,175 D | Using cached results for paper PMC11139272
+2026-05-20 17:03:01,175 D | No discussion available for paper PMC11139272
+2026-05-20 17:03:01,185 D | Using cached abstract for paper PMC10881420
+2026-05-20 17:03:01,185 D | No results available for paper PMC10881420
+2026-05-20 17:03:01,185 D | No discussion available for paper PMC10881420
+2026-05-20 17:03:01,187 D | Using cached abstract for paper PMC10859248
+2026-05-20 17:03:01,187 D | No results available for paper PMC10859248
+2026-05-20 17:03:01,187 D | No discussion available for paper PMC10859248
+2026-05-20 17:03:01,194 D | Using cached abstract for paper PMC10141520
+2026-05-20 17:03:01,194 D | Using cached results for paper PMC10141520
+2026-05-20 17:03:01,195 D | Using cached discussion for paper PMC10141520
+2026-05-20 17:03:01,203 D | Using cached abstract for paper PMC6664183
+2026-05-20 17:03:01,203 D | No results available for paper PMC6664183
+2026-05-20 17:03:01,203 D | No discussion available for paper PMC6664183
+2026-05-20 17:03:01,207 D | Using cached abstract for paper PMC6305552
+2026-05-20 17:03:01,207 D | Using cached results for paper PMC6305552
+2026-05-20 17:03:01,207 D | Using cached discussion for paper PMC6305552
+2026-05-20 17:03:01,215 D | Using cached abstract for paper PMC4768119
+2026-05-20 17:03:01,215 D | No results available for paper PMC4768119
+2026-05-20 17:03:01,215 D | No discussion available for paper PMC4768119
+
+
+Profile: tcruzi-clbrener
+Organism: Trypanosoma cruzi CL Brener
+Gene: TcCLB.507093.220
+Name: TcCLB.507093.220
+Name source: locus_fallback
+Count: 7
+Retrieval sources:
+  locus: 7
+Score distribution:
+  min/max: 0.025/0.862
+  mean/median: 0.451/0.425
+  >=0.75: 1
+  >=0.50: 3
+  >=0.25: 6
+  <0.10: 1
+Warnings:
+  missing_organism: 1
+  missing_target_organism: 1
+
+Top 10 PMC papers by relevance:
+PMC10141520 | PMID 36935010 | score 0.862
+  year: 2023 | sources: locus | warnings: none
+  title: RNA-Seq reveals that overexpression of TcUBP1 switches the gene expression pattern toward that of the infective form of Trypanosoma cruzi
+  top components: section_locus=+0.210, retrieval_locus=+0.180, organism_gene_comention=+0.150, abstract_organism=+0.120, title_organism=+0.080
+PMC6305552 | PMID 30619487 | score 0.580
+  year: 2018 | sources: locus | warnings: none
+  title: UTRme: A Scoring-Based Tool to Annotate Untranslated Regions in Trypanosomatid Genomes
+  top components: retrieval_locus=+0.180, organism_gene_comention=+0.150, section_locus=+0.140, section_organism=+0.080, recency=+0.030
+PMC11139272 | PMID 38758959 | score 0.505
+  year: 2024 | sources: locus | warnings: none
+  title: Transcriptomic analysis of N-terminal mutated Trypanosoma cruzi UBP1 knockdown underlines the importance of this RNA-binding protein in parasite development
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, title_organism=+0.080, section_organism=+0.080, recency=+0.045
+PMC10859248 | PMID 38348324 | score 0.425
+  year: 2024 | sources: locus | warnings: none
+  title: Proteomic data of the Trypanosoma cruzi insect-dwelling epimastigotes overexpressing the RNA-binding protein UBP1
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, title_organism=+0.080, recency=+0.045
+PMC6664183 | PMID 31113862 | score 0.412
+  year: 2019 | sources: locus | warnings: none
+  title: The RNA-binding protein TcUBP1 up-regulates an RNA regulon for a cell surface–associated Trypanosoma cruzi glycoprotein and promotes parasite infectivity
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, title_organism=+0.080, recency=+0.033
+PMC10881420 | PMID 38389957 | score 0.345
+  year: 2024 | sources: locus | warnings: none
+  title: RNA-seq data exploration after trypanosome RNA-binding protein UBP1 expression is altered by CRISPR-Cas9 gene editing and overexpression
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, recency=+0.045
+PMC4768119 | PMID 26981203 | score 0.025
+  year: 2016 | sources: locus | warnings: missing_target_organism,missing_organism
+  title: Regulation of RNA binding proteins in trypanosomatid protozoan parasites
+  top components: retrieval_locus=+0.180, missing_organism_penalty=-0.180, recency=+0.025
+
+Bottom 5 PMC papers by relevance:
+PMC11139272 | PMID 38758959 | score 0.505
+  year: 2024 | sources: locus | warnings: none
+  title: Transcriptomic analysis of N-terminal mutated Trypanosoma cruzi UBP1 knockdown underlines the importance of this RNA-binding protein in parasite development
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, title_organism=+0.080, section_organism=+0.080, recency=+0.045
+PMC10859248 | PMID 38348324 | score 0.425
+  year: 2024 | sources: locus | warnings: none
+  title: Proteomic data of the Trypanosoma cruzi insect-dwelling epimastigotes overexpressing the RNA-binding protein UBP1
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, title_organism=+0.080, recency=+0.045
+PMC6664183 | PMID 31113862 | score 0.412
+  year: 2019 | sources: locus | warnings: none
+  title: The RNA-binding protein TcUBP1 up-regulates an RNA regulon for a cell surface–associated Trypanosoma cruzi glycoprotein and promotes parasite infectivity
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, title_organism=+0.080, recency=+0.033
+PMC10881420 | PMID 38389957 | score 0.345
+  year: 2024 | sources: locus | warnings: none
+  title: RNA-seq data exploration after trypanosome RNA-binding protein UBP1 expression is altered by CRISPR-Cas9 gene editing and overexpression
+  top components: retrieval_locus=+0.180, abstract_organism=+0.120, recency=+0.045
+PMC4768119 | PMID 26981203 | score 0.025
+  year: 2016 | sources: locus | warnings: missing_target_organism,missing_organism
+  title: Regulation of RNA binding proteins in trypanosomatid protozoan parasites
+  top components: retrieval_locus=+0.180, missing_organism_penalty=-0.180, recency=+0.025
+
+Cumulative relevance simulation:
+  selection mode: cumulative_relevance_budget
+  eligible papers: 6
+  target relevance: 9.000
+  min papers: 5
+  max papers: 20
+  min score: 0.100
+  max rank: 20
+  selected papers: 6
+  cumulative relevance: 3.892
+  selected PMC IDs: PMC10141520, PMC6305552, PMC11139272, PMC10859248, PMC6664183, PMC10881420
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$ python get_papers.py --profile tcruzi-clbrener --name TcUBP1 --locus TcCLB.507093.220
+2026-05-20 17:03:11,465 I | Using dir ./.cache for caching papers
+2026-05-20 17:03:11,465 I | Using dir ./.cache for caching PMC papers
+2026-05-20 17:03:11,492 I | Using throttler to make no more than 2 requests per second
+2026-05-20 17:03:11,492 I | Searching PubMed Central for gene TcCLB.507093.220
+2026-05-20 17:03:11,492 D | Searching PubMed Central by gene locus TcCLB.507093.220
+2026-05-20 17:03:11,693 D | Found 7 papers by locus for gene TcCLB.507093.220
+2026-05-20 17:03:11,693 D | Searching PubMed Central by gene name TcUBP1
+2026-05-20 17:03:11,693 D | Slowing down requests: sleeping for 0.500s
+2026-05-20 17:03:12,348 D | Found 50 papers by name (TcUBP1) for gene TcCLB.507093.220
+2026-05-20 17:03:12,348 D | That makes total of 52 papers for gene TcCLB.507093.220
+2026-05-20 17:03:12,353 D | Using cached abstract for paper PMC11139272
+2026-05-20 17:03:12,353 D | Using cached results for paper PMC11139272
+2026-05-20 17:03:12,353 D | No discussion available for paper PMC11139272
+2026-05-20 17:03:12,361 D | Using cached abstract for paper PMC10881420
+2026-05-20 17:03:12,361 D | No results available for paper PMC10881420
+2026-05-20 17:03:12,361 D | No discussion available for paper PMC10881420
+2026-05-20 17:03:12,363 D | Using cached abstract for paper PMC10859248
+2026-05-20 17:03:12,363 D | No results available for paper PMC10859248
+2026-05-20 17:03:12,363 D | No discussion available for paper PMC10859248
+2026-05-20 17:03:12,368 D | Using cached abstract for paper PMC10141520
+2026-05-20 17:03:12,368 D | Using cached results for paper PMC10141520
+2026-05-20 17:03:12,368 D | Using cached discussion for paper PMC10141520
+2026-05-20 17:03:12,374 D | Using cached abstract for paper PMC6664183
+2026-05-20 17:03:12,375 D | No results available for paper PMC6664183
+2026-05-20 17:03:12,375 D | No discussion available for paper PMC6664183
+2026-05-20 17:03:12,378 D | Using cached abstract for paper PMC6305552
+2026-05-20 17:03:12,378 D | Using cached results for paper PMC6305552
+2026-05-20 17:03:12,378 D | Using cached discussion for paper PMC6305552
+2026-05-20 17:03:12,384 D | Using cached abstract for paper PMC4768119
+2026-05-20 17:03:12,384 D | No results available for paper PMC4768119
+2026-05-20 17:03:12,384 D | No discussion available for paper PMC4768119
+2026-05-20 17:03:12,390 D | Using cached abstract for paper PMC12522734
+2026-05-20 17:03:12,390 D | Using cached results for paper PMC12522734
+2026-05-20 17:03:12,390 D | Using cached discussion for paper PMC12522734
+2026-05-20 17:03:12,402 D | Using cached abstract for paper PMC12441053
+2026-05-20 17:03:12,402 D | Using cached results for paper PMC12441053
+2026-05-20 17:03:12,403 D | Using cached discussion for paper PMC12441053
+2026-05-20 17:03:12,413 D | Using cached abstract for paper PMC11852901
+2026-05-20 17:03:12,413 D | Using cached results for paper PMC11852901
+2026-05-20 17:03:12,414 D | Using cached discussion for paper PMC11852901
+2026-05-20 17:03:12,420 D | Using cached abstract for paper PMC11655123
+2026-05-20 17:03:12,421 D | No cached results for paper PMC11655123
+2026-05-20 17:03:12,421 D | Parsing paper PMC11655123
+2026-05-20 17:03:12,421 D | Paper PMC11655123 missing abstract
+2026-05-20 17:03:12,421 D | No cached discussion for paper PMC11655123
+2026-05-20 17:03:12,421 D | Parsing paper PMC11655123
+2026-05-20 17:03:12,422 D | Paper PMC11655123 missing abstract
+2026-05-20 17:03:12,427 D | Using cached abstract for paper PMC10913370
+2026-05-20 17:03:12,427 D | Using cached results for paper PMC10913370
+2026-05-20 17:03:12,427 D | Using cached discussion for paper PMC10913370
+2026-05-20 17:03:12,438 D | Using cached abstract for paper PMC10907163
+2026-05-20 17:03:12,438 D | Using cached results for paper PMC10907163
+2026-05-20 17:03:12,438 D | Using cached discussion for paper PMC10907163
+2026-05-20 17:03:12,453 D | Using cached abstract for paper PMC10778605
+2026-05-20 17:03:12,453 D | Using cached results for paper PMC10778605
+2026-05-20 17:03:12,453 D | No discussion available for paper PMC10778605
+2026-05-20 17:03:12,461 D | Using cached abstract for paper PMC9894534
+2026-05-20 17:03:12,461 D | No results available for paper PMC9894534
+2026-05-20 17:03:12,461 D | No discussion available for paper PMC9894534
+2026-05-20 17:03:12,468 D | Using cached abstract for paper PMC9865030
+2026-05-20 17:03:12,468 D | No results available for paper PMC9865030
+2026-05-20 17:03:12,468 D | No discussion available for paper PMC9865030
+2026-05-20 17:03:12,476 D | Using cached abstract for paper PMC9342746
+2026-05-20 17:03:12,476 D | No results available for paper PMC9342746
+2026-05-20 17:03:12,476 D | No discussion available for paper PMC9342746
+2026-05-20 17:03:12,482 D | Using cached abstract for paper PMC8032824
+2026-05-20 17:03:12,482 D | No results available for paper PMC8032824
+2026-05-20 17:03:12,482 D | No discussion available for paper PMC8032824
+2026-05-20 17:03:12,487 D | Using cached abstract for paper PMC8867043
+2026-05-20 17:03:12,487 D | No results available for paper PMC8867043
+2026-05-20 17:03:12,487 D | No discussion available for paper PMC8867043
+2026-05-20 17:03:12,499 D | Using cached abstract for paper PMC8833553
+2026-05-20 17:03:12,499 D | No results available for paper PMC8833553
+2026-05-20 17:03:12,499 D | No discussion available for paper PMC8833553
+2026-05-20 17:03:12,509 D | Using cached abstract for paper PMC8312218
+2026-05-20 17:03:12,509 D | Using cached results for paper PMC8312218
+2026-05-20 17:03:12,510 D | Using cached discussion for paper PMC8312218
+2026-05-20 17:03:12,521 D | Using cached abstract for paper PMC8177656
+2026-05-20 17:03:12,521 D | Using cached results for paper PMC8177656
+2026-05-20 17:03:12,521 D | No discussion available for paper PMC8177656
+2026-05-20 17:03:12,529 D | Using cached abstract for paper PMC7593948
+2026-05-20 17:03:12,530 D | Using cached results for paper PMC7593948
+2026-05-20 17:03:12,530 D | Using cached discussion for paper PMC7593948
+2026-05-20 17:03:12,541 D | Using cached abstract for paper PMC7045066
+2026-05-20 17:03:12,541 D | No results available for paper PMC7045066
+2026-05-20 17:03:12,541 D | Using cached discussion for paper PMC7045066
+2026-05-20 17:03:12,548 D | Using cached abstract for paper PMC6874640
+2026-05-20 17:03:12,549 D | Using cached results for paper PMC6874640
+2026-05-20 17:03:12,549 D | No discussion available for paper PMC6874640
+2026-05-20 17:03:12,554 D | Using cached abstract for paper PMC6161725
+2026-05-20 17:03:12,554 D | No results available for paper PMC6161725
+2026-05-20 17:03:12,554 D | No discussion available for paper PMC6161725
+2026-05-20 17:03:12,559 D | Using cached abstract for paper PMC6560856
+2026-05-20 17:03:12,559 D | Using cached results for paper PMC6560856
+2026-05-20 17:03:12,559 D | Using cached discussion for paper PMC6560856
+2026-05-20 17:03:12,565 D | Using cached abstract for paper PMC6334006
+2026-05-20 17:03:12,565 D | No results available for paper PMC6334006
+2026-05-20 17:03:12,565 D | No discussion available for paper PMC6334006
+2026-05-20 17:03:12,569 D | Using cached abstract for paper PMC6057467
+2026-05-20 17:03:12,569 D | Using cached results for paper PMC6057467
+2026-05-20 17:03:12,570 D | Using cached discussion for paper PMC6057467
+2026-05-20 17:03:12,578 D | Using cached abstract for paper PMC6002132
+2026-05-20 17:03:12,578 D | Using cached results for paper PMC6002132
+2026-05-20 17:03:12,578 D | No discussion available for paper PMC6002132
+2026-05-20 17:03:12,589 D | Using cached abstract for paper PMC5512578
+2026-05-20 17:03:12,589 D | Using cached results for paper PMC5512578
+2026-05-20 17:03:12,589 D | Using cached discussion for paper PMC5512578
+2026-05-20 17:03:12,600 D | Using cached abstract for paper PMC4967103
+2026-05-20 17:03:12,600 D | Using cached results for paper PMC4967103
+2026-05-20 17:03:12,601 D | Using cached discussion for paper PMC4967103
+2026-05-20 17:03:12,607 D | Using cached abstract for paper PMC4768126
+2026-05-20 17:03:12,607 D | No results available for paper PMC4768126
+2026-05-20 17:03:12,607 D | No discussion available for paper PMC4768126
+2026-05-20 17:03:12,613 D | Using cached abstract for paper PMC4278681
+2026-05-20 17:03:12,613 D | Using cached results for paper PMC4278681
+2026-05-20 17:03:12,614 D | Using cached discussion for paper PMC4278681
+2026-05-20 17:03:12,622 D | Using cached abstract for paper PMC4156503
+2026-05-20 17:03:12,622 D | No results available for paper PMC4156503
+2026-05-20 17:03:12,622 D | No discussion available for paper PMC4156503
+2026-05-20 17:03:12,628 D | Using cached abstract for paper PMC3985865
+2026-05-20 17:03:12,628 D | Using cached results for paper PMC3985865
+2026-05-20 17:03:12,628 D | Using cached discussion for paper PMC3985865
+2026-05-20 17:03:12,637 D | Using cached abstract for paper PMC3623441
+2026-05-20 17:03:12,637 D | No results available for paper PMC3623441
+2026-05-20 17:03:12,637 D | No discussion available for paper PMC3623441
+2026-05-20 17:03:12,644 D | Using cached abstract for paper PMC3728762
+2026-05-20 17:03:12,644 D | Using cached results for paper PMC3728762
+2026-05-20 17:03:12,645 D | Using cached discussion for paper PMC3728762
+2026-05-20 17:03:12,653 D | Using cached abstract for paper PMC3365939
+2026-05-20 17:03:12,654 D | No results available for paper PMC3365939
+2026-05-20 17:03:12,654 D | No discussion available for paper PMC3365939
+2026-05-20 17:03:12,658 D | Using cached abstract for paper PMC3575623
+2026-05-20 17:03:12,658 D | No results available for paper PMC3575623
+2026-05-20 17:03:12,658 D | No discussion available for paper PMC3575623
+2026-05-20 17:03:12,663 D | Using cached abstract for paper PMC3070815
+2026-05-20 17:03:12,664 D | No results available for paper PMC3070815
+2026-05-20 17:03:12,664 D | No discussion available for paper PMC3070815
+2026-05-20 17:03:12,666 D | Using cached abstract for paper PMC2787363
+2026-05-20 17:03:12,666 D | No results available for paper PMC2787363
+2026-05-20 17:03:12,666 D | No discussion available for paper PMC2787363
+2026-05-20 17:03:12,669 D | Using cached abstract for paper PMC2852512
+2026-05-20 17:03:12,669 D | Using cached results for paper PMC2852512
+2026-05-20 17:03:12,669 D | Using cached discussion for paper PMC2852512
+2026-05-20 17:03:12,673 D | Using cached abstract for paper PMC2661826
+2026-05-20 17:03:12,673 D | No results available for paper PMC2661826
+2026-05-20 17:03:12,673 D | No discussion available for paper PMC2661826
+2026-05-20 17:03:12,679 D | Using cached abstract for paper PMC2637893
+2026-05-20 17:03:12,680 D | Using cached results for paper PMC2637893
+2026-05-20 17:03:12,680 D | Using cached discussion for paper PMC2637893
+2026-05-20 17:03:12,688 D | Using cached abstract for paper PMC2168414
+2026-05-20 17:03:12,689 D | No results available for paper PMC2168414
+2026-05-20 17:03:12,689 D | No discussion available for paper PMC2168414
+2026-05-20 17:03:12,689 D | Using cached abstract for paper PMC1892994
+2026-05-20 17:03:12,690 D | No results available for paper PMC1892994
+2026-05-20 17:03:12,690 D | No discussion available for paper PMC1892994
+2026-05-20 17:03:12,690 D | Using cached abstract for paper PMC1698591
+2026-05-20 17:03:12,691 D | No results available for paper PMC1698591
+2026-05-20 17:03:12,691 D | No discussion available for paper PMC1698591
+2026-05-20 17:03:12,694 D | Using cached abstract for paper PMC1540728
+2026-05-20 17:03:12,695 D | Using cached results for paper PMC1540728
+2026-05-20 17:03:12,695 D | Using cached discussion for paper PMC1540728
+2026-05-20 17:03:12,704 D | Using cached abstract for paper PMC1500871
+2026-05-20 17:03:12,704 D | Using cached results for paper PMC1500871
+2026-05-20 17:03:12,704 D | Using cached discussion for paper PMC1500871
+2026-05-20 17:03:12,708 D | Using cached abstract for paper PMC1317496
+2026-05-20 17:03:12,709 D | No results available for paper PMC1317496
+2026-05-20 17:03:12,709 D | No discussion available for paper PMC1317496
+2026-05-20 17:03:12,709 D | Using cached abstract for paper PMC137141
+2026-05-20 17:03:12,709 D | No results available for paper PMC137141
+2026-05-20 17:03:12,709 D | No discussion available for paper PMC137141
+
+
+Profile: tcruzi-clbrener
+Organism: Trypanosoma cruzi CL Brener
+Gene: TcCLB.507093.220
+Name: TcUBP1
+Name source: supplied
+Count: 52
+Retrieval sources:
+  locus: 7
+  name: 50
+Score distribution:
+  min/max: 0.000/1.000
+  mean/median: 0.270/0.303
+  >=0.75: 3
+  >=0.50: 8
+  >=0.25: 28
+  <0.10: 23
+Warnings:
+  missing_organism: 22
+  missing_target_organism: 22
+  name_only_match: 13
+  off_target_organism_dominant: 8
+
+Top 10 PMC papers by relevance:
+PMC11139272 | PMID 38758959 | score 1.000
+  year: 2024 | sources: locus,name | warnings: name_only_match
+  title: Transcriptomic analysis of N-terminal mutated Trypanosoma cruzi UBP1 knockdown underlines the importance of this RNA-binding protein in parasite development
+  top components: retrieval_locus=+0.180, abstract_name=+0.150, section_name=+0.150, organism_gene_comention=+0.150, abstract_organism=+0.120
+PMC10141520 | PMID 36935010 | score 1.000
+  year: 2023 | sources: locus,name | warnings: none
+  title: RNA-Seq reveals that overexpression of TcUBP1 switches the gene expression pattern toward that of the infective form of Trypanosoma cruzi
+  top components: title_name=+0.250, section_locus=+0.210, retrieval_locus=+0.180, abstract_name=+0.150, section_name=+0.150
+PMC6664183 | PMID 31113862 | score 1.000
+  year: 2019 | sources: locus,name | warnings: name_only_match
+  title: The RNA-binding protein TcUBP1 up-regulates an RNA regulon for a cell surface–associated Trypanosoma cruzi glycoprotein and promotes parasite infectivity
+  top components: title_name=+0.250, retrieval_locus=+0.180, abstract_name=+0.150, organism_gene_comention=+0.150, abstract_organism=+0.120
+PMC6002132 | PMID 29864162 | score 0.720
+  year: 2018 | sources: name | warnings: name_only_match
+  title: Translational repression by an RNA-binding protein promotes differentiation to infective forms in Trypanosoma cruzi
+  top components: abstract_name=+0.150, section_name=+0.150, organism_gene_comention=+0.150, abstract_organism=+0.120, name_only_penalty=-0.120
+PMC10859248 | PMID 38348324 | score 0.705
+  year: 2024 | sources: locus,name | warnings: name_only_match
+  title: Proteomic data of the Trypanosoma cruzi insect-dwelling epimastigotes overexpressing the RNA-binding protein UBP1
+  top components: retrieval_locus=+0.180, organism_gene_comention=+0.150, abstract_organism=+0.120, retrieval_name=+0.080, title_organism=+0.080
+PMC10881420 | PMID 38389957 | score 0.675
+  year: 2024 | sources: locus,name | warnings: name_only_match
+  title: RNA-seq data exploration after trypanosome RNA-binding protein UBP1 expression is altered by CRISPR-Cas9 gene editing and overexpression
+  top components: retrieval_locus=+0.180, organism_gene_comention=+0.150, abstract_organism=+0.120, abstract_name=+0.100, retrieval_name=+0.080
+PMC6305552 | PMID 30619487 | score 0.580
+  year: 2018 | sources: locus | warnings: none
+  title: UTRme: A Scoring-Based Tool to Annotate Untranslated Regions in Trypanosomatid Genomes
+  top components: retrieval_locus=+0.180, organism_gene_comention=+0.150, section_locus=+0.140, section_organism=+0.080, recency=+0.030
+PMC2637893 | PMID 19063746 | score 0.565
+  year: 2008 | sources: name | warnings: name_only_match
+  title: Functionally related transcripts have common RNA motifs for specific RNA-binding proteins in trypanosomes
+  top components: section_name=+0.150, organism_gene_comention=+0.150, abstract_organism=+0.120, name_only_penalty=-0.120, abstract_name=+0.100
+PMC12522734 | PMID 41087866 | score 0.487
+  year: 2025 | sources: name | warnings: name_only_match
+  title: Exploring a gene co-expression network throughout the trypanosoma cruzi life cycle
+  top components: organism_gene_comention=+0.150, abstract_organism=+0.120, name_only_penalty=-0.120, retrieval_name=+0.080, title_organism=+0.080
+PMC12441053 | PMID 40956360 | score 0.487
+  year: 2025 | sources: name | warnings: name_only_match
+  title: Differential susceptibility of human placental trophoblasts to Trypanosoma cruzi infection
+  top components: organism_gene_comention=+0.150, abstract_organism=+0.120, name_only_penalty=-0.120, retrieval_name=+0.080, title_organism=+0.080
+
+Bottom 5 PMC papers by relevance:
+PMC1698591 | PMID 16898873 | score 0.000
+  year: 2006 | sources: name | warnings: missing_target_organism,missing_organism
+  title: Structural studies on the RNA-recognition motif of NELF E, a cellular negative transcription elongation factor involved in the regulation of HIV transcription
+  top components: missing_organism_penalty=-0.180, retrieval_name=+0.080
+PMC1540728 | PMID 16885237 | score 0.000
+  year: 2006 | sources: name | warnings: name_only_match,missing_target_organism,missing_organism
+  title: NMR structure of the three quasi RNA recognition motifs (qRRMs) of human hnRNP F and interaction studies with Bcl-x G-tract RNA: a novel mode of RNA recognition
+  top components: missing_organism_penalty=-0.180, name_only_penalty=-0.120, retrieval_name=+0.080, section_name=+0.050
+PMC1500871 | PMID 16820531 | score 0.000
+  year: 2006 | sources: name | warnings: missing_target_organism,missing_organism,off_target_organism_dominant
+  title: Information-driven protein–DNA docking using HADDOCK: it is a matter of flexibility
+  top components: off_target_organism_penalty=-0.200, missing_organism_penalty=-0.180, retrieval_name=+0.080
+PMC1317496 | PMID 16339728 | score 0.000
+  year: 2005 | sources: name | warnings: off_target_organism_dominant
+  title: RNA-Binding Domain Proteins in Kinetoplastids: a Comparative Analysis† 
+  top components: off_target_organism_penalty=-0.200, abstract_organism=+0.120, retrieval_name=+0.080
+PMC137141 | PMID 12384588 | score 0.000
+  year: 2002 | sources: name | warnings: missing_target_organism,missing_organism,off_target_organism_dominant
+  title: Expression of the human RNA-binding protein HuR in Trypanosoma brucei increases the abundance of mRNAs containing AU-rich regulatory elements
+  top components: off_target_organism_penalty=-0.200, missing_organism_penalty=-0.180, retrieval_name=+0.080
+
+Cumulative relevance simulation:
+  selection mode: cumulative_relevance_budget
+  eligible papers: 29
+  target relevance: 9.000
+  min papers: 5
+  max papers: 20
+  min score: 0.100
+  max rank: 20
+  selected papers: 19
+  cumulative relevance: 9.073
+  selected PMC IDs: PMC11139272, PMC10141520, PMC6664183, PMC6002132, PMC10859248, PMC10881420, PMC6305552, PMC2637893, PMC12522734, PMC12441053, PMC7593948, PMC11852901, PMC10913370, PMC8312218, PMC8177656, PMC7045066, PMC6874640, PMC6560856, PMC2787363
+(venv) caden-saltzberg@PenguinPaladin:~/projects/sch/gene-autoannotator$ 
