@@ -1,6 +1,8 @@
 __pycache__/**
 .cache/**
+.venv/
 **/*.pyc
+backend/*.sqlite3
 
 creds/
 data/go-basic.obo
