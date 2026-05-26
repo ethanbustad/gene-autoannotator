@@ -99,6 +99,17 @@ def test_name_search_uses_active_profile_species_terms():
     assert "Mycobacterium+tuberculosis" not in manager.throttler.urls[1]
 
 
+def test_get_pmid_returns_none_for_article_xml_missing_front(tmp_path):
+    manager = PmcPaperManager(tmp_path)
+    fulltext_path = tmp_path / "fulltxt" / "PMC123.xml"
+    fulltext_path.write_text(
+        "<pmc-articleset><article><body /></article></pmc-articleset>",
+        encoding="utf8",
+    )
+
+    assert manager.get_pmid("123") is None
+
+
 def test_tcruzi_profile_scores_tcruzi_text_as_target_organism():
     manager = FakePmcPaperManager(
         {

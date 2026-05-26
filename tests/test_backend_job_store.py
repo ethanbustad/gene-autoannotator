@@ -65,3 +65,76 @@ def test_tracks_failed_job_error(tmp_path):
     assert failed["status"] == "failed"
     assert failed["error"] == "Invalid locus"
     assert failed["finished_at"] is not None
+
+
+def test_lists_jobs_with_queue_positions(tmp_path):
+    store = JobStore(tmp_path / "jobs.sqlite3")
+    running = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0001"})
+    queued_first = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0002"})
+    queued_second = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0003"})
+
+    store.mark_running(running["id"])
+
+    jobs = store.list_jobs(order="queue")
+    jobs_by_id = {job["id"]: job for job in jobs}
+
+    assert [job["id"] for job in jobs] == [
+        running["id"],
+        queued_first["id"],
+        queued_second["id"],
+    ]
+    assert jobs_by_id[running["id"]]["queue_position"] is None
+    assert jobs_by_id[running["id"]]["current_step"] == "running"
+    assert jobs_by_id[queued_first["id"]]["queue_position"] == 1
+    assert jobs_by_id[queued_second["id"]]["queue_position"] == 2
+
+
+def test_claim_next_queued_job_respects_single_running_job(tmp_path):
+    store = JobStore(tmp_path / "jobs.sqlite3")
+    first = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0001"})
+    second = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0002"})
+
+    claimed = store.claim_next_queued_job()
+    blocked = store.claim_next_queued_job()
+    store.mark_completed(claimed["id"], {"annotation": {"gene_id": "Rv0001"}})
+    next_claimed = store.claim_next_queued_job()
+
+    assert claimed["id"] == first["id"]
+    assert claimed["status"] == "running"
+    assert blocked is None
+    assert next_claimed["id"] == second["id"]
+    assert next_claimed["status"] == "running"
+
+
+def test_marks_interrupted_running_jobs_failed_on_restart(tmp_path):
+    store = JobStore(tmp_path / "jobs.sqlite3")
+    running = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0001"})
+    queued = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0002"})
+
+    store.mark_running(running["id"])
+    interrupted_count = store.mark_interrupted_running_jobs("API restarted")
+    claimed = store.claim_next_queued_job()
+    failed = store.get_job(running["id"])
+
+    assert interrupted_count == 1
+    assert failed["status"] == "failed"
+    assert failed["error"] == "API restarted"
+    assert claimed["id"] == queued["id"]
+
+
+def test_clear_finished_jobs_keeps_running_and_queued_jobs(tmp_path):
+    store = JobStore(tmp_path / "jobs.sqlite3")
+    completed = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0001"})
+    failed = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0002"})
+    queued = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0003"})
+    running = store.create_job({"profile": "mtb-h37rv", "locus": "Rv0004"})
+
+    store.mark_completed(completed["id"], {"annotation": {"gene_id": "Rv0001"}})
+    store.mark_failed(failed["id"], "bad paper")
+    store.mark_running(running["id"])
+
+    deleted_count = store.clear_finished_jobs()
+    remaining_ids = {job["id"] for job in store.list_jobs(order="queue")}
+
+    assert deleted_count == 2
+    assert remaining_ids == {queued["id"], running["id"]}

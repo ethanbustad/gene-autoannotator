@@ -1,3 +1,6 @@
+import os
+
+
 # autoannotation/models.py
 
 # === Performance models ===
@@ -15,14 +18,31 @@ LITE_MODELS = {
     'aggregation': 'gemma3:4b'
 }
 
-# === Select mode ===
-MODE = 'performance'   # 'performance' or 'lite'
+def _parse_summary_models(value):
+    if not value:
+        return None
+    models = [item.strip() for item in value.split(',') if item.strip()]
+    if len(models) != 3:
+        raise ValueError('AUTOANNOTATION_SUMMARY_MODELS must contain exactly three models')
+    return models
 
-if MODE == 'performance':
-    MODEL_SUMMARY = PERF_MODELS['summary']
-    MODEL_CONSENSUS = PERF_MODELS['consensus']
-    MODEL_AGGREGATION = PERF_MODELS['aggregation']
-else:
-    MODEL_SUMMARY = LITE_MODELS['summary']
-    MODEL_CONSENSUS = LITE_MODELS['consensus']
-    MODEL_AGGREGATION = LITE_MODELS['aggregation']
+
+def _select_model_set(mode):
+    normalized_mode = mode.strip().lower()
+    if normalized_mode == 'performance':
+        return PERF_MODELS
+    if normalized_mode == 'lite':
+        return LITE_MODELS
+    raise ValueError("AUTOANNOTATION_MODEL_MODE must be 'performance' or 'lite'")
+
+
+# === Select mode ===
+MODE = os.getenv('AUTOANNOTATION_MODEL_MODE', 'performance')
+MODEL_SET = _select_model_set(MODE)
+
+MODEL_SUMMARY = (
+    _parse_summary_models(os.getenv('AUTOANNOTATION_SUMMARY_MODELS'))
+    or MODEL_SET['summary']
+)
+MODEL_CONSENSUS = os.getenv('AUTOANNOTATION_CONSENSUS_MODEL') or MODEL_SET['consensus']
+MODEL_AGGREGATION = os.getenv('AUTOANNOTATION_AGGREGATION_MODEL') or MODEL_SET['aggregation']

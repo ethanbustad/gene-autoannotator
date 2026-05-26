@@ -258,8 +258,8 @@ class PmcPaperManager(papers.PaperManager):
         if pmc_id.startswith('PMC'):
             pmc_id = pmc_id[3:]
         article_xml = self._get_article_xml(pmc_id)
-        article_meta = article_xml.find('front').find('article-meta')
         try:
+            article_meta = article_xml.find('front').find('article-meta')
             return article_meta.find('article-id[@pub-id-type="pmid"]').text
         except AttributeError as ae:
             log.exception(f'Failed PMID fetch for paper PMC{pmc_id}')

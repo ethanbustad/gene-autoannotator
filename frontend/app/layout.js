@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Gene Autoannotator",
-  description: "Placeholder web UI for the gene annotation backend",
+  description: "Web UI for queued gene annotation jobs and generated annotation history",
 };
 
 export default function RootLayout({ children }) {

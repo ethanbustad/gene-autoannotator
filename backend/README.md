@@ -39,6 +39,31 @@ Check that it is reachable:
 curl http://localhost:8000/health
 ```
 
+Annotation search/history uses MongoDB. Put your local connection string in the
+project root `.env` file:
+
+```bash
+MONGO_URI=mongodb://localhost:27017/gene_autoannotator
+```
+
+The API will still start if MongoDB is unavailable, but `/health` will report
+annotation storage as unavailable and annotation search endpoints will return a
+service error until the connection is fixed.
+
+The annotator's Ollama models can also be configured in `.env`. This is useful
+when the backend sees a different model list than the original development
+machine:
+
+```bash
+AUTOANNOTATION_MODEL_MODE=lite
+AUTOANNOTATION_SUMMARY_MODELS=mistral:7b-instruct-v0.2-q3_K_M,llama3.2:3b,gemma3:4b
+AUTOANNOTATION_CONSENSUS_MODEL=phi3:3.8b
+AUTOANNOTATION_AGGREGATION_MODEL=gemma3:4b
+```
+
+If `OLLAMA_HOST` is set in the terminal where the CLI works, add the same value
+to `.env` before restarting the backend.
+
 ## Real Annotation Requirements
 
 The API still uses the same underlying annotation code. Real jobs require the
@@ -47,9 +72,17 @@ terminal command, including Ollama and the configured LLM models.
 
 ## Endpoint Summary
 
-- `GET /health`: API health check.
+- `GET /health`: API, SQLite job store, Mongo annotation store, queue, and
+  process resource health.
 - `GET /profiles`: configured organism profiles.
 - `POST /validate`: validates an organism/profile and locus.
-- `POST /jobs`: creates an annotation job and returns a `job_id`.
+- `GET /jobs`: lists shared jobs with queue positions.
+- `DELETE /jobs/history`: clears completed and failed job history while leaving
+  queued and running jobs untouched.
+- `POST /jobs`: creates an annotation job and returns a `job_id`. Jobs are
+  persisted in SQLite and executed sequentially; only one job runs at a time.
 - `GET /jobs/{job_id}`: returns job status and metadata.
 - `GET /jobs/{job_id}/result`: returns completed annotation JSON.
+- `GET /annotations/search?query=...`: searches current generated annotations.
+- `GET /annotations/{annotation_id}`: returns the current stored annotation.
+- `GET /annotations/{annotation_id}/versions`: returns older stored versions.

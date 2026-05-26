@@ -1,8 +1,8 @@
 # Gene Autoannotator Frontend
 
-This is a placeholder [Next.js](https://nextjs.org) app for the gene
-autoannotator API. It is intentionally small for this first phase: the page
-checks backend health and shows a non-submitting annotation form shell.
+This [Next.js](https://nextjs.org) app is the web interface for the gene
+autoannotator API. It has pages for usage guidance, queued job submission, and
+searching generated annotation history.
 
 ## Getting Started
 
@@ -26,11 +26,15 @@ The Python backend should be running separately, usually at
 ## Scripts
 
 - `npm run dev`: start the local frontend server.
+- `npm run test`: run lightweight helper tests.
 - `npm run lint`: run ESLint.
 - `npm run build`: build the production app.
 
-## Current Scope
+## Pages
 
-The current page is only a connectivity placeholder. A later phase can wire the
-form to `POST /jobs`, poll `GET /jobs/{job_id}`, and display completed
-annotation JSON from `GET /jobs/{job_id}/result`.
+- `/`: explains what the annotator does, how jobs work, and important limits.
+- `/jobs`: shows backend health, submits annotation jobs, and polls the shared
+  sequential queue.
+- `/annotations`: searches Mongo-backed generated annotations, displays the
+  current annotation, loads older versions on demand, and links back to `/jobs`
+  for update runs.

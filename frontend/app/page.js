@@ -1,129 +1,78 @@
-async function getBackendHealth() {
-  const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+import Link from "next/link";
 
-  try {
-    const response = await fetch(`${apiBaseUrl}/health`, {
-      cache: "no-store",
-    });
+import AppShell from "../components/AppShell";
 
-    if (!response.ok) {
-      return {
-        apiBaseUrl,
-        available: false,
-        message: `Backend returned HTTP ${response.status}`,
-      };
-    }
-
-    const payload = await response.json();
-    return {
-      apiBaseUrl,
-      available: payload.status === "ok",
-      message: payload.status === "ok" ? "Backend is reachable" : "Unknown status",
-    };
-  } catch (error) {
-    return {
-      apiBaseUrl,
-      available: false,
-      message: error.message,
-    };
-  }
-}
-
-export default async function Home() {
-  const health = await getBackendHealth();
-
+export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-950 px-6 py-10 text-slate-100">
-      <section className="mx-auto flex max-w-5xl flex-col gap-8">
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl shadow-black/20">
+    <AppShell>
+      <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+        <div className="rounded-3xl border border-white/10 bg-slate-900/70 p-8 shadow-2xl shadow-black/20">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
-            Gene Autoannotator
+            README for the web app
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Browser placeholder for long-running gene annotation jobs
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+            Generate literature-backed gene annotations without babysitting a terminal.
           </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            This page proves the Next.js frontend can talk to the Python API.
-            Full job submission, progress, and result pages can build on this
-            foundation.
+          <p className="mt-5 text-lg leading-8 text-slate-300">
+            The autoannotator takes an organism profile and locus, gathers
+            relevant literature, asks the configured model to synthesize an
+            annotation, and stores the generated result for review. Runs can
+            take a long time, so the web app submits work to a backend queue
+            and lets you come back later.
+          </p>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/jobs"
+              className="rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+            >
+              Submit a job
+            </Link>
+            <Link
+              href="/annotations"
+              className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-cyan-300/70"
+            >
+              Search annotations
+            </Link>
+          </div>
+        </div>
+
+        <aside className="rounded-3xl border border-amber-300/30 bg-amber-300/10 p-6 text-amber-50">
+          <h2 className="text-xl font-semibold">Important limitations</h2>
+          <ul className="mt-4 space-y-3 text-sm leading-6 text-amber-100/90">
+            <li>Only one annotation job runs at a time; new jobs wait in order.</li>
+            <li>Real jobs require the same Ollama, model, PubMed, and cache setup as the CLI.</li>
+            <li>Generated annotations should be reviewed before being treated as curated truth.</li>
+            <li>Progress is intentionally coarse until the annotator pipeline is instrumented in more detail.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section className="mt-8 grid gap-6 lg:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-slate-900 p-6">
+          <h2 className="text-xl font-semibold text-white">Inputs</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            A job needs a profile or organism/strain pair plus a locus. A gene
+            name can be supplied when you already know the preferred symbol.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h2 className="text-xl font-semibold text-white">Backend Status</h2>
-            <div
-              className={`mt-4 rounded-xl border p-4 ${
-                health.available
-                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-100"
-                  : "border-amber-500/40 bg-amber-500/10 text-amber-100"
-              }`}
-            >
-              <p className="font-medium">
-                {health.available ? "Connected" : "Unavailable"}
-              </p>
-              <p className="mt-2 text-sm opacity-90">{health.message}</p>
-            </div>
-            <p className="mt-4 break-all text-sm text-slate-400">
-              API base URL: {health.apiBaseUrl}
-            </p>
-          </section>
+        <div className="rounded-2xl border border-white/10 bg-slate-900 p-6">
+          <h2 className="text-xl font-semibold text-white">Queue</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            Submissions are persisted in SQLite. The worker drains queued jobs
+            sequentially so heavy annotation runs do not compete with each other.
+          </p>
+        </div>
 
-          <section className="rounded-2xl border border-slate-800 bg-white p-6 text-slate-950">
-            <h2 className="text-xl font-semibold">Annotation Request</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Placeholder form only. The next frontend phase will submit this
-              to <code className="font-mono">POST /jobs</code> and poll job
-              status.
-            </p>
-
-            <form className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium">
-                Profile
-                <input
-                  className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="tcruzi-clbrener"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm font-medium">
-                Organism
-                <input
-                  className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="Trypanosoma cruzi"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm font-medium">
-                Strain
-                <input
-                  className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="CL Brener"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm font-medium">
-                Locus
-                <input
-                  className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="TcCLB.503799.4"
-                />
-              </label>
-              <label className="flex flex-col gap-2 text-sm font-medium sm:col-span-2">
-                Gene name
-                <input
-                  className="rounded-lg border border-slate-300 px-3 py-2"
-                  placeholder="Optional curated gene name"
-                />
-              </label>
-              <button
-                className="rounded-lg bg-slate-950 px-4 py-3 font-semibold text-white opacity-60 sm:col-span-2"
-                disabled
-              >
-                Job submission coming next
-              </button>
-            </form>
-          </section>
+        <div className="rounded-2xl border border-white/10 bg-slate-900 p-6">
+          <h2 className="text-xl font-semibold text-white">Results</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            Completed jobs are saved to MongoDB by canonical organism profile
+            and normalized locus. New runs preserve older versions.
+          </p>
         </div>
       </section>
-    </main>
+    </AppShell>
   );
 }

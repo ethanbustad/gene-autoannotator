@@ -65,11 +65,55 @@ class JobRecordResponse(BaseModel):
 
     id: str
     status: str
+    current_step: str = "queued"
     request: dict[str, Any]
     result: dict[str, Any] | None = None
     error: str | None = None
+    annotation_persisted: bool = False
+    annotation_error: str | None = None
     output_path: str | None = None
     created_at: str
     started_at: str | None = None
     finished_at: str | None = None
     result_available: bool = False
+    queue_position: int | None = None
+
+
+class QueueSummaryResponse(BaseModel):
+    queued: int
+    running: int
+    completed: int
+    failed: int
+
+
+class JobsListResponse(BaseModel):
+    jobs: list[JobRecordResponse]
+    queue: QueueSummaryResponse
+
+
+class AnnotationSearchResult(BaseModel):
+    id: str
+    profile_id: str
+    canonical_name: str
+    species_name: str | None = None
+    strain: str | None = None
+    normalized_locus: str
+    gene_name: str | None = None
+    generated_at: str | None = None
+    version_count: int = 0
+
+
+class AnnotationSearchResponse(BaseModel):
+    query: str
+    matches: list[AnnotationSearchResult]
+
+
+class AnnotationDetailResponse(AnnotationSearchResult):
+    result: dict[str, Any]
+    job_id: str | None = None
+    output_path: str | None = None
+
+
+class AnnotationVersionsResponse(BaseModel):
+    annotation_id: str
+    versions: list[dict[str, Any]]
