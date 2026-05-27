@@ -37,6 +37,38 @@ textarea {
   font: inherit;
 }
 
+.workbench-app {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.workbench-nav {
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  background: linear-gradient(135deg, var(--nav), var(--nav-soft));
+  color: #f5f0e6;
+}
+
+.workbench-nav-subtitle {
+  color: #aebcaf;
+}
+
+.workbench-nav-link {
+  border: 1px solid rgb(255 255 255 / 10%);
+  color: #dce5de;
+}
+
+.workbench-nav-link:hover {
+  border-color: rgb(255 255 255 / 25%);
+  color: white;
+}
+
+.workbench-nav-link-active {
+  border-color: #f3eee4;
+  background: #f3eee4;
+  color: var(--foreground);
+}
+
 .workbench-card {
   border: 1px solid var(--line);
   border-radius: 18px;
@@ -47,6 +79,66 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface);
+}
+
+.workbench-surface-bg {
+  background: var(--surface);
+}
+
+.workbench-muted-bg {
+  background: var(--surface-muted);
+}
+
+.workbench-amber-bg {
+  background: var(--amber-soft);
+}
+
+.workbench-foreground {
+  color: var(--foreground);
+}
+
+.workbench-muted {
+  color: var(--muted);
+}
+
+.workbench-green {
+  color: var(--green);
+}
+
+.workbench-amber {
+  color: var(--amber);
+}
+
+.workbench-red {
+  color: var(--red);
+}
+
+.workbench-border {
+  border-color: var(--line);
+}
+
+.workbench-border-green {
+  border-color: var(--green);
+}
+
+.workbench-border-amber {
+  border-color: var(--amber);
+}
+
+.workbench-border-blue {
+  border-color: var(--blue);
+}
+
+.workbench-border-red {
+  border-color: var(--red);
+}
+
+.health-status-ok {
+  border-top: 5px solid var(--green);
+}
+
+.health-status-warn {
+  border-top: 5px solid var(--amber);
 }
 
 .workbench-kicker {
@@ -109,4 +201,24 @@ textarea {
 .workbench-input:focus {
   border-color: color-mix(in srgb, var(--green) 55%, var(--line));
   box-shadow: 0 0 0 3px rgb(85 120 100 / 14%);
+}
+
+.job-card-running {
+  border-left-color: var(--green);
+  background: linear-gradient(90deg, var(--green-soft), var(--surface) 42%);
+}
+
+.job-card-completed {
+  border-left-color: var(--blue);
+  background: var(--surface);
+}
+
+.job-card-failed {
+  border-left-color: var(--red);
+  background: #fbefed;
+}
+
+.job-card-queued {
+  border-left-color: #b9ad99;
+  background: var(--surface);
 }

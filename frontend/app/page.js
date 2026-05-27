@@ -10,10 +10,10 @@ export default function Home() {
           <p className="workbench-kicker">
             README for the web app
           </p>
-          <h1 className="mt-3 max-w-4xl text-4xl font-bold tracking-[-0.04em] text-[var(--foreground)] sm:text-5xl">
+          <h1 className="workbench-foreground mt-3 max-w-4xl text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
             Generate literature-backed gene annotations without babysitting a terminal.
           </h1>
-          <p className="mt-5 text-lg leading-8 text-[var(--muted)]">
+          <p className="workbench-muted mt-5 text-lg leading-8">
             The autoannotator takes an organism profile and locus, gathers
             relevant literature, asks the configured model to synthesize an
             annotation, and stores the generated result for review. Runs can
@@ -37,7 +37,7 @@ export default function Home() {
           </div>
         </div>
 
-        <aside className="rounded-[18px] border border-[var(--line)] bg-[var(--amber-soft)] p-6 text-[var(--foreground)]">
+        <aside className="workbench-amber-bg workbench-foreground rounded-[18px] border workbench-border p-6">
           <h2 className="text-xl font-bold tracking-[-0.02em]">Important limitations</h2>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-[#5f4b2e]">
             <li>Only one annotation job runs at a time; new jobs wait in order.</li>
@@ -50,24 +50,24 @@ export default function Home() {
 
       <section className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="workbench-card p-6">
-          <h2 className="text-xl font-bold tracking-[-0.02em] text-[var(--foreground)]">Inputs</h2>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+          <h2 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">Inputs</h2>
+          <p className="workbench-muted mt-3 text-sm leading-6">
             A job needs a profile or organism/strain pair plus a locus. A gene
             name can be supplied when you already know the preferred symbol.
           </p>
         </div>
 
         <div className="workbench-card p-6">
-          <h2 className="text-xl font-bold tracking-[-0.02em] text-[var(--foreground)]">Queue</h2>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+          <h2 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">Queue</h2>
+          <p className="workbench-muted mt-3 text-sm leading-6">
             Submissions are persisted in SQLite. The worker drains queued jobs
             sequentially so heavy annotation runs do not compete with each other.
           </p>
         </div>
 
         <div className="workbench-card p-6">
-          <h2 className="text-xl font-bold tracking-[-0.02em] text-[var(--foreground)]">Results</h2>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+          <h2 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">Results</h2>
+          <p className="workbench-muted mt-3 text-sm leading-6">
             Completed jobs are saved to MongoDB by canonical organism profile
             and normalized locus. New runs preserve older versions.
           </p>

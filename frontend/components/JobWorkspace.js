@@ -27,10 +27,10 @@ const stepLabels = {
 };
 
 function statusTone(status) {
-  if (status === "completed") return "border-l-[var(--blue)] bg-[var(--surface)]";
-  if (status === "failed") return "border-l-[var(--red)] bg-[#fbefed]";
-  if (status === "running") return "border-l-[var(--green)] bg-[linear-gradient(90deg,var(--green-soft),var(--surface)_42%)]";
-  return "border-l-[#b9ad99] bg-[var(--surface)]";
+  if (status === "completed") return "job-card-completed";
+  if (status === "failed") return "job-card-failed";
+  if (status === "running") return "job-card-running";
+  return "job-card-queued";
 }
 
 function progressPercent(job) {
@@ -45,15 +45,15 @@ function HealthBadge({ label, status, detail }) {
   const ok = status === "ok";
   return (
     <div
-      className={`min-h-32 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 ${
-        ok ? "border-t-[5px] border-t-[var(--green)]" : "border-t-[5px] border-t-[var(--amber)]"
+      className={`workbench-surface-bg min-h-32 rounded-2xl border workbench-border p-4 ${
+        ok ? "health-status-ok" : "health-status-warn"
       }`}
     >
-      <p className="text-sm font-semibold text-[var(--muted)]">{label}</p>
-      <p className="mt-2 text-base font-bold text-[var(--foreground)]">
+      <p className="workbench-muted text-sm font-semibold">{label}</p>
+      <p className="workbench-foreground mt-2 text-base font-bold">
         {ok ? "Connected" : status || "Unavailable"}
       </p>
-      {detail ? <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{detail}</p> : null}
+      {detail ? <p className="workbench-muted mt-2 text-xs leading-5">{detail}</p> : null}
     </div>
   );
 }
@@ -94,17 +94,17 @@ function JobTile({ job }) {
   const step = stepLabels[job.current_step] || stepLabels[job.status] || job.status;
 
   return (
-    <article className={`rounded-2xl border border-[var(--line)] border-l-[5px] p-4 ${statusTone(job.status)}`}>
+    <article className={`rounded-2xl border workbench-border border-l-[5px] p-4 ${statusTone(job.status)}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-lg font-bold tracking-[-0.02em] text-[var(--foreground)]">
+          <p className="workbench-foreground text-lg font-bold tracking-[-0.02em]">
             {request.name || request.locus || "Unknown locus"}
           </p>
-          <p className="mt-1 text-sm text-[var(--muted)]">
+          <p className="workbench-muted mt-1 text-sm">
             {request.profile || request.organism || "default profile"} · {request.locus}
           </p>
         </div>
-        <span className="rounded-full border border-[var(--line)] bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
+        <span className="rounded-full border workbench-border bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
           {job.status}
         </span>
       </div>
@@ -112,32 +112,32 @@ function JobTile({ job }) {
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#e3dbcf]">
         <div
           className={`h-full rounded-full ${
-            job.status === "failed" ? "bg-[var(--red)]" : "bg-[var(--green)]"
+            job.status === "failed" ? "bg-[#994f56]" : "bg-[#557864]"
           }`}
           style={{ width: `${progressPercent(job)}%` }}
         />
       </div>
 
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-        <div className="border-t border-[var(--line)] pt-2">
-          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Step</dt>
+        <div className="border-t workbench-border pt-2">
+          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Step</dt>
           <dd className="mt-1 text-[#3d463f]">{step}</dd>
         </div>
-        <div className="border-t border-[var(--line)] pt-2">
-          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Queue</dt>
+        <div className="border-t workbench-border pt-2">
+          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Queue</dt>
           <dd className="mt-1 text-[#3d463f]">
             {job.queue_position ? `#${job.queue_position}` : "Active or finished"}
           </dd>
         </div>
-        <div className="border-t border-[var(--line)] pt-2">
-          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Elapsed</dt>
+        <div className="border-t workbench-border pt-2">
+          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Elapsed</dt>
           <dd className="mt-1 text-[#3d463f]">{elapsed}</dd>
         </div>
       </dl>
 
-      {job.error ? <p className="mt-4 text-sm text-[var(--red)]">{job.error}</p> : null}
+      {job.error ? <p className="workbench-red mt-4 text-sm">{job.error}</p> : null}
       {job.annotation_error ? (
-        <p className="mt-4 text-sm text-[var(--amber)]">
+        <p className="workbench-amber mt-4 text-sm">
           Annotation storage warning: {job.annotation_error}
         </p>
       ) : null}
@@ -145,7 +145,7 @@ function JobTile({ job }) {
       {job.result_available ? (
         <Link
           href={`/annotations?query=${encodeURIComponent(request.locus || "")}`}
-          className="mt-4 inline-flex text-sm font-bold text-[var(--green)] hover:text-[var(--nav)]"
+          className="workbench-green mt-4 inline-flex text-sm font-bold hover:text-[#111a16]"
         >
           Search stored annotation
         </Link>
@@ -277,10 +277,10 @@ export default function JobWorkspace() {
             <p className="workbench-kicker">
               Backend
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[var(--foreground)]">
+            <h1 className="workbench-foreground mt-2 text-3xl font-bold tracking-[-0.04em]">
               Submit and monitor jobs
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+            <p className="workbench-muted mt-3 max-w-2xl text-sm leading-6">
               Choose a configured profile, enter a locus, and add the annotation run to the
               shared queue. Status stays visible beside the instructions so backend or storage
               problems are obvious before submitting work.
@@ -330,7 +330,7 @@ export default function JobWorkspace() {
       <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
         <section className="workbench-card p-6">
           <h2 className="text-2xl font-bold tracking-[-0.03em]">New annotation job</h2>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+          <p className="workbench-muted mt-3 text-sm leading-6">
             Choose a configured profile, provide the locus, and submit the run.
             Jobs are queued and executed sequentially; a real annotation can take hours.
           </p>
@@ -353,7 +353,7 @@ export default function JobWorkspace() {
             </label>
 
             {selectedProfile ? (
-              <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--muted)]">
+              <div className="workbench-muted-bg workbench-muted rounded-xl border workbench-border p-4 text-sm">
                 Expected locus format:{" "}
                 <code className="rounded bg-[#eee6d9] px-1 py-0.5">
                   {selectedProfile.locus_regex}
@@ -402,7 +402,7 @@ export default function JobWorkspace() {
               />
             </label>
 
-            <div className="grid gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm">
+            <div className="workbench-muted-bg grid gap-3 rounded-xl border workbench-border p-4 text-sm">
               <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -430,7 +430,7 @@ export default function JobWorkspace() {
             </div>
 
             {statusMessage ? (
-              <p className="rounded-xl border border-[var(--line)] bg-[var(--amber-soft)] p-4 text-sm text-[#5f4b2e]">
+              <p className="workbench-amber-bg rounded-xl border workbench-border p-4 text-sm text-[#5f4b2e]">
                 {statusMessage}
               </p>
             ) : null}
@@ -449,8 +449,8 @@ export default function JobWorkspace() {
         <section className="workbench-card p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--foreground)]">Job queue</h2>
-              <p className="mt-2 text-sm text-[var(--muted)]">
+              <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">Job queue</h2>
+              <p className="workbench-muted mt-2 text-sm">
                 {queue.running || 0} running · {queue.queued || 0} queued ·{" "}
                 {queue.completed || 0} completed · {queue.failed || 0} failed
               </p>
@@ -470,7 +470,7 @@ export default function JobWorkspace() {
             {jobs.length > 0 ? (
               jobs.map((job) => <JobTile key={job.id} job={job} />)
             ) : (
-              <div className="rounded-2xl border border-dashed border-[var(--line)] p-8 text-center text-[var(--muted)]">
+              <div className="workbench-muted rounded-2xl border border-dashed workbench-border p-8 text-center">
                 No jobs have been submitted yet.
               </div>
             )}

@@ -13,9 +13,9 @@ import { buildJobPrefillHref } from "../lib/form";
 function EmptyState({ query }) {
   const href = `/jobs?locus=${encodeURIComponent(query)}`;
   return (
-    <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-muted)] p-8 text-center">
-      <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--foreground)]">No annotation found</h2>
-      <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+    <div className="workbench-muted-bg rounded-2xl border border-dashed workbench-border p-8 text-center">
+      <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">No annotation found</h2>
+      <p className="workbench-muted mx-auto mt-3 max-w-2xl text-sm leading-6">
         There is no stored annotation matching this search yet. You can submit
         the locus as a new queued job and return here after it completes.
       </p>
@@ -32,7 +32,7 @@ function EmptyState({ query }) {
 function AnnotationDetail({ annotation, versions, onLoadVersions }) {
   if (!annotation) {
     return (
-      <div className="workbench-card p-8 text-[var(--muted)]">
+      <div className="workbench-card workbench-muted p-8">
         Select a search result to view the generated annotation.
       </div>
     );
@@ -50,10 +50,10 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
           <p className="workbench-kicker">
             Current annotation
           </p>
-          <h2 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[var(--foreground)]">
+          <h2 className="workbench-foreground mt-2 text-3xl font-bold tracking-[-0.04em]">
             {annotation.gene_name || annotation.normalized_locus}
           </h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">
+          <p className="workbench-muted mt-2 text-sm">
             {annotation.canonical_name} · {annotation.normalized_locus}
           </p>
         </div>
@@ -65,31 +65,31 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
         </Link>
       </div>
 
-      <dl className="mt-6 grid overflow-hidden rounded-xl border border-[var(--line)] text-sm sm:grid-cols-3">
-        <div className="border-b border-[var(--line)] bg-[var(--surface-muted)] p-4 sm:border-r sm:border-b-0">
-          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Generated</dt>
+      <dl className="mt-6 grid overflow-hidden rounded-xl border workbench-border text-sm sm:grid-cols-3">
+        <div className="workbench-muted-bg border-b workbench-border p-4 sm:border-r sm:border-b-0">
+          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Generated</dt>
           <dd className="mt-1 text-[#3d463f]">{generated}</dd>
         </div>
-        <div className="border-b border-[var(--line)] bg-[var(--surface-muted)] p-4 sm:border-r sm:border-b-0">
-          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Versions</dt>
+        <div className="workbench-muted-bg border-b workbench-border p-4 sm:border-r sm:border-b-0">
+          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Versions</dt>
           <dd className="mt-1 text-[#3d463f]">{annotation.version_count}</dd>
         </div>
-        <div className="bg-[var(--surface-muted)] p-4">
-          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Job</dt>
+        <div className="workbench-muted-bg p-4">
+          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Job</dt>
           <dd className="mt-1 break-all text-[#3d463f]">{annotation.job_id || "Unknown"}</dd>
         </div>
       </dl>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-[var(--line)] bg-[#fffefa] p-4">
-          <h3 className="font-bold text-[var(--foreground)]">Generated fields</h3>
+        <section className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+          <h3 className="workbench-foreground font-bold">Generated fields</h3>
           <dl className="mt-4 space-y-3 text-sm">
             {Object.entries(resultAnnotation)
               .filter(([key]) => key !== "annotation_metadata")
               .slice(0, 8)
               .map(([key, value]) => (
                 <div key={key}>
-                  <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">{key.replaceAll("_", " ")}</dt>
+                  <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">{key.replaceAll("_", " ")}</dt>
                   <dd className="mt-1 text-[#3d463f]">
                     {Array.isArray(value) ? value.join(", ") : String(value ?? "Not provided")}
                   </dd>
@@ -98,9 +98,9 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
           </dl>
         </section>
 
-        <section className="rounded-xl border border-[var(--line)] bg-[#fffefa] p-4">
-          <h3 className="font-bold text-[var(--foreground)]">Raw result preview</h3>
-          <pre className="mt-4 max-h-96 overflow-auto rounded-xl bg-[var(--surface-muted)] p-4 text-xs leading-5 text-[#3d463f]">
+        <section className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+          <h3 className="workbench-foreground font-bold">Raw result preview</h3>
+          <pre className="workbench-muted-bg mt-4 max-h-96 overflow-auto rounded-xl p-4 text-xs leading-5 text-[#3d463f]">
             {JSON.stringify(annotation.result, null, 2)}
           </pre>
         </section>
@@ -121,19 +121,19 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
               versions.map((version) => (
                 <div
                   key={version.version_id}
-                  className="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm"
+                  className="workbench-muted-bg rounded-xl border workbench-border p-4 text-sm"
                 >
-                  <p className="font-bold text-[var(--foreground)]">
+                  <p className="workbench-foreground font-bold">
                     {version.gene_name || "Older annotation"}
                   </p>
-                  <p className="mt-1 text-[var(--muted)]">
+                  <p className="workbench-muted mt-1">
                     Generated {new Date(version.generated_at).toLocaleString()} · job{" "}
                     {version.job_id}
                   </p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-[var(--muted)]">No older versions stored yet.</p>
+              <p className="workbench-muted text-sm">No older versions stored yet.</p>
             )}
           </div>
         ) : null}
@@ -205,10 +205,10 @@ export default function AnnotationExplorer({
         <p className="workbench-kicker">
           Annotation library
         </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[var(--foreground)]">
+        <h1 className="workbench-foreground mt-2 text-3xl font-bold tracking-[-0.04em]">
           Search generated annotations
         </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+        <p className="workbench-muted mt-3 max-w-3xl text-sm leading-6">
           Search by locus, gene name, profile, or terms present in stored
           annotation metadata. Current annotations are shown first; older
           versions stay hidden until requested.
@@ -235,27 +235,27 @@ export default function AnnotationExplorer({
             {isSearching ? "Searching..." : "Search"}
           </button>
         </form>
-        {message ? <p className="mt-4 text-sm text-[var(--amber)]">{message}</p> : null}
+        {message ? <p className="workbench-amber mt-4 text-sm">{message}</p> : null}
       </section>
 
       <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
         <section className="workbench-card p-6">
-          <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--foreground)]">Matches</h2>
+          <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">Matches</h2>
           <div className="mt-5 grid gap-3">
             {matches.map((match) => (
               <button
                 type="button"
                 key={match.id}
                 onClick={() => loadAnnotation(match.id)}
-                className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 text-left transition hover:border-[var(--green)]"
+                className="workbench-surface-bg rounded-xl border workbench-border p-4 text-left transition hover:border-[#557864]"
               >
-                <p className="font-bold text-[var(--foreground)]">
+                <p className="workbench-foreground font-bold">
                   {match.gene_name || match.normalized_locus}
                 </p>
-                <p className="mt-1 text-sm text-[var(--muted)]">
+                <p className="workbench-muted mt-1 text-sm">
                   {match.canonical_name} · {match.normalized_locus}
                 </p>
-                <p className="mt-2 text-xs text-[var(--muted)]">
+                <p className="workbench-muted mt-2 text-xs">
                   {match.version_count} older version{match.version_count === 1 ? "" : "s"}
                 </p>
               </button>
@@ -266,7 +266,7 @@ export default function AnnotationExplorer({
             ) : null}
 
             {!searchedQuery ? (
-              <p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-sm text-[var(--muted)]">
+              <p className="workbench-muted rounded-2xl border border-dashed workbench-border p-6 text-sm">
                 Search for an annotation to get started.
               </p>
             ) : null}
