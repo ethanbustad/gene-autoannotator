@@ -28,8 +28,14 @@ An application that uses LLMs to summarize published literature on supplied gene
 
 ## References
 
+# run locally to forward localhost
+
 ssh -L 3000:127.0.0.1:3000 -L 8000:127.0.0.1:8000 caden@10.158.45.197
 
+# to run backend on server
+
 uvicorn backend.api:app --host 127.0.0.1 --port 8000
+
+# to run frontend on server
 
 npm run dev
