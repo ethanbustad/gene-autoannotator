@@ -123,12 +123,14 @@ def create_app(
         except ImportError:
             return {"status": "unavailable", "message": "psutil is not installed"}
 
-        process = psutil.Process(os.getpid())
-        memory = process.memory_info()
+        memory = psutil.virtual_memory()
         return {
             "status": "ok",
-            "process_memory_mb": round(memory.rss / 1024 / 1024, 2),
-            "process_cpu_percent": process.cpu_percent(interval=None),
+            "cpu_percent": psutil.cpu_percent(interval=None),
+            "memory_total_bytes": memory.total,
+            "memory_used_bytes": memory.used,
+            "memory_available_bytes": memory.available,
+            "memory_percent": memory.percent,
         }
 
     @app.get("/health")

@@ -17,7 +17,12 @@ def test_health_endpoint(tmp_path):
     assert payload["status"] == "ok"
     assert payload["stores"]["jobs"]["status"] == "ok"
     assert "queue" in payload
-    assert "resources" in payload
+    assert payload["resources"]["status"] == "ok"
+    assert "cpu_percent" in payload["resources"]
+    assert "memory_total_bytes" in payload["resources"]
+    assert "memory_used_bytes" in payload["resources"]
+    assert "memory_available_bytes" in payload["resources"]
+    assert "memory_percent" in payload["resources"]
 
 
 def test_cors_allows_local_frontend_origin(tmp_path):
