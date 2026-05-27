@@ -1,8 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3eee4;
+  --foreground: #18211c;
+  --surface: #fffdf8;
+  --surface-muted: #f8f3ea;
+  --muted: #677168;
+  --line: #d8d0c2;
+  --nav: #111a16;
+  --nav-soft: #1a2821;
+  --green: #557864;
+  --green-soft: #e8efe8;
+  --amber: #9b7339;
+  --amber-soft: #f5ead6;
+  --blue: #3f6377;
+  --red: #994f56;
 }
 
 @theme inline {
@@ -10,13 +22,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -30,4 +35,78 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+.workbench-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgb(255 253 248 / 82%);
+}
+
+.workbench-surface {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.workbench-kicker {
+  color: var(--green);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.workbench-button {
+  display: inline-flex;
+  min-height: 2.375rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.625rem;
+  padding: 0 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 750;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+}
+
+.workbench-button-primary {
+  background: var(--nav);
+  color: white;
+}
+
+.workbench-button-primary:hover {
+  background: var(--nav-soft);
+}
+
+.workbench-button-secondary {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.workbench-button-secondary:hover {
+  border-color: color-mix(in srgb, var(--green) 50%, var(--line));
+}
+
+.workbench-input {
+  min-height: 2.75rem;
+  border: 1px solid #cfc6b7;
+  border-radius: 0.625rem;
+  background: #fffefa;
+  padding: 0.75rem;
+  color: var(--foreground);
+  outline: none;
+}
+
+.workbench-input::placeholder {
+  color: #8d958f;
+}
+
+.workbench-input:focus {
+  border-color: color-mix(in srgb, var(--green) 55%, var(--line));
+  box-shadow: 0 0 0 3px rgb(85 120 100 / 14%);
 }

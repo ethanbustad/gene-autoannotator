@@ -27,10 +27,10 @@ const stepLabels = {
 };
 
 function statusTone(status) {
-  if (status === "completed") return "border-emerald-400/40 bg-emerald-400/10";
-  if (status === "failed") return "border-rose-400/40 bg-rose-400/10";
-  if (status === "running") return "border-cyan-400/40 bg-cyan-400/10";
-  return "border-slate-700 bg-slate-900";
+  if (status === "completed") return "border-l-[var(--blue)] bg-[var(--surface)]";
+  if (status === "failed") return "border-l-[var(--red)] bg-[#fbefed]";
+  if (status === "running") return "border-l-[var(--green)] bg-[linear-gradient(90deg,var(--green-soft),var(--surface)_42%)]";
+  return "border-l-[#b9ad99] bg-[var(--surface)]";
 }
 
 function progressPercent(job) {
@@ -45,15 +45,15 @@ function HealthBadge({ label, status, detail }) {
   const ok = status === "ok";
   return (
     <div
-      className={`rounded-2xl border p-4 ${
-        ok ? "border-emerald-400/30 bg-emerald-400/10" : "border-amber-400/30 bg-amber-400/10"
+      className={`min-h-32 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 ${
+        ok ? "border-t-[5px] border-t-[var(--green)]" : "border-t-[5px] border-t-[var(--amber)]"
       }`}
     >
-      <p className="text-sm font-semibold text-white">{label}</p>
-      <p className={ok ? "mt-1 text-sm text-emerald-200" : "mt-1 text-sm text-amber-200"}>
+      <p className="text-sm font-semibold text-[var(--muted)]">{label}</p>
+      <p className="mt-2 text-base font-bold text-[var(--foreground)]">
         {ok ? "Connected" : status || "Unavailable"}
       </p>
-      {detail ? <p className="mt-2 text-xs text-slate-400">{detail}</p> : null}
+      {detail ? <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{detail}</p> : null}
     </div>
   );
 }
@@ -94,50 +94,50 @@ function JobTile({ job }) {
   const step = stepLabels[job.current_step] || stepLabels[job.status] || job.status;
 
   return (
-    <article className={`rounded-2xl border p-5 ${statusTone(job.status)}`}>
+    <article className={`rounded-2xl border border-[var(--line)] border-l-[5px] p-4 ${statusTone(job.status)}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-lg font-semibold text-white">
+          <p className="text-lg font-bold tracking-[-0.02em] text-[var(--foreground)]">
             {request.name || request.locus || "Unknown locus"}
           </p>
-          <p className="mt-1 text-sm text-slate-300">
+          <p className="mt-1 text-sm text-[var(--muted)]">
             {request.profile || request.organism || "default profile"} · {request.locus}
           </p>
         </div>
-        <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
+        <span className="rounded-full border border-[var(--line)] bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
           {job.status}
         </span>
       </div>
 
-      <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-800">
+      <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#e3dbcf]">
         <div
           className={`h-full rounded-full ${
-            job.status === "failed" ? "bg-rose-400" : "bg-cyan-300"
+            job.status === "failed" ? "bg-[var(--red)]" : "bg-[var(--green)]"
           }`}
           style={{ width: `${progressPercent(job)}%` }}
         />
       </div>
 
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-        <div>
-          <dt className="text-slate-500">Step</dt>
-          <dd className="mt-1 text-slate-200">{step}</dd>
+        <div className="border-t border-[var(--line)] pt-2">
+          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Step</dt>
+          <dd className="mt-1 text-[#3d463f]">{step}</dd>
         </div>
-        <div>
-          <dt className="text-slate-500">Queue</dt>
-          <dd className="mt-1 text-slate-200">
+        <div className="border-t border-[var(--line)] pt-2">
+          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Queue</dt>
+          <dd className="mt-1 text-[#3d463f]">
             {job.queue_position ? `#${job.queue_position}` : "Active or finished"}
           </dd>
         </div>
-        <div>
-          <dt className="text-slate-500">Elapsed</dt>
-          <dd className="mt-1 text-slate-200">{elapsed}</dd>
+        <div className="border-t border-[var(--line)] pt-2">
+          <dt className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--muted)]">Elapsed</dt>
+          <dd className="mt-1 text-[#3d463f]">{elapsed}</dd>
         </div>
       </dl>
 
-      {job.error ? <p className="mt-4 text-sm text-rose-200">{job.error}</p> : null}
+      {job.error ? <p className="mt-4 text-sm text-[var(--red)]">{job.error}</p> : null}
       {job.annotation_error ? (
-        <p className="mt-4 text-sm text-amber-200">
+        <p className="mt-4 text-sm text-[var(--amber)]">
           Annotation storage warning: {job.annotation_error}
         </p>
       ) : null}
@@ -145,7 +145,7 @@ function JobTile({ job }) {
       {job.result_available ? (
         <Link
           href={`/annotations?query=${encodeURIComponent(request.locus || "")}`}
-          className="mt-4 inline-flex text-sm font-semibold text-cyan-200 hover:text-cyan-100"
+          className="mt-4 inline-flex text-sm font-bold text-[var(--green)] hover:text-[var(--nav)]"
         >
           Search stored annotation
         </Link>
@@ -270,28 +270,40 @@ export default function JobWorkspace() {
   }
 
   return (
-    <div className="grid gap-8">
-      <section className="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <div className="grid gap-5">
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+        <div className="workbench-card flex min-h-64 flex-col justify-between p-6">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-300">
+            <p className="workbench-kicker">
               Backend
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">Submit and monitor jobs</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-[-0.04em] text-[var(--foreground)]">
+              Submit and monitor jobs
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+              Choose a configured profile, enter a locus, and add the annotation run to the
+              shared queue. Status stays visible beside the instructions so backend or storage
+              problems are obvious before submitting work.
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              refreshHealth();
-              refreshJobs();
-            }}
-            className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-cyan-300/70"
-          >
-            Refresh
-          </button>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                refreshHealth();
+                refreshJobs();
+              }}
+              className="workbench-button workbench-button-secondary"
+            >
+              Refresh
+            </button>
+            <span className="workbench-button workbench-button-secondary">
+              Queue runs sequentially
+            </span>
+          </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           <HealthBadge
             label="API"
             status={health?.status}
@@ -315,10 +327,10 @@ export default function JobWorkspace() {
         </div>
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="rounded-3xl border border-white/10 bg-white p-6 text-slate-950">
-          <h2 className="text-2xl font-semibold">New annotation job</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+      <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+        <section className="workbench-card p-6">
+          <h2 className="text-2xl font-bold tracking-[-0.03em]">New annotation job</h2>
+          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
             Choose a configured profile, provide the locus, and submit the run.
             Jobs are queued and executed sequentially; a real annotation can take hours.
           </p>
@@ -329,7 +341,7 @@ export default function JobWorkspace() {
               <select
                 value={form.profile}
                 onChange={(event) => updateForm("profile", event.target.value)}
-                className="rounded-xl border border-slate-300 px-3 py-3"
+                className="workbench-input"
               >
                 <option value="">Custom organism/strain</option>
                 {profiles.map((profile) => (
@@ -341,9 +353,9 @@ export default function JobWorkspace() {
             </label>
 
             {selectedProfile ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--muted)]">
                 Expected locus format:{" "}
-                <code className="rounded bg-slate-200 px-1 py-0.5">
+                <code className="rounded bg-[#eee6d9] px-1 py-0.5">
                   {selectedProfile.locus_regex}
                 </code>
               </div>
@@ -354,7 +366,7 @@ export default function JobWorkspace() {
                   <input
                     value={form.organism}
                     onChange={(event) => updateForm("organism", event.target.value)}
-                    className="rounded-xl border border-slate-300 px-3 py-3"
+                    className="workbench-input"
                     placeholder="Trypanosoma cruzi"
                   />
                 </label>
@@ -363,7 +375,7 @@ export default function JobWorkspace() {
                   <input
                     value={form.strain}
                     onChange={(event) => updateForm("strain", event.target.value)}
-                    className="rounded-xl border border-slate-300 px-3 py-3"
+                    className="workbench-input"
                     placeholder="CL Brener"
                   />
                 </label>
@@ -375,7 +387,7 @@ export default function JobWorkspace() {
               <input
                 value={form.locus}
                 onChange={(event) => updateForm("locus", event.target.value)}
-                className="rounded-xl border border-slate-300 px-3 py-3"
+                className="workbench-input"
                 placeholder="Rv0001 or TcCLB.503799.4"
               />
             </label>
@@ -385,12 +397,12 @@ export default function JobWorkspace() {
               <input
                 value={form.name}
                 onChange={(event) => updateForm("name", event.target.value)}
-                className="rounded-xl border border-slate-300 px-3 py-3"
+                className="workbench-input"
                 placeholder="dnaA"
               />
             </label>
 
-            <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm">
+            <div className="grid gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-4 text-sm">
               <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -418,7 +430,7 @@ export default function JobWorkspace() {
             </div>
 
             {statusMessage ? (
-              <p className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+              <p className="rounded-xl border border-[var(--line)] bg-[var(--amber-soft)] p-4 text-sm text-[#5f4b2e]">
                 {statusMessage}
               </p>
             ) : null}
@@ -427,18 +439,18 @@ export default function JobWorkspace() {
               type="submit"
               disabled={!canSubmit}
               suppressHydrationWarning
-              className="rounded-xl bg-slate-950 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="workbench-button workbench-button-primary min-h-11 px-5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? "Submitting..." : "Queue annotation job"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-3xl border border-white/10 bg-slate-900/70 p-6">
+        <section className="workbench-card p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold text-white">Job queue</h2>
-              <p className="mt-2 text-sm text-slate-400">
+              <h2 className="text-2xl font-bold tracking-[-0.03em] text-[var(--foreground)]">Job queue</h2>
+              <p className="mt-2 text-sm text-[var(--muted)]">
                 {queue.running || 0} running · {queue.queued || 0} queued ·{" "}
                 {queue.completed || 0} completed · {queue.failed || 0} failed
               </p>
@@ -448,7 +460,7 @@ export default function JobWorkspace() {
               onClick={handleClearHistory}
               disabled={(queue.completed || 0) + (queue.failed || 0) === 0}
               suppressHydrationWarning
-              className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-cyan-300/70 disabled:cursor-not-allowed disabled:opacity-50"
+              className="workbench-button workbench-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Clear finished history
             </button>
@@ -458,7 +470,7 @@ export default function JobWorkspace() {
             {jobs.length > 0 ? (
               jobs.map((job) => <JobTile key={job.id} job={job} />)
             ) : (
-              <div className="rounded-2xl border border-dashed border-slate-700 p-8 text-center text-slate-400">
+              <div className="rounded-2xl border border-dashed border-[var(--line)] p-8 text-center text-[var(--muted)]">
                 No jobs have been submitted yet.
               </div>
             )}
