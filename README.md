@@ -27,3 +27,9 @@ An application that uses LLMs to summarize published literature on supplied gene
 ## Limitations / Considerations
 
 ## References
+
+ssh -L 3000:127.0.0.1:3000 -L 8000:127.0.0.1:8000 caden@10.158.45.197
+
+uvicorn backend.api:app --host 127.0.0.1 --port 8000
+
+npm run dev

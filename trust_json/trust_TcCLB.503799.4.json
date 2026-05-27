@@ -1,0 +1,16 @@
+{
+    "gene_id": "TcCLB.503799.4",
+    "name": "AUK1",
+    "function": "Cell division, DNA synthesis, symmetric mitosis, kinetoplast (mitochondrial DNA) duplication",
+    "functional_category": [
+        "protein kinase activity", 
+        "protein serine/threonine kinase activity", 
+        "ATP binding", 
+        "cellular_component", 
+        "protein phosphorylation"
+    ],
+    "drug_susc_impact": "",
+    "infection_impact": "",
+    "essential_in_vitro": null,
+    "essential_in_vivo": null
+}

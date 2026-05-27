@@ -1,0 +1,21 @@
+{
+    "gene_id": "TcCLB.507093.220",
+    "name": "UBP1",
+    "function": "RNA binding",
+    "functional_category": [
+        "RNA processing", 
+        "cellular_component", 
+        "nucleus", 
+        "spliceosomal complex", 
+        "cytoplasm", 
+        "mitochondrion", 
+        "acidocalcisome", 
+        "nucleic acid binding", 
+        "RNA binding", 
+        "mRNA binding"
+    ],
+    "drug_susc_impact": "",
+    "infection_impact": "",
+    "essential_in_vitro": null,
+    "essential_in_vivo": null
+}
