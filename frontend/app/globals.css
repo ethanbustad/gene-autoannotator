@@ -203,16 +203,6 @@ textarea {
   box-shadow: 0 0 0 3px rgb(85 120 100 / 14%);
 }
 
-.annotation-layout {
-  display: grid;
-  gap: 1.25rem;
-}
-
-.annotation-detail-card,
-.annotation-detail-section {
-  min-width: 0;
-}
-
 .annotation-raw-json {
   display: block;
   width: 100%;
@@ -220,12 +210,6 @@ textarea {
   min-width: 0;
   overflow: auto;
   white-space: pre;
-}
-
-@media (min-width: 1024px) {
-  .annotation-layout {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-  }
 }
 
 .job-card-running {
