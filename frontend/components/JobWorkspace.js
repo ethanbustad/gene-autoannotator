@@ -16,6 +16,7 @@ import {
   buildJobPayload,
   formatJobElapsed,
 } from "../lib/form";
+import { getHiddenJobCount, getVisibleJobs } from "../lib/jobQueue";
 
 const stepLabels = {
   queued: "Waiting in queue",
@@ -157,6 +158,7 @@ export default function JobWorkspace() {
   const [health, setHealth] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const [queue, setQueue] = useState({ queued: 0, running: 0, completed: 0, failed: 0 });
   const [statusMessage, setStatusMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -173,6 +175,8 @@ export default function JobWorkspace() {
 
   const apiAvailable = health?.status === "ok";
   const canSubmit = health !== null && apiAvailable && !isSubmitting;
+  const hiddenJobCount = getHiddenJobCount(jobs);
+  const visibleJobs = getVisibleJobs(jobs, showAllJobs);
 
   async function refreshHealth() {
     try {
@@ -450,20 +454,31 @@ export default function JobWorkspace() {
                 {queue.completed || 0} completed · {queue.failed || 0} failed
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleClearHistory}
-              disabled={(queue.completed || 0) + (queue.failed || 0) === 0}
-              suppressHydrationWarning
-              className="workbench-button workbench-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Clear finished history
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {hiddenJobCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllJobs((current) => !current)}
+                  className="workbench-button workbench-button-secondary"
+                >
+                  {showAllJobs ? "Hide extra jobs" : `Show all jobs (${hiddenJobCount} more)`}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleClearHistory}
+                disabled={(queue.completed || 0) + (queue.failed || 0) === 0}
+                suppressHydrationWarning
+                className="workbench-button workbench-button-secondary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Clear finished history
+              </button>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-4">
             {jobs.length > 0 ? (
-              jobs.map((job) => <JobTile key={job.id} job={job} />)
+              visibleJobs.map((job) => <JobTile key={job.id} job={job} />)
             ) : (
               <div className="workbench-muted rounded-2xl border border-dashed workbench-border p-8 text-center">
                 No jobs have been submitted yet.
