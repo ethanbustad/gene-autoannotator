@@ -9,6 +9,10 @@ import {
   searchAnnotations,
 } from "../lib/api";
 import {
+  getHiddenMatchCount,
+  getVisibleMatches,
+} from "../lib/annotationMatches";
+import {
   getGeneratedFieldRows,
   getMetadataRows,
   getPmcIdsAnalyzed,
@@ -197,6 +201,9 @@ export default function AnnotationExplorer({
   const [message, setMessage] = useState(initialMessage);
   const [searchedQuery, setSearchedQuery] = useState(initialQuery);
   const [isSearching, setIsSearching] = useState(false);
+  const [showAllMatches, setShowAllMatches] = useState(false);
+  const hiddenMatchCount = getHiddenMatchCount(matches);
+  const visibleMatches = getVisibleMatches(matches, showAllMatches);
 
   async function runSearch(nextQuery = query) {
     const trimmed = nextQuery.trim();
@@ -210,6 +217,7 @@ export default function AnnotationExplorer({
     setSelected(null);
     setVersions(null);
     setSearchedQuery(trimmed);
+    setShowAllMatches(false);
 
     try {
       const payload = await searchAnnotations(trimmed);
@@ -281,11 +289,24 @@ export default function AnnotationExplorer({
         {message ? <p className="workbench-amber mt-4 text-sm">{message}</p> : null}
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
+      <div className="grid items-start gap-5 lg:grid-cols-[0.8fr_1.2fr]">
         <section className="workbench-card p-6">
-          <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">Matches</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">
+              Matches
+            </h2>
+            {hiddenMatchCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setShowAllMatches((current) => !current)}
+                className="workbench-button workbench-button-secondary w-36 shrink-0"
+              >
+                {showAllMatches ? "Hide all" : `View all (${matches.length})`}
+              </button>
+            ) : null}
+          </div>
           <div className="mt-5 grid gap-3">
-            {matches.map((match) => (
+            {visibleMatches.map((match) => (
               <button
                 type="button"
                 key={match.id}
