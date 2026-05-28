@@ -1,6 +1,20 @@
-const DEFAULT_API_BASE_URL = "http://10.158.45.197:8000";
+const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
+const BROWSER_API_BASE_URL = "/api/backend";
+
+function getBrowserApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return BROWSER_API_BASE_URL;
+}
 
 export function getApiBaseUrl() {
+  const browserApiBaseUrl = getBrowserApiBaseUrl();
+
+  if (browserApiBaseUrl) {
+    return browserApiBaseUrl;
+  }
+
   return process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL;
 }
 

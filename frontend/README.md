@@ -20,8 +20,9 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-The Python backend should be running separately, usually at
-[http://10.158.45.197:8000](http://10.158.45.197:8000).
+The Python backend should be running separately on port `8000`. Browser API
+calls go through the same-origin `/api/backend` proxy, so remote devices only
+need to reach the frontend on port `3000`.
 
 ## Scripts
 

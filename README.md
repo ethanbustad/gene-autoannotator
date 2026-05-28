@@ -34,8 +34,14 @@ ssh -L 3000:127.0.0.1:3000 -L 8000:127.0.0.1:8000 caden@localhost
 
 # to run backend on server
 
-uvicorn backend.api:app --host 127.0.0.1 --port 8000
+activatevenv
+uvicorn backend.api:app --host 0.0.0.0 --port 8000
 
 # to run frontend on server
 
+cd frontend
 npm run dev
+
+# open from another device on the same network
+
+http://<server-ip>:3000/jobs

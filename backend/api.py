@@ -38,6 +38,15 @@ DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 )
+DEFAULT_CORS_ORIGIN_REGEX = (
+    r"^https?://("
+    r"localhost|"
+    r"127\.0\.0\.1|"
+    r"10(?:\.\d{1,3}){3}|"
+    r"192\.168(?:\.\d{1,3}){2}|"
+    r"172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}"
+    r"):3000$"
+)
 
 
 def _profile_response(profile):
@@ -109,9 +118,11 @@ def create_app(
         for origin in os.getenv("CORS_ORIGINS", ",".join(DEFAULT_CORS_ORIGINS)).split(",")
         if origin.strip()
     ]
+    cors_origin_regex = os.getenv("CORS_ORIGIN_REGEX", DEFAULT_CORS_ORIGIN_REGEX).strip()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
+        allow_origin_regex=cors_origin_regex or None,
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],

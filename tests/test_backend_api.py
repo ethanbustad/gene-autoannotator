@@ -41,6 +41,23 @@ def test_cors_allows_local_frontend_origin(tmp_path):
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
 
 
+def test_cors_allows_private_network_frontend_origin(tmp_path):
+    app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
+    client = TestClient(app)
+
+    response = client.options(
+        "/validate",
+        headers={
+            "Origin": "http://10.158.45.197:3000",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://10.158.45.197:3000"
+
+
 def test_profiles_endpoint_lists_configured_profiles(tmp_path):
     app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
     client = TestClient(app)
