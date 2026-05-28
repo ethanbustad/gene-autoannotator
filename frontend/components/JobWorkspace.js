@@ -297,9 +297,6 @@ export default function JobWorkspace() {
             >
               Refresh
             </button>
-            <span className="workbench-button workbench-button-secondary">
-              Queue runs sequentially
-            </span>
           </div>
         </div>
 
