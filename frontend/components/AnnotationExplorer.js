@@ -8,6 +8,11 @@ import {
   getAnnotationVersions,
   searchAnnotations,
 } from "../lib/api";
+import {
+  getGeneratedFieldRows,
+  getMetadataRows,
+  getPmcIdsAnalyzed,
+} from "../lib/annotationDisplay";
 import { buildJobPrefillHref } from "../lib/form";
 
 function EmptyState({ query }) {
@@ -41,7 +46,9 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
   const generated = annotation.generated_at
     ? new Date(annotation.generated_at).toLocaleString()
     : "Unknown";
-  const resultAnnotation = annotation.result?.annotation || {};
+  const generatedRows = getGeneratedFieldRows(annotation);
+  const metadataRows = getMetadataRows(annotation);
+  const pmcIdsAnalyzed = getPmcIdsAnalyzed(annotation);
 
   return (
     <article className="workbench-card p-6">
@@ -80,30 +87,66 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
         </div>
       </dl>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border workbench-border bg-[#fffefa] p-4">
-          <h3 className="workbench-foreground font-bold">Generated fields</h3>
-          <dl className="mt-4 space-y-3 text-sm">
-            {Object.entries(resultAnnotation)
-              .filter(([key]) => key !== "annotation_metadata")
-              .slice(0, 8)
-              .map(([key, value]) => (
-                <div key={key}>
-                  <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">{key.replaceAll("_", " ")}</dt>
-                  <dd className="mt-1 text-[#3d463f]">
-                    {Array.isArray(value) ? value.join(", ") : String(value ?? "Not provided")}
-                  </dd>
-                </div>
-              ))}
+      <div className="mt-6 grid gap-4">
+        <section className="rounded-xl border workbench-border bg-[#fffefa] p-5">
+          <h3 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">
+            Generated annotation fields
+          </h3>
+          <dl className="mt-5 grid gap-4">
+            {generatedRows.map((row) => (
+              <div key={row.key} className="workbench-muted-bg rounded-xl border workbench-border p-4">
+                <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
+                  {row.label}
+                </dt>
+                <dd className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3d463f]">
+                  {row.value}
+                </dd>
+              </div>
+            ))}
           </dl>
         </section>
 
-        <section className="rounded-xl border workbench-border bg-[#fffefa] p-4">
-          <h3 className="workbench-foreground font-bold">Raw result preview</h3>
+        <details className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+          <summary className="workbench-foreground cursor-pointer text-sm font-bold">
+            Annotation metadata
+          </summary>
+          <dl className="mt-4 grid gap-3 text-sm">
+            {metadataRows.map((row) => (
+              <div key={row.key} className="workbench-muted-bg rounded-xl border workbench-border p-4">
+                <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
+                  {row.label}
+                </dt>
+                <dd className="mt-2 whitespace-pre-wrap leading-6 text-[#3d463f]">{row.value}</dd>
+              </div>
+            ))}
+          </dl>
+
+          <details className="workbench-muted-bg mt-4 rounded-xl border workbench-border p-4">
+            <summary className="workbench-foreground cursor-pointer text-sm font-bold">
+              PMC IDs analyzed
+            </summary>
+            {pmcIdsAnalyzed.length > 0 ? (
+              <ul className="mt-3 grid gap-2 text-sm text-[#3d463f] sm:grid-cols-2">
+                {pmcIdsAnalyzed.map((pmcId) => (
+                  <li key={pmcId} className="rounded-lg bg-white/70 px-3 py-2">
+                    PMC{pmcId}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="workbench-muted mt-3 text-sm">No analyzed PMC IDs stored.</p>
+            )}
+          </details>
+        </details>
+
+        <details className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+          <summary className="workbench-foreground cursor-pointer text-sm font-bold">
+            Raw JSON
+          </summary>
           <pre className="workbench-muted-bg mt-4 max-h-96 overflow-auto rounded-xl p-4 text-xs leading-5 text-[#3d463f]">
             {JSON.stringify(annotation.result, null, 2)}
           </pre>
-        </section>
+        </details>
       </div>
 
       <div className="mt-6">

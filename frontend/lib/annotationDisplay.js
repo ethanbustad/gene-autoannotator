@@ -1,0 +1,105 @@
+export const GENERATED_FIELD_ORDER = [
+  ["functional_category", "Functional category"],
+  ["function", "Function"],
+  ["drug_susc_impact", "Drug susceptibility impact"],
+  ["infection_impact", "Infection impact"],
+  ["essential_in_vitro", "Essential in vitro"],
+  ["essential_in_vivo", "Essential in vivo"],
+];
+
+const METADATA_FIELDS = [
+  ["annotation_notes", "Annotation notes"],
+  ["total_papers", "Total papers"],
+  ["papers_analyzed", "Papers analyzed"],
+  ["sections_analyzed", "Sections analyzed"],
+  ["cumulative_relevance", "Cumulative relevance"],
+  ["quality_flags", "Quality flags"],
+  ["duration", "Duration"],
+];
+
+function getAnnotationPayload(annotation) {
+  return annotation?.result?.annotation || {};
+}
+
+function getMetadata(annotation) {
+  return getAnnotationPayload(annotation).annotation_metadata || {};
+}
+
+function getLiterature(annotation) {
+  return getMetadata(annotation).literature || {};
+}
+
+function formatDuration(seconds) {
+  if (seconds == null || Number.isNaN(Number(seconds))) {
+    return "No supported data";
+  }
+
+  const total = Math.max(0, Math.round(Number(seconds)));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainingSeconds = total % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (minutes > 0) {
+    return `${minutes}m ${remainingSeconds}s`;
+  }
+  return `${remainingSeconds}s`;
+}
+
+export function formatAnnotationValue(value) {
+  if (value == null) {
+    return "No supported data";
+  }
+  if (typeof value === "boolean") {
+    return value ? "True" : "False";
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "No supported data";
+    }
+    return value.map(formatAnnotationValue).join(", ");
+  }
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+
+  const text = String(value).trim();
+  return text || "No supported data";
+}
+
+export function getGeneratedFieldRows(annotation) {
+  const payload = getAnnotationPayload(annotation);
+  return GENERATED_FIELD_ORDER.map(([key, label]) => ({
+    key,
+    label,
+    value: formatAnnotationValue(payload[key]),
+  }));
+}
+
+export function getMetadataRows(annotation) {
+  const payload = getAnnotationPayload(annotation);
+  const metadata = getMetadata(annotation);
+  const literature = getLiterature(annotation);
+  const values = {
+    annotation_notes: payload.annotation_notes,
+    total_papers: literature.total_papers_retrieved,
+    papers_analyzed: literature.papers_analyzed,
+    sections_analyzed: literature.sections_analyzed,
+    cumulative_relevance: literature.cumulative_relevance,
+    quality_flags: metadata.quality_flags,
+    duration: formatDuration(metadata.duration_sec),
+  };
+
+  return METADATA_FIELDS.map(([key, label]) => ({
+    key,
+    label,
+    value: formatAnnotationValue(values[key]),
+  }));
+}
+
+export function getPmcIdsAnalyzed(annotation) {
+  const ids = getLiterature(annotation).pmc_ids_analyzed;
+  return Array.isArray(ids) ? ids : [];
+}
