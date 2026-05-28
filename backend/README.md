@@ -36,7 +36,7 @@ uvicorn backend.api:app --host 0.0.0.0 --port 8000
 Check that it is reachable:
 
 ```bash
-curl http://localhost:8000/health
+curl http://10.158.45.197:8000/health
 ```
 
 Annotation search/history uses MongoDB. Put your local connection string in the

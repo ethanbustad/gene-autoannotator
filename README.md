@@ -30,7 +30,7 @@ An application that uses LLMs to summarize published literature on supplied gene
 
 # run locally to forward localhost
 
-ssh -L 3000:127.0.0.1:3000 -L 8000:127.0.0.1:8000 caden@10.158.45.197
+ssh -L 3000:127.0.0.1:3000 -L 8000:127.0.0.1:8000 caden@localhost
 
 # to run backend on server
 

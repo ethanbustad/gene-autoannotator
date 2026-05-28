@@ -21,7 +21,7 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 The Python backend should be running separately, usually at
-[http://localhost:8000](http://localhost:8000).
+[http://10.158.45.197:8000](http://10.158.45.197:8000).
 
 ## Scripts
 
