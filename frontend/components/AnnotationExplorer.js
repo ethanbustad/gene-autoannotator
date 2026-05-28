@@ -37,7 +37,7 @@ function EmptyState({ query }) {
 function AnnotationDetail({ annotation, versions, onLoadVersions }) {
   if (!annotation) {
     return (
-      <div className="workbench-card workbench-muted p-8">
+      <div className="annotation-detail-card workbench-card workbench-muted p-8">
         Select a search result to view the generated annotation.
       </div>
     );
@@ -51,7 +51,7 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
   const pmcIdsAnalyzed = getPmcIdsAnalyzed(annotation);
 
   return (
-    <article className="workbench-card p-6">
+    <article className="annotation-detail-card workbench-card p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="workbench-kicker">
@@ -88,7 +88,7 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
       </dl>
 
       <div className="mt-6 grid gap-4">
-        <section className="rounded-xl border workbench-border bg-[#fffefa] p-5">
+        <section className="annotation-detail-section rounded-xl border workbench-border bg-[#fffefa] p-5">
           <h3 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">
             Generated annotation fields
           </h3>
@@ -106,7 +106,7 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
           </dl>
         </section>
 
-        <details className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+        <details className="annotation-detail-section rounded-xl border workbench-border bg-[#fffefa] p-4">
           <summary className="workbench-foreground cursor-pointer text-sm font-bold">
             Annotation metadata
           </summary>
@@ -139,11 +139,11 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
           </details>
         </details>
 
-        <details className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+        <details className="annotation-detail-section rounded-xl border workbench-border bg-[#fffefa] p-4">
           <summary className="workbench-foreground cursor-pointer text-sm font-bold">
             Raw JSON
           </summary>
-          <pre className="workbench-muted-bg mt-4 max-h-96 overflow-auto rounded-xl p-4 text-xs leading-5 text-[#3d463f]">
+          <pre className="annotation-raw-json workbench-muted-bg mt-4 max-h-96 rounded-xl p-4 text-xs leading-5 text-[#3d463f]">
             {JSON.stringify(annotation.result, null, 2)}
           </pre>
         </details>
@@ -281,8 +281,8 @@ export default function AnnotationExplorer({
         {message ? <p className="workbench-amber mt-4 text-sm">{message}</p> : null}
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-        <section className="workbench-card p-6">
+      <div className="annotation-layout">
+        <section className="workbench-card min-w-0 p-6">
           <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">Matches</h2>
           <div className="mt-5 grid gap-3">
             {matches.map((match) => (
