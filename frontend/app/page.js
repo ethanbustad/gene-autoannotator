@@ -11,7 +11,7 @@ export default function Home() {
             README for the web app
           </p>
           <h1 className="workbench-foreground mt-3 max-w-4xl text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
-            Generate literature-backed gene annotations without babysitting a terminal.
+            Generate literature-backed gene annotations.
           </h1>
           <p className="workbench-muted mt-5 text-lg leading-8">
             The autoannotator takes an organism profile and locus, gathers
