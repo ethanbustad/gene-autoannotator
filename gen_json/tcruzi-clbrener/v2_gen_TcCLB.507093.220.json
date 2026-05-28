@@ -13,7 +13,7 @@
   "essential_in_vivo": null,
   "annotation_notes": "Multiple publications describe UBP1's role in mRNA regulation and its impact on parasite differentiation and infectivity.  Conflicting data exists regarding the specific mechanisms and functions, highlighting the complexity of this protein's role.",
   "annotation_metadata": {
-    "generated_at": "2026-05-21T07:57:35.939469+00:00",
+    "generated_at": "2026-05-28T00:08:12.244062+00:00",
     "gene": "TcCLB.507093.220",
     "gene_name": "UBP1",
     "profile_id": "tcruzi-clbrener",
@@ -364,7 +364,7 @@
       ]
     },
     "quality_flags": [],
-    "duration_sec": 24273.8,
+    "duration_sec": 2.1,
     "field_coverage": {
       "function": "supported",
       "functional_category": "supported",

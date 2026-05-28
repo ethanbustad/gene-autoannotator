@@ -1,7 +1,7 @@
 {
   "gene_id": "TcCLB.503799.4",
   "name": "AUK1",
-  "function": "involved in mitotic spindle assembling and chromosome segregation; appears to play a role during the initiation of kinetoplast duplication (PMID: 30897087); coordinates events associated with mitosis and cytokinesis; phosphorylates histone H3 (PMID: 19320832).",
+  "function": "involved in mitotic spindle assembling and chromosome segregation; appears to play a role during the initiation of kinetoplast duplication (PMID: 30897087); coordinates events associated with mitosis and cytokinesis; phosphorylates histone H3 (PMID: 19320832); cell cycle control; phosphorylation of TbH3 and TbH2B (PMID: 19320832)",
   "functional_category": [
     "Mitosis",
     "Cell cycle",
@@ -11,9 +11,9 @@
   "infection_impact": "Essential contribution to infection (demonstrated by conditional knockdown in infected mice) (PMID: 19320832).",
   "essential_in_vitro": true,
   "essential_in_vivo": true,
-  "annotation_notes": "Twelve papers were analyzed to generate this annotation. The literature base is moderately strong, with several papers detailing AUK1's role in cell division and infection.  Fields related to function and essentiality were populated based on available evidence. The 'essential_in_vitro' and 'essential_in_vivo' fields show conflicting data; PMID: 19320832 reports both as true, while PMID: 34128702 reports 'essential_in_vitro' as false.  The 'functional_category' field was also populated with conflicting information, with PMID 19320832 reporting 'Cytokinesis' while other papers did not.  Fields related to protein kinase inhibitors and oxidative stress modulation remain unknown due to insufficient evidence.  The relevance budget was reached at 6.961, leaving several papers unanalyzed.",
+  "annotation_notes": "Twelve papers were analyzed to generate this annotation. The literature base is moderately strong, with several papers detailing AUK1's role in cell division and infection.  Fields related to essentiality were populated based on experimental evidence; the conflicting reports regarding in vitro essentiality (PMID: 34128702 reports false, while PMID: 19320832 reports true) were resolved by prioritizing the experimental evidence from PMID: 19320832.  Fields related to function were synthesized from multiple sources. The following fields remain unknown due to insufficient evidence: functional_category (in some instances), drug_susc_impact, and infection_impact.  A limitation is the varying levels of detail provided across the analyzed papers.",
   "annotation_metadata": {
-    "generated_at": "2026-05-22T04:02:04.965909+00:00",
+    "generated_at": "2026-05-27T16:54:50.970093+00:00",
     "gene": "TcCLB.503799.4",
     "gene_name": "AUK1",
     "profile_id": "tcruzi-clbrener",
@@ -28,7 +28,7 @@
     "gene_name_warnings": [],
     "selection_mode": "cumulative_relevance_budget",
     "literature": {
-      "total_papers_retrieved": 38,
+      "total_papers_retrieved": 37,
       "papers_eligible": 12,
       "papers_selected": 12,
       "papers_analyzed": 12,
@@ -75,8 +75,7 @@
         "3894213",
         "3866873",
         "3485913",
-        "2916222",
-        "1914216"
+        "2916222"
       ],
       "pmc_ids_selected": [
         "8550152",
@@ -273,7 +272,7 @@
       ]
     },
     "quality_flags": [],
-    "duration_sec": 27200.8,
+    "duration_sec": 486.2,
     "field_coverage": {
       "function": "supported",
       "functional_category": "supported",

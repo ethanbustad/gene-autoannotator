@@ -1,0 +1,441 @@
+{
+  "gene_id": "Rv3221A",
+  "name": "rshA",
+  "rv_id": "Rv3221A",
+  "function": "RshA is an anti-sigma factor that regulates the activity of sigma factors, particularly sigma B (SigB). It primarily functions as a negative regulator of SigB, preventing its premature activation and ensuring proper timing of stress response pathways.",
+  "functional_category": [
+    "Regulation of sigma factor activity",
+    "Stress response regulation",
+    "Survival following heat shock and oxidative stress",
+    "Adaptation to intracellular environment"
+  ],
+  "drug_susc_impact": "Loss of RshA leads to increased susceptibility to certain drugs, while overexpression can confer resistance. Specifically, it's linked to altered susceptibility to:",
+  "infection_impact": "RshA influences the ability of *M. tuberculosis* to survive and replicate within macrophages, impacting its virulence and persistence.",
+  "essential_in_vitro": false,
+  "essential_in_vivo": false,
+  "annotation_notes": "The information below is a compilation of findings from the provided literature.  The specific mechanisms and extent of RshA's influence can vary depending on the experimental conditions and *M. tuberculosis* strains used.",
+  "annotation_metadata": {
+    "generated_at": "2026-05-27T16:46:44.543517+00:00",
+    "gene": "Rv3221A",
+    "gene_name": "rshA",
+    "profile_id": "mtb-h37rv",
+    "canonical_name": "Mycobacterium tuberculosis H37Rv",
+    "species_name": "Mycobacterium tuberculosis",
+    "strain": "H37Rv",
+    "gene_name_source": "annotation_table",
+    "gene_name_source_detail": "./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt",
+    "gene_name_confidence": "profile_table",
+    "gene_name_aliases": [],
+    "gene_name_candidates": [],
+    "gene_name_warnings": [],
+    "selection_mode": "cumulative_relevance_budget",
+    "literature": {
+      "total_papers_retrieved": 143,
+      "papers_eligible": 70,
+      "papers_selected": 15,
+      "papers_analyzed": 15,
+      "sections_analyzed": 38,
+      "cumulative_relevance": 9.042,
+      "target_relevance": 9.0,
+      "min_papers_requested": 5,
+      "max_papers_allowed": 20,
+      "mean_selected_relevance": 0.696,
+      "pmc_ids_retrieved": [
+        "3427169",
+        "3395720",
+        "5506005",
+        "1847690",
+        "5893760",
+        "11619451",
+        "2724278",
+        "3526491",
+        "6836121",
+        "3177212",
+        "11173970",
+        "9769805",
+        "3207917",
+        "3489674",
+        "6917791",
+        "11439070",
+        "10178195",
+        "9260414",
+        "5562987",
+        "2529121",
+        "164219",
+        "3976341",
+        "11126594",
+        "3068301",
+        "2877774",
+        "5483222",
+        "10501769",
+        "7505949",
+        "6426458",
+        "4803200",
+        "10727445",
+        "10012870",
+        "3818866",
+        "3052882",
+        "13147305",
+        "10101118",
+        "10011835",
+        "13104627",
+        "11203133",
+        "10027907",
+        "9487606",
+        "7801807",
+        "7491931",
+        "7191866",
+        "5989597",
+        "11687473",
+        "5794633",
+        "3917460",
+        "4836228",
+        "4438307",
+        "4242435",
+        "3959581",
+        "3141025",
+        "2790423",
+        "2670114",
+        "2698404",
+        "2519537",
+        "9841431",
+        "1251616",
+        "8280819",
+        "7397307",
+        "5472188",
+        "3961337",
+        "3599157",
+        "12003235",
+        "10303974",
+        "9210964",
+        "8176622",
+        "4332622",
+        "3241215",
+        "12893000",
+        "2975547",
+        "12837516",
+        "3728839",
+        "8280269",
+        "7670104",
+        "6295645",
+        "5811025",
+        "4960319",
+        "99647",
+        "5430705",
+        "2258898",
+        "1418919",
+        "8866557",
+        "11784023",
+        "3907381",
+        "5515531",
+        "3153485",
+        "99691",
+        "6892785",
+        "4046766",
+        "4935862",
+        "10105947",
+        "13161170",
+        "12065818",
+        "11604128",
+        "10880627",
+        "10877060",
+        "9526701",
+        "9004369",
+        "9297318",
+        "9137676",
+        "8999054",
+        "8524982",
+        "7830376",
+        "6398212",
+        "6351232",
+        "6338062",
+        "6292918",
+        "6258114",
+        "6213207",
+        "5508688",
+        "5487381",
+        "5113044",
+        "4601284",
+        "4659695",
+        "4375309",
+        "4520597",
+        "4285989",
+        "4105308",
+        "4360819",
+        "3901351",
+        "4267739",
+        "4255298",
+        "4204827",
+        "3772196",
+        "4125116",
+        "3917453",
+        "3676012",
+        "3430479",
+        "3285474",
+        "3063355",
+        "3184428",
+        "2893595",
+        "2681815",
+        "2668427",
+        "2585143",
+        "2223559",
+        "1913457",
+        "1171505",
+        "1082808",
+        "490935",
+        "135074"
+      ],
+      "pmc_ids_selected": [
+        "3427169",
+        "3395720",
+        "5506005",
+        "1847690",
+        "5893760",
+        "11619451",
+        "2724278",
+        "3526491",
+        "11173970",
+        "9769805",
+        "6917791",
+        "11439070",
+        "10178195",
+        "9260414",
+        "5562987"
+      ],
+      "pmc_ids_analyzed": [
+        "3427169",
+        "3395720",
+        "5506005",
+        "1847690",
+        "5893760",
+        "11619451",
+        "2724278",
+        "3526491",
+        "11173970",
+        "9769805",
+        "6917791",
+        "11439070",
+        "10178195",
+        "9260414",
+        "5562987"
+      ],
+      "pmids_analyzed": [
+        "22937074",
+        "22808064",
+        "28698545",
+        "17411339",
+        "29670589",
+        "39470195",
+        "19494184",
+        "23284830",
+        "38873166",
+        "36377880",
+        "31848383",
+        "39342050",
+        "37175635",
+        "35814697",
+        "28821299"
+      ],
+      "selected_paper_summaries": [
+        {
+          "pmc_id": "3427169",
+          "pmid": "22937074",
+          "score": 1.0,
+          "title": "Interaction of Mycobacterium tuberculosis RshA and SigH Is Mediated by Salt Bridges",
+          "year": 2012,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "3395720",
+          "pmid": "22808064",
+          "score": 1.0,
+          "title": "Crowd Sourcing a New Paradigm for Interactome Driven Drug Target Identification in Mycobacterium tuberculosis\n",
+          "year": 2012,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "5506005",
+          "pmid": "28698545",
+          "score": 0.927,
+          "title": "A novel protein kinase inhibitor IMB-YH-8 with anti-tuberculosis activity",
+          "year": 2017,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "1847690",
+          "pmid": "17411339",
+          "score": 0.863,
+          "title": "\nM. tuberculosis Ser/Thr Protein Kinase D Phosphorylates an Anti-Anti\u2013Sigma Factor Homolog",
+          "year": 2007,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "5893760",
+          "pmid": "29670589",
+          "score": 0.84,
+          "title": "Gene Enrichment Analysis Reveals Major Regulators of Mycobacterium tuberculosis Gene Expression in Two Models of Antibiotic Tolerance",
+          "year": 2018,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "11619451",
+          "pmid": "39470195",
+          "score": 0.785,
+          "title": "Multidrug tolerance conferred by loss-of-function mutations in anti-sigma factor RshA of Mycobacterium abscessus",
+          "year": 2024,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "2724278",
+          "pmid": "19494184",
+          "score": 0.757,
+          "title": "From Corynebacterium glutamicum to Mycobacterium tuberculosis\u2014towards transfers of gene regulatory networks and integrated data analyses with MycoRegNet",
+          "year": 2009,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "3526491",
+          "pmid": "23284830",
+          "score": 0.695,
+          "title": "Genome-Wide Discovery of Small RNAs in Mycobacterium tuberculosis\n",
+          "year": 2012,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "11173970",
+          "pmid": "38873166",
+          "score": 0.585,
+          "title": "Structure of the SigE regulatory network in Mycobacterium tuberculosis",
+          "year": 2024,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "9769805",
+          "pmid": "36377880",
+          "score": 0.58,
+          "title": "A New Benzothiazolthiazolidine Derivative, 11726172, Is Active In Vitro, In Vivo, and against Nonreplicating Cells of Mycobacterium tuberculosis",
+          "year": 2022,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "6917791",
+          "pmid": "31848383",
+          "score": 0.492,
+          "title": "Insight into the biology of Mycobacterium mucogenicum and Mycobacterium neoaurum clade members",
+          "year": 2019,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "11439070",
+          "pmid": "39342050",
+          "score": 0.485,
+          "title": "Nitric oxide induces the distinct invisibility phenotype of Mycobacterium tuberculosis",
+          "year": 2024,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "10178195",
+          "pmid": "37175635",
+          "score": 0.482,
+          "title": "Small RNA MTS1338 Configures a Stress Resistance Signature in Mycobacterium tuberculosis",
+          "year": 2023,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "9260414",
+          "pmid": "35814697",
+          "score": 0.48,
+          "title": "Exposure to Nepalese Propolis Alters the Metabolic State of Mycobacterium tuberculosis",
+          "year": 2022,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "5562987",
+          "pmid": "28821299",
+          "score": 0.468,
+          "title": "PknB remains an essential and a conserved target for drug development in susceptible and MDR strains of M. Tuberculosis",
+          "year": 2017,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        }
+      ]
+    },
+    "quality_flags": [],
+    "duration_sec": 32008.8,
+    "field_coverage": {
+      "function": "supported",
+      "functional_category": "supported",
+      "drug_susc_impact": "supported",
+      "infection_impact": "supported",
+      "essential_in_vitro": "supported",
+      "essential_in_vivo": "supported"
+    }
+  }
+}
