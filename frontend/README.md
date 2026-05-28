@@ -22,7 +22,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 The Python backend should be running separately on port `8000`. Browser API
 calls go through the same-origin `/api/backend` proxy, so remote devices only
-need to reach the frontend on port `3000`.
+need to reach the frontend on port `3000`. If FastAPI is not on the same
+machine as Next.js, set `BACKEND_API_BASE_URL` to its internal URL.
 
 ## Scripts
 
