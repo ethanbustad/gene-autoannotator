@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 
 import {
   clearFinishedJobHistory,
@@ -16,7 +17,7 @@ import {
   buildJobPayload,
   formatJobElapsed,
 } from "../lib/form";
-import { getHiddenJobCount, getVisibleJobs } from "../lib/jobQueue";
+import { getHiddenJobCount, getVisibleJobs, shouldShowRunningSpinner } from "../lib/jobQueue";
 
 const stepLabels = {
   queued: "Waiting in queue",
@@ -91,6 +92,7 @@ function JobTile({ job }) {
   const elapsed = formatJobElapsed(job);
   const request = job.request || {};
   const step = stepLabels[job.current_step] || stepLabels[job.status] || job.status;
+  const showSpinner = shouldShowRunningSpinner(job);
 
   return (
     <article className={`rounded-2xl border workbench-border border-l-[5px] p-4 ${statusTone(job.status)}`}>
@@ -103,9 +105,19 @@ function JobTile({ job }) {
             {request.profile || request.organism || "default profile"} · {request.locus}
           </p>
         </div>
-        <span className="rounded-full border workbench-border bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
-          {job.status}
-        </span>
+        <div className="flex items-center gap-2">
+          {showSpinner ? (
+            <motion.span
+              aria-label="Annotation job running"
+              className="inline-block size-4 rounded-full border-2 border-[#b8c7bb] border-t-[#557864]"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+            />
+          ) : null}
+          <span className="rounded-full border workbench-border bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
+            {job.status}
+          </span>
+        </div>
       </div>
 
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#e3dbcf]">

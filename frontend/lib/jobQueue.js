@@ -9,3 +9,7 @@ export function getHiddenJobCount(jobs) {
   const normalizedJobs = Array.isArray(jobs) ? jobs : [];
   return Math.max(0, normalizedJobs.length - COMPACT_JOB_COUNT);
 }
+
+export function shouldShowRunningSpinner(job) {
+  return job?.status === "running";
+}

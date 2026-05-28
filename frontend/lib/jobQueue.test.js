@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getHiddenJobCount, getVisibleJobs } from "./jobQueue.js";
+import { getHiddenJobCount, getVisibleJobs, shouldShowRunningSpinner } from "./jobQueue.js";
 
 const jobs = [
   { id: "running", status: "running" },
@@ -27,4 +27,12 @@ test("getVisibleJobs returns all jobs when expanded", () => {
 test("getHiddenJobCount returns the number of jobs hidden by the compact view", () => {
   assert.equal(getHiddenJobCount(jobs), 2);
   assert.equal(getHiddenJobCount(jobs.slice(0, 2)), 0);
+});
+
+test("shouldShowRunningSpinner is true only for running jobs", () => {
+  assert.equal(shouldShowRunningSpinner({ status: "running" }), true);
+  assert.equal(shouldShowRunningSpinner({ status: "queued" }), false);
+  assert.equal(shouldShowRunningSpinner({ status: "completed" }), false);
+  assert.equal(shouldShowRunningSpinner({ status: "failed" }), false);
+  assert.equal(shouldShowRunningSpinner(null), false);
 });
