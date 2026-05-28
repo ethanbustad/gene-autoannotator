@@ -14,8 +14,7 @@ import {
 } from "../lib/api";
 import {
   buildJobPayload,
-  formatElapsedSeconds,
-  secondsSince,
+  formatJobElapsed,
 } from "../lib/form";
 
 const stepLabels = {
@@ -88,8 +87,7 @@ function formatResourceDetail(resources) {
 }
 
 function JobTile({ job }) {
-  const elapsedFrom = job.started_at || job.created_at;
-  const elapsed = formatElapsedSeconds(secondsSince(elapsedFrom));
+  const elapsed = formatJobElapsed(job);
   const request = job.request || {};
   const step = stepLabels[job.current_step] || stepLabels[job.status] || job.status;
 

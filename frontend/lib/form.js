@@ -60,3 +60,18 @@ export function secondsSince(isoTimestamp) {
   }
   return Math.max(0, Math.floor((Date.now() - Date.parse(isoTimestamp)) / 1000));
 }
+
+export function formatJobElapsed(job, nowMs = Date.now()) {
+  if (!job?.started_at) {
+    return "--";
+  }
+
+  const startedMs = Date.parse(job.started_at);
+  if (Number.isNaN(startedMs)) {
+    return "--";
+  }
+
+  const finishedMs = job.finished_at ? Date.parse(job.finished_at) : null;
+  const endMs = finishedMs != null && !Number.isNaN(finishedMs) ? finishedMs : nowMs;
+  return formatElapsedSeconds((endMs - startedMs) / 1000);
+}
