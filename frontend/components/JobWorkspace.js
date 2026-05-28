@@ -449,7 +449,7 @@ export default function JobWorkspace() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">Job queue</h2>
-              <p className="workbench-muted mt-2 text-sm">
+              <p className="workbench-muted w-full md:w-35 mt-2 text-sm">
                 {queue.running || 0} running · {queue.queued || 0} queued ·{" "}
                 {queue.completed || 0} completed · {queue.failed || 0} failed
               </p>
