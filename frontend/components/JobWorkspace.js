@@ -326,7 +326,7 @@ export default function JobWorkspace() {
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid items-start gap-5 lg:grid-cols-[0.95fr_1.05fr]">
         <section className="workbench-card p-6">
           <h2 className="text-2xl font-bold tracking-[-0.03em]">New annotation job</h2>
           <p className="workbench-muted mt-3 text-sm leading-6">
@@ -454,12 +454,12 @@ export default function JobWorkspace() {
                 {queue.completed || 0} completed · {queue.failed || 0} failed
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-row flex-nowrap items-center gap-2 sm:justify-end">
               {hiddenJobCount > 0 ? (
                 <button
                   type="button"
                   onClick={() => setShowAllJobs((current) => !current)}
-                  className="workbench-button workbench-button-secondary"
+                  className="workbench-button workbench-button-secondary w-52 shrink-0"
                 >
                   {showAllJobs ? "Hide extra jobs" : `Show all jobs (${hiddenJobCount} more)`}
                 </button>
