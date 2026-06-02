@@ -7,3 +7,10 @@ backend/*.sqlite3
 
 creds/
 data/go-basic.obo
+
+node_modules/
+frontend/node_modules/
+
+.next/
+dist/
+build/
