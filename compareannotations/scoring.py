@@ -13,6 +13,9 @@ from .metrics import stringify_field_value
 
 log = logging.getLogger(__name__)
 
+# Heavy comparison dependencies are loaded lazily because normal imports and
+# fast tests should not pay the SentenceTransformer/NLI startup cost. Running a
+# real comparison still requires local HuggingFace model access and Ollama.
 """
 qwen2.5:32b-instruct  20. GB  10:47 8/9
 qwen2.5:14b-instruct  9.0 GB  0: /9

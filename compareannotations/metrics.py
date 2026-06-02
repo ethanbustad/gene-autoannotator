@@ -1,5 +1,8 @@
 """Pure comparison metrics (no ML model imports)."""
 
+# These constants define the stable, testable comparison policy around coverage
+# vs symmetric similarity and verbosity. Keep model calls outside this file so
+# unit tests can cover the math without loading ML dependencies.
 COVERAGE_SCORE_WEIGHT = 0.75
 SYMMETRIC_SCORE_WEIGHT = 0.25
 

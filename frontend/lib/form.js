@@ -1,4 +1,6 @@
 export function buildJobPayload(values) {
+  // Convert React form naming to the snake_case FastAPI/Pydantic contract while
+  // omitting empty optional fields so backend defaults remain authoritative.
   const payload = {
     locus: values.locus?.trim(),
     allow_online_name_lookup: Boolean(values.allowOnlineNameLookup),

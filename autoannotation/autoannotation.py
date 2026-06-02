@@ -4,6 +4,10 @@ import time
 
 import pandas as pd
 
+# Orchestrates the full annotation pipeline. Lower-level modules own organism
+# resolution, paper retrieval, model prompting, and metadata construction; this
+# function keeps those contracts in one linear flow so CLI and web jobs share
+# the same behavior.
 from . import llms
 from . import gene_names
 from . import metadata
@@ -58,9 +62,10 @@ def get_gene_annotation(
     if len(pmc_ids) < 3:
         log.warning(f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {gene}')
 
-    # speeding up analysis
-    #pmc_ids = pmc_ids[:25]
-
+    # Selection happens before any LLM calls because each analyzed section is
+    # expensive: three model summaries, one consensus call, then final
+    # aggregation. Keep ranking changes in pmc/metadata so this orchestration
+    # remains about pipeline order rather than relevance policy.
     selection = paper_manager.select_relevance_records(
         ranked_papers,
         target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
@@ -88,6 +93,10 @@ def get_gene_annotation(
     for pmc_id in papers_to_analyze:
         sections = []
 
+        # The annotator currently distills only abstract, results, and
+        # discussion. Methods are cached by the paper parser, but left out of
+        # annotation because they usually describe experimental setup rather
+        # than gene-level biological claims.
         relevance_record = relevance_by_pmc_id.get(pmc_id)
         relevance_score = relevance_record.score if relevance_record is not None else 0.0
         log.info(
@@ -114,6 +123,9 @@ def get_gene_annotation(
         for label, section in sections:
             log.debug(f'Starting processing for PMC{pmc_id} {label}')
             section_distillation_candidates_cur = []
+            # Consensus assumes exactly three independent candidates. Model
+            # configuration enforces that cardinality, so callers should change
+            # the consensus interface before changing the number of summaries.
             for model in (MODEL_SUMMARY): #for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
                 section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
                     gene, name, section, model, section_type=label,
@@ -150,10 +162,14 @@ def get_gene_annotation(
         f'total paper section{utils.s_if_plural(section_distillation_df)} for gene',
         gene
     )))
+    # The dataframes are temporary bookkeeping for prompt construction,
+    # filtering, and metadata. They are not part of a persisted schema.
     section_distillation_df.insert(
         1, 'PMID', section_distillation_df['PmcId'].map(paper_manager.get_pmid)
     )
 
+    # This filter is a structural sanity check only: parseable JSON and profile-
+    # appropriate gene identity. It does not verify biological correctness.
     section_distillation_filtered_df = section_distillation_df.loc[
         section_distillation_df['Response'].map(
             lambda response: llm_handler.json_regex_filter(
@@ -190,6 +206,9 @@ def get_gene_annotation(
             record = relevance_by_pmc_id.get(pmc_id)
             return record.score if record is not None else None
 
+        # Relevance scores and literature context are passed into the aggregate
+        # prompt so final notes can expose confidence and selection limitations
+        # instead of presenting every generated field as equally supported.
         relevance_scores = section_distillation_filtered_df['PmcId'].map(_relevance_for_pmc_label)
         gene_distillation, duration_sec = llm_handler.get_llm_aggregate_json(
             section_distillation_filtered_df['Response'],

@@ -9,6 +9,8 @@ function getBrowserApiBaseUrl() {
 }
 
 export function getApiBaseUrl() {
+  // Server components can call FastAPI directly, but browser components always
+  // use the Next proxy so CORS and deployment topology stay centralized.
   const browserApiBaseUrl = getBrowserApiBaseUrl();
 
   if (browserApiBaseUrl) {

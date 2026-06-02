@@ -28,6 +28,8 @@ DEFAULT_GO_BASIC_OBO_PATH = os.path.join('data', 'go-basic.obo')
 
 _default_ontology = None
 
+# Curated aliases bridge project-specific labels and GO IDs. Prefer adding
+# narrow aliases here over weakening semantic fallback thresholds.
 CATEGORY_ALIASES = {
 	'information pathways': {'GO:0006259', 'GO:0006351', 'GO:0006412'},
 	'dna replication repair': {'GO:0006260', 'GO:0006281'},

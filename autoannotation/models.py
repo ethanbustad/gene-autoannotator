@@ -3,6 +3,10 @@ import os
 
 # autoannotation/models.py
 
+# Model roles are deliberately separated: summary models create independent
+# section candidates, a consensus model reconciles each section, and an
+# aggregation model synthesizes across papers. The consensus prompt expects
+# exactly three summary candidates.
 # === Performance models ===
 PERF_MODELS = {
     'summary': ['mistral-nemo:12b','llama3:8b','gemma3:12b'],

@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Any
 
 
+# SQLite-backed queue and job history. The store owns lifecycle transitions and
+# exposes plain dicts so FastAPI schemas, tests, and the frontend stay decoupled
+# from sqlite3 row objects.
 def _now_iso():
     return datetime.now(UTC).isoformat()
 
@@ -181,6 +184,10 @@ class JobStore:
     def claim_next_queued_job(self):
         with self._connect() as connection:
             connection.row_factory = sqlite3.Row
+            # BEGIN IMMEDIATE serializes claims across threads/processes using
+            # the same database file. The extra running-job check preserves the
+            # project invariant that only one heavy annotation run happens at a
+            # time.
             connection.execute("BEGIN IMMEDIATE")
             running = connection.execute(
                 "SELECT id FROM annotation_jobs WHERE status = ? LIMIT 1",

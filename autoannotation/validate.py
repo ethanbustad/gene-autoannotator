@@ -6,6 +6,8 @@ from .organisms import validate_locus_request, validate_organism_locus
 
 
 def main(argv=None):
+    # Lightweight diagnostics CLI for profile/locus resolution. It mirrors the
+    # validation path used by the API before jobs are queued.
     parser = argparse.ArgumentParser(
         description="Validate an organism profile identifier and gene locus."
     )

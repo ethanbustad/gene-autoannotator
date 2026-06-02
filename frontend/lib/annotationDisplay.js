@@ -7,6 +7,9 @@ export const GENERATED_FIELD_ORDER = [
   ["essential_in_vivo", "Essential in vivo"],
 ];
 
+// UI field order is fixed for review readability even though raw JSON preserves
+// the full annotation. Helpers expect the backend shape:
+// annotation.result.annotation.<generated fields and annotation_metadata>.
 const METADATA_FIELDS = [
   ["annotation_notes", "Annotation notes"],
   ["total_papers", "Total papers"],

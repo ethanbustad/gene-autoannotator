@@ -24,6 +24,9 @@ from .schemas import (
     ValidationRequest,
 )
 
+# FastAPI wrapper around the existing annotator. It is deliberately thin: jobs
+# run in this Python process, SQLite stores queue state, and optional MongoDB
+# storage keeps searchable annotation history.
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - dependency is optional at import time.
@@ -79,6 +82,9 @@ def create_app(
     worker_lock = threading.Lock()
 
     def persist_completed_annotation(job):
+        # Annotation history/search is a secondary persistence path. A Mongo
+        # outage should be visible on the job but should not erase a completed
+        # annotation result or mark the LLM run itself as failed.
         try:
             annotations.save_completed_job(job)
             store.mark_annotation_persisted(job["id"])
@@ -88,6 +94,9 @@ def create_app(
             store.mark_annotation_error(job["id"], str(exc))
 
     def drain_queue():
+        # One process-local drain loop is enough because JobStore also refuses
+        # to claim a second running job. Multi-process deployments still need a
+        # more explicit worker design before being treated as durable.
         with worker_lock:
             while True:
                 job = store.claim_next_queued_job()
@@ -107,6 +116,8 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app):
         if start_worker:
+            # Running jobs cannot be resumed safely after an API restart because
+            # the annotator is invoked in-process and has no checkpoint protocol.
             store.mark_interrupted_running_jobs("Job interrupted by API restart")
             worker = threading.Thread(target=drain_queue, daemon=True)
             worker.start()

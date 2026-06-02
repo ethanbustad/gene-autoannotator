@@ -17,6 +17,8 @@ def _now_iso():
 
 
 def _annotation_id(profile_id, normalized_locus):
+    # Profile is part of identity because different organisms/strains may use
+    # overlapping locus-looking strings.
     return f"{profile_id}:{normalized_locus}"
 
 
@@ -77,6 +79,9 @@ def _version_from_current(current):
 
 
 def _build_document(job, existing=None):
+    # Mongo stores one document per profile/locus. The newest successful job is
+    # `current`; the previous current result is copied into `versions` so the UI
+    # can show history without searching multiple collections.
     result = job.get("result") or {}
     validation = _validation_for_job(job)
     normalized_locus = validation.normalized_locus
@@ -108,6 +113,9 @@ def _build_document(job, existing=None):
         if part
     ).lower()
 
+    # Search is intentionally denormalized substring matching for now. It is
+    # simple to inspect and test, but not a replacement for indexed full-text
+    # search if the annotation library grows.
     return {
         "_id": annotation_id,
         "profile_id": validation.profile_id,

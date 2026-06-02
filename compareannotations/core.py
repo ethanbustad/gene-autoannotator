@@ -20,6 +20,10 @@ from .scoring import (
 	trusted_coverage_similarity,
 )
 
+# Comparison is intentionally asymmetric: trusted annotations are treated as
+# reference facts, and generated annotations are rewarded for covering them
+# without contradiction. Extra generated detail is not automatically evidence of
+# better quality.
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -46,6 +50,8 @@ def compare(trusted, generated):
 
 	for key in trusted:
 		if key in COMPARISON_IGNORE_FIELDS:
+			# Metadata explains how the annotation was produced; it should not
+			# affect biological field scores.
 			log.debug('Skipping metadata field: %s', key)
 			ignored.append(key)
 			continue

@@ -14,6 +14,9 @@ from . import organisms
 from . import papers
 from . import utils
 
+# PubMed Central retrieval and relevance policy live here. The annotator treats
+# these records as evidence selection metadata, so scoring changes should be
+# made deliberately and reflected in tests/README rather than hidden in prompts.
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -85,6 +88,9 @@ class PmcPaperManager(papers.PaperManager):
         self.off_target_species_patterns = self.organism_profile.off_target_patterns
 
     def _build_name_search_term(self, name):
+        # Name searches are scoped by profile species terms to reduce broad gene
+        # symbol collisions. Locus searches are still run separately because
+        # locus IDs are usually more precise than names.
         organism_terms = (
             self.organism_profile.species_name,
             *self.organism_profile.species_synonyms,
@@ -321,6 +327,9 @@ class PmcPaperManager(papers.PaperManager):
             for label, text in sections.items()
         }
 
+        # The score favors direct locus/title evidence, then section-level gene
+        # and organism co-mentions. Warnings represent curation risk and are
+        # used later as hard selection filters for the most dangerous cases.
         has_locus_hit = any(hits['locus'] > 0 for hits in section_hits.values())
         has_name_hit = any(hits['name'] > 0 for hits in section_hits.values())
         target_organism_hits = sum(
@@ -488,6 +497,9 @@ class PmcPaperManager(papers.PaperManager):
         )
         total_retrieved = len(records)
 
+        # The limited-literature mode is intentionally permissive: if there are
+        # too few eligible papers to satisfy the minimum, analyze all eligible
+        # papers and flag that limitation in metadata instead of failing early.
         if len(eligible_records) <= min_papers:
             selected_records = eligible_records[:max_papers]
             return PaperSelectionResult(
@@ -503,6 +515,8 @@ class PmcPaperManager(papers.PaperManager):
         selected_rank = 0
         eligible_ids = {record.pmc_id for record in eligible_records}
 
+        # Cumulative relevance uses a discounted rank contribution, so one very
+        # strong top paper cannot fully replace the minimum-paper requirement.
         for rank, record in enumerate(records, start=1):
             if rank > max_rank:
                 break
@@ -625,6 +639,9 @@ class PmcPaperManager(papers.PaperManager):
             log.debug(f'No paper body available for PMC{pmc_id}')
             return
 
+        # PMC/JATS section labels vary. This parser handles common top-level
+        # title/sec-type names but does not recursively normalize every nested
+        # section pattern, so missing sections are expected for some papers.
         for section in body.findall('sec'):
             section_type = section.get('sec-type')
             if section_type is None:

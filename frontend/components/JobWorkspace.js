@@ -35,6 +35,8 @@ function statusTone(status) {
 }
 
 function progressPercent(job) {
+  // Progress is deliberately coarse because the backend currently exposes only
+  // queue lifecycle states, not per-paper or per-model annotation progress.
   if (job.status === "completed") return 100;
   if (job.status === "failed") return 100;
   if (job.current_step === "saving_result") return 85;
@@ -225,6 +227,9 @@ export default function JobWorkspace() {
     }
 
     loadInitialData();
+    // Polling keeps the UI simple while the job API is coarse. If the backend
+    // later exposes precise progress or events, this is the main replacement
+    // point for SSE/websocket-driven updates.
     const jobsTimer = window.setInterval(refreshJobs, 5000);
     const healthTimer = window.setInterval(refreshHealth, 15000);
     return () => {

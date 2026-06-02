@@ -9,6 +9,10 @@ from urllib.parse import quote_plus
 import pandas as pd
 import requests
 
+# Gene names are hints for retrieval and prompts, not primary identity. The
+# locus remains canonical; every lookup result carries source/confidence data so
+# generated metadata can explain whether a name was curated, cached, online, or
+# just the locus fallback.
 log = logging.getLogger(__name__)
 
 DEFAULT_GENE_NAME_CACHE_DIR = os.path.join('.cache', 'gene_names')
@@ -113,6 +117,8 @@ def lookup_cached_gene_name(profile, locus, cache_dir=DEFAULT_GENE_NAME_CACHE_DI
         record = GeneNameRecord.from_dict(record_payload)
     except (KeyError, TypeError):
         return None
+    # Manual cache entries are curator-supplied and should remain visibly
+    # distinct from online records that merely happen to be cached locally.
     source = 'manual_cache' if record.source == 'manual_cache' else 'cache'
     source_detail = record.source_detail
     if source == 'cache' and record.source:
@@ -328,6 +334,9 @@ def resolve_gene_name(
     refresh_cache=False,
     sources=None,
 ):
+    # Resolution order is conservative: profile table first, then cache, then
+    # optional online sources. If no source yields one clear name, fall back to
+    # the locus so retrieval remains possible without pretending confidence.
     table_result = lookup_annotation_table_gene_name(profile, locus)
     if table_result and table_result.gene_name:
         return table_result

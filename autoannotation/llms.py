@@ -9,6 +9,9 @@ import ollama
 from . import organisms
 from . import utils
 
+# Prompt/schema construction and Ollama response caching for annotation models.
+# The rest of the pipeline depends on this module applying a consistent JSON
+# shape and null/placeholder policy before responses move downstream.
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -22,6 +25,8 @@ BIOLOGY_FIELDS = (
     'essential_in_vivo',
 )
 
+# Treat these as absence-of-evidence markers across model outputs. This is a
+# normalization policy, not a biological claim about the gene.
 UNKNOWN_STRINGS = frozenset({
     '',
     'unknown',
@@ -162,6 +167,9 @@ def _identity_properties(organism_profile=None):
 
 
 def build_json_schema(organism_profile=None, *, require_biology=False, aggregate=False):
+    # Ollama's structured output support is used as the first guardrail. The
+    # schema is intentionally small because factual support still comes from
+    # prompts, section selection, and later curator review.
     organism_label = (
         organism_profile.species_name if organism_profile is not None else 'the organism'
     )
@@ -265,6 +273,9 @@ class LlmHandler:
         name_ptrn='([a-z]{3}[a-zA-Z0-9.]*)|([PE_GRS]{2,7}[0-9A]{1,3})',
         organism_profile=None,
     ):
+        # This is only a shape/profile filter for model outputs. It rejects
+        # wrong-locus or malformed JSON before aggregation but does not check
+        # whether the biological statements are true.
         locus_ptrn = organism_profile.locus_regex if organism_profile is not None else rv_ptrn
         if organism_profile is not None:
             name_ptrn = rf'[\w.\-:/]+|{locus_ptrn}'
@@ -308,6 +319,8 @@ class LlmHandler:
         if relevance_scores is None:
             relevance_scores = [None] * len(json_responses)
         for pmid, json_response, relevance in zip(pmids, json_responses, relevance_scores):
+            # Normalize each section before embedding it in the aggregate
+            # prompt so the final model sees a consistent null policy.
             normalized = self.normalize_response_json(
                 json_response,
                 organism_profile=organism_profile,
@@ -489,6 +502,8 @@ class LlmHandler:
         return response_text, duration_sec
 
     def _get_file(self, model, prompt, json_schema):
+        # Cache identity includes the model, full prompt, and JSON schema. That
+        # makes prompt/schema edits naturally invalidate stale model responses.
         md5 = hashlib.md5(usedforsecurity=False)
         md5.update(model.encode(encoding='utf8'))
         md5.update(prompt.encode(encoding='utf8'))

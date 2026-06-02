@@ -11,11 +11,16 @@ const HOP_BY_HOP_HEADERS = new Set([
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// Browser code calls this same-origin proxy instead of FastAPI directly. That
+// keeps local/server deployments consistent and avoids exposing a public backend
+// URL to client bundles.
 function getBackendApiBaseUrl() {
   return process.env.BACKEND_API_BASE_URL || DEFAULT_BACKEND_API_BASE_URL;
 }
 
 function copyProxyHeaders(headers) {
+  // Hop-by-hop headers describe one network connection and can break streamed
+  // proxy responses if forwarded unchanged.
   const copied = new Headers(headers);
   for (const header of HOP_BY_HOP_HEADERS) {
     copied.delete(header);

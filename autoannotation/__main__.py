@@ -7,6 +7,9 @@ import os
 from autoannotation.autoannotation import get_gene_annotation
 from autoannotation import gene_names
 
+# CLI and backend entry point for a single annotation run. The output path
+# convention intentionally preserves legacy MTB files at gen_json/gen_<locus>.json
+# while namespacing newer organism profiles by profile_id.
 def main(
     gene=None, cache_dir='./.cache', profile=None, organism=None, strain=None,
     locus=None, name=None, output_dir='gen_json',
@@ -54,6 +57,9 @@ def main(
 
     profile_id = parsed.get("annotation_metadata", {}).get("profile_id", "mtb-h37rv")
     output_parent = output_dir
+    # Non-MTB profiles may share locus-like names across organisms; separating
+    # by profile_id keeps generated artifacts unambiguous without changing the
+    # original MTB output contract.
     if profile_id != "mtb-h37rv":
         output_parent = os.path.join(output_parent, profile_id)
     os.makedirs(output_parent, exist_ok=True)

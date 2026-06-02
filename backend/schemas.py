@@ -6,6 +6,9 @@ from autoannotation import gene_names
 
 
 class AnnotationJobRequest(BaseModel):
+    # cache/output fields are server filesystem paths passed through to the
+    # existing annotator. Add validation here before exposing this API beyond a
+    # trusted/local deployment.
     profile: str | None = None
     organism: str | None = None
     strain: str | None = None

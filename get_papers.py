@@ -12,6 +12,9 @@ from autoannotation.pmc import (
     DEFAULT_TARGET_RELEVANCE,
 )
 
+# Diagnostic CLI for literature retrieval and ranking. Use this before changing
+# relevance weights or organism patterns because it shows why papers would be
+# selected without spending time on LLM inference.
 
 def summarize_ranked_records(records):
     scores = [record.score for record in records]
@@ -242,6 +245,8 @@ def main(argv=None):
 
     if args.json_out:
         with open(args.json_out, "w", encoding="utf8") as output_file:
+            # JSON output keeps full per-paper evidence so ranking changes can
+            # be compared across runs or reviewed without scraping console text.
             json.dump(
                 {
                     "gene": context.locus,

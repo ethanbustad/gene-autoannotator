@@ -12,6 +12,9 @@ logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+# Shared request pacing for external literature/name services. The throttler is
+# intentionally simple and per-process; it prevents bursts from one run but is
+# not a distributed rate limiter.
 class Throttler:
     def __init__(self, cooldown_secs=None, timeout_secs=None):
         self.cooldown_seconds = COOLDOWN_SECONDS_DEFAULT if cooldown_secs is None else cooldown_secs

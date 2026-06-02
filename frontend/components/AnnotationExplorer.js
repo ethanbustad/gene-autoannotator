@@ -54,6 +54,8 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
   const metadataRows = getMetadataRows(annotation);
   const pmcIdsAnalyzed = getPmcIdsAnalyzed(annotation);
 
+  // The backend returns the current annotation inline. Older versions are
+  // loaded on demand because most review sessions only need the latest result.
   return (
     <article className="workbench-card min-w-0 max-w-full overflow-hidden p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -219,6 +221,8 @@ export default function AnnotationExplorer({
     setSearchedQuery(trimmed);
     setShowAllMatches(false);
 
+    // Searching returns summaries only. Selecting a match fetches the full
+    // current annotation so large JSON payloads are not loaded for every row.
     try {
       const payload = await searchAnnotations(trimmed);
       setMatches(payload.matches || []);

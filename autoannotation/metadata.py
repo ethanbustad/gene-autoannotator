@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 
+# Metadata is the audit trail attached to generated annotations. Keep curator-
+# facing confidence, paper selection, and field coverage information here rather
+# than blending it into the biological fields themselves.
 SELECTION_MODE_LIMITED = 'all_eligible_limited_literature'
 SELECTION_MODE_BUDGET = 'cumulative_relevance_budget'
 
@@ -97,6 +100,9 @@ def build_literature_context_for_notes(
     target_relevance,
     min_papers,
 ):
+    # This string is prompt input for annotation_notes, so it should stay factual
+    # and derived from ranking metadata. The model may summarize these facts but
+    # should not be the source of paper counts or selection statistics.
     total_retrieved = len(ranked_records)
     selected_count = len(selected_records)
     scores = [record.score for record in selected_records]
@@ -235,6 +241,9 @@ def build_annotation_metadata(
 def merge_annotation_output(gene_distillation_json, annotation_metadata, field_coverage=None):
     import json
 
+    # Final persisted annotations keep model-generated biological fields at the
+    # top level and attach pipeline-generated metadata underneath
+    # annotation_metadata.
     parsed = json.loads(gene_distillation_json)
     parsed['annotation_metadata'] = annotation_metadata
     if field_coverage is not None:

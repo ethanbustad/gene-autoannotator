@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Shared visual vocabulary for the workbench-style UI. Component classes below
+   should reuse these tokens so future pages keep the same review-focused tone. */
 :root {
   --background: #f3eee4;
   --foreground: #18211c;

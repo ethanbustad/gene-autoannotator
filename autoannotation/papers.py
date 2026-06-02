@@ -5,6 +5,8 @@ logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+# Base cache layout for paper-derived text. Subclasses decide how papers are
+# downloaded and parsed; this class only ensures the expected directories exist.
 class PaperManager:
     path_abstrct = 'abstracts'
     path_discusn = 'discussion'

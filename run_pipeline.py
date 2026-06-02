@@ -6,6 +6,9 @@ python -m run_pipeline 2>&1 | tee log.txt
 
 """
 
+# This is a manual evaluation harness, not the normal app entry point. It runs a
+# fixed benchmark gene list, compares generated JSON against trusted fixtures,
+# and logs scores to one Google Sheet configured below.
 import time
 import os
 from datetime import datetime
@@ -25,6 +28,8 @@ SPREADSHEET_ID = "1qiLSngYGAUQkTPGC8rLzhcQzU4Lrke7S678pSGXHICs"
 
 SHEET_NAME = "V2Scores"
 
+# Google Sheets is initialized at import time, so this script requires the
+# service-account credentials file even before the first gene starts.
 credentials = service_account.Credentials.from_service_account_file(
     SERVICE_ACCOUNT_FILE,
     scopes=SCOPES
@@ -113,6 +118,8 @@ GENES = [
 
 completed_genes = load_completed_genes()
 
+# completed_genes.txt makes long benchmark runs resumable after model/API
+# failures; deleting it intentionally reruns the full fixed list.
 for gene in GENES:
 
     if gene in completed_genes:

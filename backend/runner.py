@@ -8,6 +8,8 @@ def _load_annotation_main():
 
 
 def run_annotation_job(request: AnnotationJobRequest, annotation_main=None):
+    # The backend delegates directly to the CLI function in-process. This keeps
+    # web and CLI behavior identical, but it is not a security/resource boundary.
     main = annotation_main or _load_annotation_main()
     return main(
         gene=None,

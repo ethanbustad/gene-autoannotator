@@ -3,6 +3,10 @@ from dataclasses import asdict, dataclass
 
 from . import gene_names
 
+# Organism profiles are the boundary between general annotation logic and
+# organism-specific assumptions. Add new strains here by defining identifiers,
+# locus syntax, search terms, and target/off-target patterns rather than
+# special-casing downstream retrieval or prompts.
 
 class UnknownOrganismError(ValueError):
     """Raised when an organism identifier does not resolve to a configured profile."""
@@ -288,6 +292,8 @@ def normalize_identifier(identifier):
 
 
 def _build_synonym_index(profiles=PROFILES):
+    # Profile synonyms must be unique because API/CLI callers may use any
+    # synonym as the primary profile identifier.
     index = {}
     for profile in profiles:
         identifiers = (profile.profile_id, profile.canonical_name, *profile.synonyms)
@@ -304,6 +310,8 @@ def _build_synonym_index(profiles=PROFILES):
 
 
 def _build_species_index(profiles=PROFILES):
+    # Species names can map to multiple strains. Later validation narrows those
+    # candidates with strain input and/or locus regex.
     index = {}
     for profile in profiles:
         identifiers = (profile.species_name, *profile.species_synonyms)
@@ -463,6 +471,9 @@ def resolve_gene_context(
     gene_name_sources=None,
     cache_supplied_name=False,
 ):
+    # Context resolution validates the locus before any network or model work,
+    # then chooses the best available gene name. The returned GeneContext is the
+    # stable handoff object for retrieval, prompting, and metadata.
     result = validate_locus_request(
         locus=locus,
         profile_identifier=profile_identifier,
