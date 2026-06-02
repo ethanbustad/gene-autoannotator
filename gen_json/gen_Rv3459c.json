@@ -1,0 +1,450 @@
+{
+  "gene_id": "Rv3459c",
+  "name": "rpsK",
+  "rv_id": "Rv3459c",
+  "function": null,
+  "functional_category": null,
+  "drug_susc_impact": null,
+  "infection_impact": null,
+  "essential_in_vitro": null,
+  "essential_in_vivo": null,
+  "annotation_notes": "The gene Rv3459c, also known as rpsK, encodes for ribosomal protein S11. The provided data includes a large number of publications (36) mentioning this gene. Most of these publications do not provide specific functional annotations for Rv3459c. A few publications mention the gene's role in infection and persistence, but without detailed mechanistic explanations. One publication (PMID: 272637175) notes the presence of MTB mRNA and DNA in respiratory samples, suggesting viable MTB may persist even after treatment. One publication (PMID: 38281181) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 41629493) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 41419821) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 40501622) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 34019733) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 34484145) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 31992637) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection. One publication (PMID: 19890396) mentions Rv3459c in the context of a study on the impact of host genetic variation on Mycobacterium tuberculosis infection.",
+  "annotation_metadata": {
+    "generated_at": "2026-05-30T21:53:22.807624+00:00",
+    "gene": "Rv3459c",
+    "gene_name": "rpsK",
+    "profile_id": "mtb-h37rv",
+    "canonical_name": "Mycobacterium tuberculosis H37Rv",
+    "species_name": "Mycobacterium tuberculosis",
+    "strain": "H37Rv",
+    "gene_name_source": "annotation_table",
+    "gene_name_source_detail": "./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt",
+    "gene_name_confidence": "profile_table",
+    "gene_name_aliases": [],
+    "gene_name_candidates": [],
+    "gene_name_warnings": [],
+    "selection_mode": "cumulative_relevance_budget",
+    "literature": {
+      "total_papers_retrieved": 100,
+      "papers_eligible": 32,
+      "papers_selected": 19,
+      "papers_analyzed": 19,
+      "sections_analyzed": 37,
+      "cumulative_relevance": 7.874,
+      "target_relevance": 9.0,
+      "min_papers_requested": 5,
+      "max_papers_allowed": 20,
+      "mean_selected_relevance": 0.504,
+      "pmc_ids_retrieved": [
+        "4386821",
+        "6175983",
+        "2246267",
+        "3207917",
+        "3087520",
+        "1884158",
+        "6664167",
+        "3876250",
+        "2826498",
+        "5053881",
+        "3577857",
+        "8313281",
+        "3195342",
+        "12868050",
+        "12874952",
+        "12157685",
+        "8415458",
+        "7022156",
+        "11039985",
+        "2767505",
+        "11980559",
+        "9600765",
+        "8113780",
+        "11064486",
+        "11445079",
+        "11292845",
+        "117187",
+        "7742992",
+        "4519974",
+        "3650330",
+        "3570469",
+        "7387457",
+        "11939388",
+        "4260714",
+        "4453511",
+        "12003926",
+        "10433963",
+        "4405911",
+        "10526031",
+        "11540793",
+        "7842062",
+        "7355750",
+        "10948109",
+        "6212823",
+        "5714132",
+        "13078787",
+        "13065025",
+        "12671195",
+        "12431658",
+        "12114217",
+        "11508858",
+        "7616280",
+        "11166702",
+        "10531400",
+        "9748083",
+        "9640573",
+        "9506334",
+        "9449456",
+        "9147492",
+        "8866538",
+        "8297752",
+        "8270711",
+        "8044216",
+        "7184733",
+        "6323687",
+        "6226537",
+        "6179229",
+        "6008372",
+        "5811630",
+        "5116877",
+        "5589974",
+        "5445863",
+        "4876553",
+        "5007762",
+        "4758666",
+        "4125730",
+        "4490635",
+        "4476798",
+        "4014445",
+        "3807501",
+        "3510383",
+        "3285575",
+        "2978726",
+        "2760461",
+        "2764856",
+        "2629846",
+        "1924603",
+        "1899503",
+        "1539978",
+        "1366493",
+        "1196054",
+        "534671",
+        "524172",
+        "484181",
+        "134949",
+        "95396",
+        "95122",
+        "103750",
+        "55768",
+        "19943"
+      ],
+      "pmc_ids_selected": [
+        "4386821",
+        "6175983",
+        "2246267",
+        "3087520",
+        "1884158",
+        "6664167",
+        "3876250",
+        "2826498",
+        "5053881",
+        "3577857",
+        "8313281",
+        "3195342",
+        "12868050",
+        "12874952",
+        "12157685",
+        "8415458",
+        "7022156",
+        "11039985",
+        "2767505"
+      ],
+      "pmc_ids_analyzed": [
+        "4386821",
+        "6175983",
+        "2246267",
+        "3087520",
+        "1884158",
+        "6664167",
+        "3876250",
+        "2826498",
+        "5053881",
+        "3577857",
+        "8313281",
+        "3195342",
+        "12868050",
+        "12874952",
+        "12157685",
+        "8415458",
+        "7022156",
+        "11039985",
+        "2767505"
+      ],
+      "pmids_analyzed": [
+        "25844539",
+        "30333960",
+        "18078514",
+        "19664275",
+        "17501996",
+        "31126988",
+        "24309377",
+        "20136412",
+        "27595324",
+        "23437175",
+        "34019733",
+        "15207492",
+        "41629493",
+        "41419821",
+        "40501622",
+        "34484145",
+        "31992637",
+        "38281181",
+        "19890396"
+      ],
+      "selected_paper_summaries": [
+        {
+          "pmc_id": "4386821",
+          "pmid": "25844539",
+          "score": 0.953,
+          "title": "Transcriptional Profile of Mycobacterium tuberculosis Replicating in Type II Alveolar Epithelial Cells",
+          "year": 2015,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "6175983",
+          "pmid": "30333960",
+          "score": 0.78,
+          "title": "Transcriptional Profile of Mycobacterium tuberculosis in an in vitro Model of Intraocular Tuberculosis",
+          "year": 2018,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "2246267",
+          "pmid": "18078514",
+          "score": 0.733,
+          "title": "Quantification of global transcription patterns in prokaryotes using spotted microarrays",
+          "year": 2007,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "3087520",
+          "pmid": "19664275",
+          "score": 0.547,
+          "title": "Phylogenetic detection of horizontal gene transfer during the step-wise genesis of Mycobacterium tuberculosis",
+          "year": 2009,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "1884158",
+          "pmid": "17501996",
+          "score": 0.542,
+          "title": "The gene expression data of Mycobacterium tuberculosis based on Affymetrix gene chips provide insight into regulatory and hypothetical genes",
+          "year": 2007,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "6664167",
+          "pmid": "31126988",
+          "score": 0.492,
+          "title": "Unraveling the role of the transcriptional regulator VirS in low pH\u2013induced responses of Mycobacterium tuberculosis and identification of VirS inhibitors",
+          "year": 2019,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "3876250",
+          "pmid": "24309377",
+          "score": 0.477,
+          "title": "Osmosensory signaling in Mycobacterium tuberculosis mediated by a eukaryotic-like Ser/Thr protein kinase",
+          "year": 2013,
+          "retrieval_sources": [
+            "locus",
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "2826498",
+          "pmid": "20136412",
+          "score": 0.47,
+          "title": "Mutations in Extensively Drug Resistant Mycobacterium tuberculosis that do not Code for Known Drug-Resistance Mechanisms",
+          "year": 2010,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "5053881",
+          "pmid": "27595324",
+          "score": 0.465,
+          "title": "Persisting PET-CT lesion activity and M. tuberculosis mRNA after pulmonary tuberculosis cure",
+          "year": 2016,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "3577857",
+          "pmid": "23437175",
+          "score": 0.458,
+          "title": "Comparative Genomic Analysis of Mycobacterium tuberculosis Drug Resistant Strains from Russia",
+          "year": 2013,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "8313281",
+          "pmid": "34019733",
+          "score": 0.448,
+          "title": "Combining comparative genomic analysis with machine learning reveals some promising diagnostic markers to identify five common pathogenic non\u2010tuberculous mycobacteria",
+          "year": 2021,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "3195342",
+          "pmid": "15207492",
+          "score": 0.44,
+          "title": "Stationary phase gene expression of Mycobacterium tuberculosis following a progressive nutrient depletion: a model for persistent organisms?, \n",
+          "year": 2004,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "12868050",
+          "pmid": "41629493",
+          "score": 0.41,
+          "title": "A multiplex assay based on capillary electrophoresis to detect Mycobacterium tuberculosis complex: development and clinical validation",
+          "year": 2026,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "12874952",
+          "pmid": "41419821",
+          "score": 0.407,
+          "title": "Genomic analysis of a clinical Mycolicibacterium houstonense isolate reveals dual escalation in adaptability and virulence",
+          "year": 2025,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "12157685",
+          "pmid": "40501622",
+          "score": 0.407,
+          "title": "Desiccation-induced DNA damage facilitates drug resistance in Mycobacterium tuberculosis",
+          "year": 2025,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "8415458",
+          "pmid": "34484145",
+          "score": 0.398,
+          "title": "Effects of NaCl Concentrations on Growth Patterns, Phenotypes Associated With Virulence, and Energy Metabolism in Escherichia coli BW25113",
+          "year": 2021,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "7022156",
+          "pmid": "31992637",
+          "score": 0.395,
+          "title": "Antibiotic resistance by high-level intrinsic suppression of a frameshift mutation in an essential gene",
+          "year": 2020,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "11039985",
+          "pmid": "38281181",
+          "score": 0.385,
+          "title": "A global survey of small RNA interactors identifies KhpA and KhpB as major RNA-binding proteins in Fusobacterium nucleatum",
+          "year": 2024,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        },
+        {
+          "pmc_id": "2767505",
+          "pmid": "19890396",
+          "score": 0.367,
+          "title": "Genome Analysis of Multi- and Extensively-Drug-Resistant Tuberculosis from KwaZulu-Natal, South Africa",
+          "year": 2009,
+          "retrieval_sources": [
+            "name"
+          ],
+          "warnings": [
+            "name_only_match"
+          ]
+        }
+      ]
+    },
+    "quality_flags": [],
+    "duration_sec": 36461.3,
+    "field_coverage": {
+      "function": "insufficient_evidence",
+      "functional_category": "insufficient_evidence",
+      "drug_susc_impact": "insufficient_evidence",
+      "infection_impact": "insufficient_evidence",
+      "essential_in_vitro": "insufficient_evidence",
+      "essential_in_vivo": "insufficient_evidence"
+    }
+  }
+}
