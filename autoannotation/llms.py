@@ -190,6 +190,7 @@ json_schema_section = build_json_schema()
 json_schema_default = build_json_schema(require_biology=True)
 json_schema_aggregate = build_json_schema(require_biology=True, aggregate=True)
 
+# section field extraction prompt
 prompt1_tmpl = '''
 Using ONLY the supplied excerpt, return a JSON object for {5} gene {0}
 (named {1}).
@@ -213,6 +214,7 @@ Excerpt:
 {2}
 '''
 
+# json consensus prompt
 prompt2_tmpl = '''
 The following candidate JSON objects were generated from the same excerpt with different models.
 Each candidate uses null for fields not supported by that excerpt.
@@ -234,6 +236,7 @@ Second candidate: {1}
 Third candidate: {2}
 '''
 
+# json aggregation prompt
 prompt3_prefix = '''
 The following JSON objects describe the same gene from different paper sections. Each object uses
 null for fields that section did not support. Objects are labeled with PMID and literature
