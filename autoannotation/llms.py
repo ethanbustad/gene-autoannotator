@@ -99,6 +99,23 @@ def normalize_annotation_fields(parsed, *, require_biology_keys=False, organism_
     return normalized
 
 
+def _response_value(response, key, default=None):
+    if isinstance(response, dict):
+        return response.get(key, default)
+    if hasattr(response, key):
+        return getattr(response, key)
+    try:
+        return response[key]
+    except Exception:
+        return default
+
+
+def _duration_from_nanoseconds(value):
+    if value is None:
+        return None
+    return value / 1_000_000_000
+
+
 def _nullable_string(description):
     return {
         'type': ['string', 'null'],
@@ -304,6 +321,94 @@ class LlmHandler:
 
     def __init__(self, cache_dir='./.cache'):
         self.cache_dir = cache_dir
+        self.usage_records = []
+
+    def _usage_from_response(self, response, duration_sec):
+        input_tokens = _response_value(response, 'prompt_eval_count')
+        output_tokens = _response_value(response, 'eval_count')
+        total_tokens = None
+        if input_tokens is not None and output_tokens is not None:
+            total_tokens = input_tokens + output_tokens
+        return {
+            'input_tokens': input_tokens,
+            'output_tokens': output_tokens,
+            'total_tokens': total_tokens,
+            'total_duration_sec': _duration_from_nanoseconds(
+                _response_value(response, 'total_duration')
+            ) or duration_sec,
+            'load_duration_sec': _duration_from_nanoseconds(
+                _response_value(response, 'load_duration')
+            ),
+            'prompt_eval_duration_sec': _duration_from_nanoseconds(
+                _response_value(response, 'prompt_eval_duration')
+            ),
+            'eval_duration_sec': _duration_from_nanoseconds(
+                _response_value(response, 'eval_duration')
+            ),
+        }
+
+    def _record_usage(self, role, model, duration_sec, *, cache_hit=False, usage=None):
+        usage = usage or {}
+        input_tokens = usage.get('input_tokens')
+        output_tokens = usage.get('output_tokens')
+        total_tokens = usage.get('total_tokens')
+        if total_tokens is None and input_tokens is not None and output_tokens is not None:
+            total_tokens = input_tokens + output_tokens
+        record = {
+            'role': role,
+            'model': model,
+            'cache_hit': cache_hit,
+            'usage_available': input_tokens is not None and output_tokens is not None,
+            'input_tokens': input_tokens,
+            'output_tokens': output_tokens,
+            'total_tokens': total_tokens,
+            'duration_sec': duration_sec,
+            'total_duration_sec': usage.get('total_duration_sec'),
+            'load_duration_sec': usage.get('load_duration_sec'),
+            'prompt_eval_duration_sec': usage.get('prompt_eval_duration_sec'),
+            'eval_duration_sec': usage.get('eval_duration_sec'),
+        }
+        self.usage_records.append(record)
+        return record
+
+    @staticmethod
+    def _empty_usage_group():
+        return {
+            'calls': 0,
+            'cache_hits': 0,
+            'known_input_tokens': 0,
+            'known_output_tokens': 0,
+            'known_total_tokens': 0,
+            'usage_records_with_missing_tokens': 0,
+        }
+
+    @classmethod
+    def _add_usage_to_group(cls, group, record):
+        group['calls'] += 1
+        if record.get('cache_hit'):
+            group['cache_hits'] += 1
+        if record.get('usage_available'):
+            group['known_input_tokens'] += record.get('input_tokens') or 0
+            group['known_output_tokens'] += record.get('output_tokens') or 0
+            group['known_total_tokens'] += record.get('total_tokens') or 0
+        else:
+            group['usage_records_with_missing_tokens'] += 1
+
+    def summarize_usage(self):
+        summary = self._empty_usage_group()
+        by_role = {}
+        by_model = {}
+        for record in self.usage_records:
+            self._add_usage_to_group(summary, record)
+            role = record.get('role') or 'unknown'
+            model = record.get('model') or 'unknown'
+            role_group = by_role.setdefault(role, self._empty_usage_group())
+            model_group = by_model.setdefault(model, self._empty_usage_group())
+            self._add_usage_to_group(role_group, record)
+            self._add_usage_to_group(model_group, record)
+        summary['by_role'] = by_role
+        summary['by_model'] = by_model
+        return summary
 
     def get_llm_aggregate_json(
         self, json_responses, pmids, model='gemma3:12b',
@@ -335,6 +440,10 @@ class LlmHandler:
             log.debug((
                 f'Returning cached section-aggregation response ({len(cached_response)} chars)'
             ))
+            self._record_usage(
+                'gene_aggregation', model, cached_dur, cache_hit=True,
+                usage=self._read_cache_usage(model, prompt, json_schema),
+            )
             return self.normalize_response_json(
                 cached_response,
                 require_biology_keys=True,
@@ -370,7 +479,9 @@ class LlmHandler:
                 require_biology_keys=True,
                 organism_profile=organism_profile,
             )
-            self._write_cache(model, prompt, json_schema, response_text, duration_sec)
+            usage = self._usage_from_response(response, duration_sec)
+            self._record_usage('gene_aggregation', model, duration_sec, usage=usage)
+            self._write_cache(model, prompt, json_schema, response_text, duration_sec, usage)
         except KeyError as ke:
             if retry:
                 return self.get_llm_aggregate_json(
@@ -397,6 +508,10 @@ class LlmHandler:
             log.debug((
                 f'Returning cached candidate-aggregation response ({len(cached_response)} chars)'
             ))
+            self._record_usage(
+                'section_consensus', model, cached_dur, cache_hit=True,
+                usage=self._read_cache_usage(model, prompt, json_schema),
+            )
             return self.normalize_response_json(
                 cached_response,
                 organism_profile=organism_profile,
@@ -430,7 +545,9 @@ class LlmHandler:
                 response_text,
                 organism_profile=organism_profile,
             )
-            self._write_cache(model, prompt, json_schema, response_text, duration_sec)
+            usage = self._usage_from_response(response, duration_sec)
+            self._record_usage('section_consensus', model, duration_sec, usage=usage)
+            self._write_cache(model, prompt, json_schema, response_text, duration_sec, usage)
         except KeyError as ke:
             if retry:
                 return self.get_llm_consensus_json(
@@ -458,6 +575,10 @@ class LlmHandler:
             log.debug((
                 f'Returning cached section-summary response ({len(cached_response)} chars)'
             ))
+            self._record_usage(
+                'section_summary', model, cached_dur, cache_hit=True,
+                usage=self._read_cache_usage(model, prompt, json_schema),
+            )
             return self.normalize_response_json(
                 cached_response,
                 organism_profile=organism_profile,
@@ -490,7 +611,9 @@ class LlmHandler:
                 response_text,
                 organism_profile=organism_profile,
             )
-            self._write_cache(model, prompt, json_schema, response_text, duration_sec)
+            usage = self._usage_from_response(response, duration_sec)
+            self._record_usage('section_summary', model, duration_sec, usage=usage)
+            self._write_cache(model, prompt, json_schema, response_text, duration_sec, usage)
         except KeyError as ke:
             if retry:
                 return self.get_llm_gene_info_json(
@@ -521,7 +644,19 @@ class LlmHandler:
             cache_obj = json.load(cache_file)
             return cache_obj['response_text'], cache_obj['duration_sec']
 
-    def _write_cache(self, model, prompt, json_schema, response_text, duration_sec):
+    def _read_cache_usage(self, model, prompt, json_schema):
+        cache_path = self._get_file(model, prompt, json_schema)
+        if not os.path.exists(cache_path):
+            return None
+        try:
+            with open(cache_path) as cache_file:
+                cache_obj = json.load(cache_file)
+        except (OSError, json.JSONDecodeError):
+            return None
+        usage = cache_obj.get('usage')
+        return usage if isinstance(usage, dict) else None
+
+    def _write_cache(self, model, prompt, json_schema, response_text, duration_sec, usage=None):
         log.debug(f'Caching response from LLM {model}')
         cache_path = self._get_file(model, prompt, json_schema)
 
@@ -533,6 +668,8 @@ class LlmHandler:
             duration_sec=duration_sec,
             response_text=response_text,
         )
+        if usage is not None:
+            content['usage'] = usage
         try:
             with open(cache_path, 'w') as cache_file:
                 json.dump(content, cache_file)

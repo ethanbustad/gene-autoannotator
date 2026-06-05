@@ -180,6 +180,7 @@ def build_annotation_metadata(
     gene_name_confidence=None,
     gene_name_aliases=None,
     gene_name_warnings=None,
+    llm_usage=None,
 ):
     quality_flags = build_quality_flags(
         selected_records,
@@ -232,6 +233,16 @@ def build_annotation_metadata(
                 }
                 for record in selected_records
             ],
+        },
+        'llm_usage': llm_usage or {
+            'calls': 0,
+            'cache_hits': 0,
+            'known_input_tokens': 0,
+            'known_output_tokens': 0,
+            'known_total_tokens': 0,
+            'usage_records_with_missing_tokens': 0,
+            'by_role': {},
+            'by_model': {},
         },
         'quality_flags': quality_flags,
         'duration_sec': round(duration_sec, 1),

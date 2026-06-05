@@ -69,6 +69,18 @@ class FakeLlmHandler:
             return TCRUZI_JSON, 0.1
         return GENE_JSON, 0.1
 
+    def summarize_usage(self):
+        return {
+            "calls": 5,
+            "cache_hits": 0,
+            "known_input_tokens": 100,
+            "known_output_tokens": 25,
+            "known_total_tokens": 125,
+            "usage_records_with_missing_tokens": 0,
+            "by_role": {},
+            "by_model": {},
+        }
+
 
 class FakePmcPaperManager:
     def __init__(self, cache_dir, organism_profile=None):
@@ -162,6 +174,7 @@ def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch):
     assert result["cumulative_relevance"] == 1.6
     assert result["selection_mode"] == "all_eligible_limited_literature"
     assert result["gene_annotation"]["annotation_metadata"]["literature"]["papers_analyzed"] == 1
+    assert result["gene_annotation"]["annotation_metadata"]["llm_usage"]["known_total_tokens"] == 125
     assert result["gene_annotation"]["annotation_notes"]
 
 

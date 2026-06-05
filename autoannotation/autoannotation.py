@@ -226,6 +226,8 @@ def get_gene_annotation(
         f'Finished annotation process for gene {gene} in {utils.seconds_to_str(duration)}'
     )
 
+    llm_usage = llm_handler.summarize_usage()
+
     annotation_metadata = metadata.build_annotation_metadata(
         gene=gene,
         gene_name=name,
@@ -251,6 +253,7 @@ def get_gene_annotation(
         gene_name_confidence=context.gene_name_confidence,
         gene_name_aliases=context.gene_name_aliases,
         gene_name_warnings=context.gene_name_warnings,
+        llm_usage=llm_usage,
     )
 
     merged_annotation = None
