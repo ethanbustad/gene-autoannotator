@@ -46,6 +46,13 @@ project root `.env` file:
 MONGO_URI=mongodb://localhost:27017/gene_autoannotator
 ```
 
+The backend writes completed annotations to MongoDB after jobs finish. It still
+exposes annotation read endpoints for compatibility, but the Next.js frontend
+reads MongoDB through its own server routes so stored annotations remain
+browsable when FastAPI is offline. If the frontend and backend run as separate
+processes, configure the Mongo URI for both processes where annotation reads or
+writes are needed.
+
 The API will still start if MongoDB is unavailable, but `/health` will report
 annotation storage as unavailable and annotation search endpoints will return a
 service error until the connection is fixed.
