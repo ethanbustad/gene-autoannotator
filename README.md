@@ -35,7 +35,7 @@ Main generated fields are `gene_id`, `name`, `function`, `functional_category`, 
 Runtime assumptions:
 
 - Python 3.11+ recommended.
-- Node.js 20.19+ and npm for the frontend.
+- Node.js/npm for the frontend.
 - Internet access to NCBI Entrez/PubMed Central and optional UniProt lookup.
 - Local Ollama with the configured annotation/comparison models pulled.
 - SQLite for job queue state.
@@ -96,8 +96,8 @@ Useful environment variables:
 - `AUTOANNOTATION_CONSENSUS_MODEL=model`
 - `AUTOANNOTATION_AGGREGATION_MODEL=model`
 - `OLLAMA_HOST=http://host:11434` when Ollama is not local.
-- `MONGO_URI` or `MONGODB_URI` to enable annotation history/search. FastAPI uses it to save completed annotations; the Next.js server uses it to search and display stored annotations even when FastAPI is offline.
-- `BACKEND_API_BASE_URL=http://127.0.0.1:8000` for Next.js proxy/server calls that require FastAPI jobs, profiles, validation, queue state, or backend health.
+- `MONGO_URI` or `MONGODB_URI` to enable annotation history/search.
+- `BACKEND_API_BASE_URL=http://127.0.0.1:8000` for the Next.js proxy/server calls.
 - `CORS_ORIGINS` and `CORS_ORIGIN_REGEX` for FastAPI browser access.
 - `GO_BASIC_OBO_PATH=data/go-basic.obo` for richer functional-category comparison.
 
@@ -174,11 +174,8 @@ Some comparison/model tests may need HuggingFace model downloads and local Ollam
 - `GET /jobs?order=queue|newest`: list job history and queue summary.
 - `DELETE /jobs/history`: clear completed/failed jobs only.
 - `GET /jobs/{job_id}` and `/jobs/{job_id}/result`: job metadata/result.
-- FastAPI `GET /annotations/search?query=...`: compatibility endpoint for searching stored Mongo annotations.
-- FastAPI `GET /annotations/{annotation_id}` and `/versions`: compatibility endpoints for current stored annotations and older versions.
-- Next.js `GET /api/annotations/search?query=...`: frontend-used Mongo-backed annotation search.
-- Next.js `GET /api/annotations/{annotation_id}` and `/versions`: frontend-used current annotation and older versions.
-- Next.js `GET /api/annotations/health`: frontend-used MongoDB health independent of FastAPI health.
+- `GET /annotations/search?query=...`: search stored Mongo annotations.
+- `GET /annotations/{annotation_id}` and `/versions`: current annotation and older versions.
 
 ## Current Limitations
 

@@ -40,17 +40,11 @@ curl http://10.158.45.197:8000/health
 ```
 
 Annotation search/history uses MongoDB. Put your local connection string in the
-project root `.env` file for FastAPI annotation writes:
+project root `.env` file:
 
 ```bash
 MONGO_URI=mongodb://localhost:27017/gene_autoannotator
 ```
-
-The backend writes completed annotations to MongoDB after jobs finish. It still
-exposes annotation read endpoints for compatibility, but the Next.js frontend
-reads MongoDB through its own server routes so stored annotations remain
-browsable when FastAPI is offline. If the frontend runs as a separate process,
-also put the Mongo URI in `frontend/.env.local` for Next.js annotation reads.
 
 The API will still start if MongoDB is unavailable, but `/health` will report
 annotation storage as unavailable and annotation search endpoints will return a

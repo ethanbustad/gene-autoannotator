@@ -1,6 +1,5 @@
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const BROWSER_API_BASE_URL = "/api/backend";
-const ANNOTATION_API_BASE_URL = "/api/annotations";
 
 function getBrowserApiBaseUrl() {
   if (typeof window === "undefined") {
@@ -21,8 +20,8 @@ export function getApiBaseUrl() {
   return process.env.BACKEND_API_BASE_URL || DEFAULT_API_BASE_URL;
 }
 
-async function apiFetch(path, options = {}, baseUrl = getApiBaseUrl()) {
-  const response = await fetch(`${baseUrl}${path}`, {
+async function apiFetch(path, options = {}) {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     cache: "no-store",
     ...options,
     headers: {
@@ -37,10 +36,6 @@ async function apiFetch(path, options = {}, baseUrl = getApiBaseUrl()) {
     throw new Error(detail);
   }
   return payload;
-}
-
-async function annotationFetch(path, options = {}) {
-  return apiFetch(path, options, ANNOTATION_API_BASE_URL);
 }
 
 export async function getHealth() {
@@ -80,18 +75,14 @@ export async function clearFinishedJobHistory() {
   });
 }
 
-export async function getAnnotationHealth() {
-  return annotationFetch("/health");
-}
-
 export async function searchAnnotations(query) {
-  return annotationFetch(`/search?query=${encodeURIComponent(query)}`);
+  return apiFetch(`/annotations/search?query=${encodeURIComponent(query)}`);
 }
 
 export async function getAnnotation(annotationId) {
-  return annotationFetch(`/${encodeURIComponent(annotationId)}`);
+  return apiFetch(`/annotations/${encodeURIComponent(annotationId)}`);
 }
 
 export async function getAnnotationVersions(annotationId) {
-  return annotationFetch(`/${encodeURIComponent(annotationId)}/versions`);
+  return apiFetch(`/annotations/${encodeURIComponent(annotationId)}/versions`);
 }

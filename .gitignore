@@ -11,8 +11,6 @@ data/go-basic.obo
 node_modules/
 frontend/node_modules/
 
-.worktrees/
-
 .next/
 dist/
 build/

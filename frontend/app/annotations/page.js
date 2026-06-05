@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import AnnotationExplorer from "../../components/AnnotationExplorer";
 import AppShell from "../../components/AppShell";
-import { annotationStoreFromEnv } from "../../lib/annotationStore";
+import { getApiBaseUrl } from "../../lib/api";
 
 export const metadata = {
   title: "Annotations · Gene Autoannotator",
@@ -14,8 +14,18 @@ async function getInitialMatches(query) {
   }
 
   try {
-    const matches = await annotationStoreFromEnv().search(query, 20);
-    return { matches, message: "" };
+    const response = await fetch(
+      `${getApiBaseUrl()}/annotations/search?query=${encodeURIComponent(query)}`,
+      { cache: "no-store" },
+    );
+    const payload = await response.json();
+    if (!response.ok) {
+      return {
+        matches: [],
+        message: payload?.detail || `Backend returned HTTP ${response.status}`,
+      };
+    }
+    return { matches: payload.matches || [], message: "" };
   } catch (error) {
     return { matches: [], message: error.message };
   }

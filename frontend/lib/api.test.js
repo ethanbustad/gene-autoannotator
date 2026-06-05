@@ -1,13 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-  getAnnotation,
-  getAnnotationHealth,
-  getAnnotationVersions,
-  getApiBaseUrl,
-  searchAnnotations,
-} from "./api.js";
+import { getApiBaseUrl } from "./api.js";
 
 function withBrowserLocation(location, callback) {
   const originalWindow = globalThis.window;
@@ -114,38 +108,6 @@ test("getApiBaseUrl ignores a stale network API URL in the browser", () => {
     withBrowserLocation({ protocol: "http:", hostname: "10.19.178.136" }, () => {
       assert.equal(getApiBaseUrl(), "/api/backend");
     });
-  });
-});
-
-async function withMockFetch(callback) {
-  const originalFetch = globalThis.fetch;
-  const calls = [];
-  globalThis.fetch = async (url, options) => {
-    calls.push({ url, options });
-    return new Response(JSON.stringify({ query: "dnaA", matches: [], versions: [] }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  };
-
-  try {
-    await callback(calls);
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-}
-
-test("annotation helpers use the Next-side annotation API", async () => {
-  await withMockFetch(async (calls) => {
-    await searchAnnotations("dnaA");
-    await getAnnotation("mtb-h37rv:Rv0001");
-    await getAnnotationVersions("mtb-h37rv:Rv0001");
-    await getAnnotationHealth();
-
-    assert.equal(calls[0].url, "/api/annotations/search?query=dnaA");
-    assert.equal(calls[1].url, "/api/annotations/mtb-h37rv%3ARv0001");
-    assert.equal(calls[2].url, "/api/annotations/mtb-h37rv%3ARv0001/versions");
-    assert.equal(calls[3].url, "/api/annotations/health");
   });
 });
 
