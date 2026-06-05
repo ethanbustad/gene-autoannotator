@@ -173,6 +173,18 @@ test("MongoAnnotationStore search returns public summaries", async () => {
   ]);
 });
 
+test("MongoAnnotationStore search escapes regex metacharacters", async () => {
+  const collection = new FakeCollection([makeDocument()]);
+  const store = new MongoAnnotationStore("mongodb://example", { collection });
+
+  await store.search("dnaA.*", 5);
+
+  assert.deepEqual(collection.lastFind.query, {
+    search_text: { $regex: "dnaA\\.\\*", $options: "i" },
+  });
+  assert.equal(collection.lastFind.options.limit, 5);
+});
+
 test("MongoAnnotationStore get returns current annotation detail", async () => {
   const store = new MongoAnnotationStore("mongodb://example", {
     collection: new FakeCollection([makeDocument()]),
