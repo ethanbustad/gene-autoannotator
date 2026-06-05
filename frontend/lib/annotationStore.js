@@ -4,7 +4,7 @@ const DEFAULT_DATABASE_NAME = "gene_autoannotator";
 const DEFAULT_COLLECTION_NAME = "annotations";
 const DEFAULT_SERVER_SELECTION_TIMEOUT_MS = 1000;
 
-let cachedClientPromise = null;
+const cachedClientPromisesByFactory = new Map();
 
 function escapeRegex(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -77,14 +77,27 @@ export class MongoAnnotationStore {
       return this.collection;
     }
 
-    if (!cachedClientPromise) {
+    let cachedClientPromises = cachedClientPromisesByFactory.get(this.clientFactory);
+    if (!cachedClientPromises) {
+      cachedClientPromises = new Map();
+      cachedClientPromisesByFactory.set(this.clientFactory, cachedClientPromises);
+    }
+
+    if (!cachedClientPromises.has(this.mongoUri)) {
       const client = new this.clientFactory(this.mongoUri, {
         serverSelectionTimeoutMS: DEFAULT_SERVER_SELECTION_TIMEOUT_MS,
       });
-      cachedClientPromise = client.connect().then(() => client);
+      const clientPromise = client
+        .connect()
+        .then(() => client)
+        .catch((error) => {
+          cachedClientPromises.delete(this.mongoUri);
+          throw error;
+        });
+      cachedClientPromises.set(this.mongoUri, clientPromise);
     }
 
-    const client = await cachedClientPromise;
+    const client = await cachedClientPromises.get(this.mongoUri);
     this.collection = client.db(this.databaseName).collection(this.collectionName);
     return this.collection;
   }
@@ -92,7 +105,7 @@ export class MongoAnnotationStore {
   async health() {
     try {
       const collection = await this.getCollection();
-      await collection.database.client.admin().command({ ping: 1 });
+      await collection.db.admin().command({ ping: 1 });
       return { status: "ok", database: this.databaseName };
     } catch (error) {
       return { status: "unavailable", message: error.message };

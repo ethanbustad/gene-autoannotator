@@ -50,15 +50,13 @@ class FakeCursor {
 class FakeCollection {
   constructor(documents = []) {
     this.documents = documents;
-    this.database = {
-      client: {
-        admin: () => ({
-          command: async (command) => {
-            assert.deepEqual(command, { ping: 1 });
-            return { ok: 1 };
-          },
-        }),
-      },
+    this.db = {
+      admin: () => ({
+        command: async (command) => {
+          assert.deepEqual(command, { ping: 1 });
+          return { ok: 1 };
+        },
+      }),
     };
     this.lastFind = null;
     this.lastFindOne = null;
@@ -102,6 +100,52 @@ test("MongoAnnotationStore health pings the configured collection", async () => 
     status: "ok",
     database: "gene_autoannotator",
   });
+});
+
+test("MongoAnnotationStore retries connection after a failed connect attempt", async () => {
+  let connectAttempts = 0;
+
+  class FlakyClient {
+    constructor(mongoUri, options) {
+      assert.equal(mongoUri, "mongodb://flaky");
+      assert.deepEqual(options, { serverSelectionTimeoutMS: 1000 });
+    }
+
+    async connect() {
+      connectAttempts += 1;
+      if (connectAttempts === 1) {
+        throw new Error("first connect failed");
+      }
+      return this;
+    }
+
+    db(databaseName) {
+      assert.equal(databaseName, "gene_autoannotator");
+      return {
+        collection: (collectionName) => {
+          assert.equal(collectionName, "annotations");
+          return new FakeCollection();
+        },
+      };
+    }
+  }
+
+  const firstStore = new MongoAnnotationStore("mongodb://flaky", {
+    clientFactory: FlakyClient,
+  });
+  const secondStore = new MongoAnnotationStore("mongodb://flaky", {
+    clientFactory: FlakyClient,
+  });
+
+  assert.deepEqual(await firstStore.health(), {
+    status: "unavailable",
+    message: "first connect failed",
+  });
+  assert.deepEqual(await secondStore.health(), {
+    status: "ok",
+    database: "gene_autoannotator",
+  });
+  assert.equal(connectAttempts, 2);
 });
 
 test("MongoAnnotationStore search returns public summaries", async () => {
