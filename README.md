@@ -201,3 +201,4 @@ Likely next improvements:
 - Safer path handling and deployment guidance before exposing the API beyond trusted users.
 - Better separation of fast unit tests from model/integration tests.
 - Requirement-file cleanup once the runtime dependency set stabilizes.
+- Ollama token usage included in metadata
