@@ -13,6 +13,13 @@ for the Next.js server process:
 cp .env.example .env.local
 ```
 
+For local development, set at least:
+
+```bash
+BACKEND_API_BASE_URL=http://127.0.0.1:8000
+MONGO_URI=mongodb://localhost:27017/gene_autoannotator
+```
+
 `BACKEND_API_BASE_URL` points Next.js server/proxy calls at FastAPI for
 profiles, validation, jobs, queue state, and backend health. `MONGO_URI` or
 `MONGODB_URI` lets the Next.js server read annotation history/search directly
