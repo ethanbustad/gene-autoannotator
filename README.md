@@ -35,7 +35,7 @@ Main generated fields are `gene_id`, `name`, `function`, `functional_category`, 
 Runtime assumptions:
 
 - Python 3.11+ recommended.
-- Node.js/npm for the frontend.
+- Node.js 20.19+ and npm for the frontend.
 - Internet access to NCBI Entrez/PubMed Central and optional UniProt lookup.
 - Local Ollama with the configured annotation/comparison models pulled.
 - SQLite for job queue state.
