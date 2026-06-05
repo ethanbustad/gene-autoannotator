@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import {
   clearFinishedJobHistory,
   createJob,
+  getAnnotationHealth,
   getHealth,
   getProfiles,
   listJobs,
@@ -170,6 +171,7 @@ function JobTile({ job }) {
 export default function JobWorkspace() {
   const searchParams = useSearchParams();
   const [health, setHealth] = useState(null);
+  const [annotationHealth, setAnnotationHealth] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [showAllJobs, setShowAllJobs] = useState(false);
@@ -193,13 +195,27 @@ export default function JobWorkspace() {
   const visibleJobs = getVisibleJobs(jobs, showAllJobs);
 
   async function refreshHealth() {
-    try {
-      setHealth(await getHealth());
-    } catch (error) {
+    const [backendResult, annotationResult] = await Promise.allSettled([
+      getHealth(),
+      getAnnotationHealth(),
+    ]);
+
+    if (backendResult.status === "fulfilled") {
+      setHealth(backendResult.value);
+    } else {
       setHealth({
         status: "offline",
         stores: {},
-        resources: { status: "unavailable", message: error.message },
+        resources: { status: "unavailable", message: backendResult.reason.message },
+      });
+    }
+
+    if (annotationResult.status === "fulfilled") {
+      setAnnotationHealth(annotationResult.value);
+    } else {
+      setAnnotationHealth({
+        status: "unavailable",
+        message: annotationResult.reason.message,
       });
     }
   }
@@ -332,8 +348,8 @@ export default function JobWorkspace() {
           />
           <HealthBadge
             label="Annotations"
-            status={health?.stores?.annotations?.status}
-            detail={health?.stores?.annotations?.message}
+            status={annotationHealth?.status}
+            detail={annotationHealth?.message || annotationHealth?.database}
           />
           <HealthBadge
             label="Resources"

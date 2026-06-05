@@ -6,11 +6,24 @@ searching generated annotation history.
 
 ## Getting Started
 
-Copy the example environment file and point it at the Python API:
+Copy the example environment file and configure both the Python API and MongoDB
+for the Next.js server process:
 
 ```bash
 cp .env.example .env.local
 ```
+
+For local development, set at least:
+
+```bash
+BACKEND_API_BASE_URL=http://127.0.0.1:8000
+MONGO_URI=mongodb://localhost:27017/gene_autoannotator
+```
+
+`BACKEND_API_BASE_URL` points Next.js server/proxy calls at FastAPI for
+profiles, validation, jobs, queue state, and backend health. `MONGO_URI` or
+`MONGODB_URI` lets the Next.js server read annotation history/search directly
+from MongoDB, so `/annotations` can keep working while FastAPI is offline.
 
 Then run the development server:
 
@@ -20,10 +33,16 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-The Python backend should be running separately on port `8000`. Browser API
-calls go through the same-origin `/api/backend` proxy, so remote devices only
-need to reach the frontend on port `3000`. If FastAPI is not on the same
-machine as Next.js, set `BACKEND_API_BASE_URL` to its internal URL.
+The Python backend should be running separately on port `8000` for job-related
+actions. Browser job API calls still go through the same-origin `/api/backend`
+proxy, so remote devices only need to reach the frontend on port `3000`. If
+FastAPI is not on the same machine as Next.js, set `BACKEND_API_BASE_URL` to its
+internal URL.
+
+Annotation search/review uses `/api/annotations/*` server routes. Those routes
+read MongoDB from the Next.js server process instead of proxying through
+FastAPI, which keeps stored annotations browsable when MongoDB is reachable and
+FastAPI is offline.
 
 ## Scripts
 
