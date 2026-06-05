@@ -27,6 +27,11 @@ const annotation = {
           cumulative_relevance: 3.42,
           pmc_ids_analyzed: ["123", "456"],
         },
+        llm_usage: {
+          known_input_tokens: 1200,
+          known_output_tokens: 345,
+          known_total_tokens: 1545,
+        },
         quality_flags: ["limited_literature"],
         duration_sec: 125,
       },
@@ -60,12 +65,18 @@ test("getMetadataRows extracts requested metadata fields", () => {
     "sections_analyzed",
     "cumulative_relevance",
     "quality_flags",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
     "duration",
   ]);
   assert.equal(rows[0].value, "Five papers were analyzed; support is mixed.");
   assert.equal(rows[1].value, "18");
   assert.equal(rows[5].value, "limited_literature");
-  assert.equal(rows[6].value, "2m 5s");
+  assert.equal(rows[6].value, "1200");
+  assert.equal(rows[7].value, "345");
+  assert.equal(rows[8].value, "1545");
+  assert.equal(rows[9].value, "2m 5s");
 });
 
 test("getPmcIdsAnalyzed returns analyzed PMC IDs", () => {

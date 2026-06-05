@@ -17,6 +17,9 @@ const METADATA_FIELDS = [
   ["sections_analyzed", "Sections analyzed"],
   ["cumulative_relevance", "Cumulative relevance"],
   ["quality_flags", "Quality flags"],
+  ["input_tokens", "Input tokens"],
+  ["output_tokens", "Output tokens"],
+  ["total_tokens", "Total tokens"],
   ["duration", "Duration"],
 ];
 
@@ -85,6 +88,7 @@ export function getMetadataRows(annotation) {
   const payload = getAnnotationPayload(annotation);
   const metadata = getMetadata(annotation);
   const literature = getLiterature(annotation);
+  const llmUsage = metadata.llm_usage || {};
   const values = {
     annotation_notes: payload.annotation_notes,
     total_papers: literature.total_papers_retrieved,
@@ -92,6 +96,9 @@ export function getMetadataRows(annotation) {
     sections_analyzed: literature.sections_analyzed,
     cumulative_relevance: literature.cumulative_relevance,
     quality_flags: metadata.quality_flags,
+    input_tokens: llmUsage.known_input_tokens,
+    output_tokens: llmUsage.known_output_tokens,
+    total_tokens: llmUsage.known_total_tokens,
     duration: formatDuration(metadata.duration_sec),
   };
 
