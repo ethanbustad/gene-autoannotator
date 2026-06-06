@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import {
   clearFinishedJobHistory,
   createJob,
+  getAnnotationHealth,
   getHealth,
   getProfiles,
   listJobs,
@@ -170,6 +171,7 @@ function JobTile({ job }) {
 export default function JobWorkspace() {
   const searchParams = useSearchParams();
   const [health, setHealth] = useState(null);
+  const [annotationHealth, setAnnotationHealth] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [showAllJobs, setShowAllJobs] = useState(false);
@@ -200,6 +202,16 @@ export default function JobWorkspace() {
         status: "offline",
         stores: {},
         resources: { status: "unavailable", message: error.message },
+      });
+    }
+
+    try {
+      setAnnotationHealth(await getAnnotationHealth());
+    } catch (error) {
+      setAnnotationHealth({
+        status: "unavailable",
+        message: error.message,
+        source: "next",
       });
     }
   }
@@ -332,8 +344,12 @@ export default function JobWorkspace() {
           />
           <HealthBadge
             label="Annotations"
-            status={health?.stores?.annotations?.status}
-            detail={health?.stores?.annotations?.message}
+            status={annotationHealth?.status}
+            detail={
+              annotationHealth?.status === "ok"
+                ? "Next server can reach MongoDB"
+                : annotationHealth?.message
+            }
           />
           <HealthBadge
             label="Resources"

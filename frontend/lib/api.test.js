@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getApiBaseUrl } from "./api.js";
+import { getAnnotationApiBaseUrl, getApiBaseUrl } from "./api.js";
 
 function withBrowserLocation(location, callback) {
   const originalWindow = globalThis.window;
@@ -108,6 +108,18 @@ test("getApiBaseUrl ignores a stale network API URL in the browser", () => {
     withBrowserLocation({ protocol: "http:", hostname: "10.19.178.136" }, () => {
       assert.equal(getApiBaseUrl(), "/api/backend");
     });
+  });
+});
+
+test("getAnnotationApiBaseUrl uses the dedicated Next annotation API in the browser", () => {
+  withBrowserLocation({ protocol: "http:", hostname: "10.1.2.3" }, () => {
+    assert.equal(getAnnotationApiBaseUrl(), "/api/annotations");
+  });
+});
+
+test("getAnnotationApiBaseUrl uses the dedicated Next annotation API on the server", () => {
+  withoutBrowser(() => {
+    assert.equal(getAnnotationApiBaseUrl(), "/api/annotations");
   });
 });
 

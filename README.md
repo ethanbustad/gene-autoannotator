@@ -23,7 +23,7 @@ Main generated fields are `gene_id`, `name`, `function`, `functional_category`, 
 
 - `autoannotation/`: core Python pipeline, organism profiles, PMC retrieval, LLM prompts, metadata, and CLI.
 - `backend/`: FastAPI API, SQLite job queue, optional MongoDB annotation history/search, and in-process runner.
-- `frontend/`: Next.js UI for job submission, queue monitoring, and annotation search/review.
+- `frontend/`: Next.js UI for job submission, queue monitoring, and direct MongoDB annotation search/review.
 - `compareannotations/`: trusted-vs-generated scoring tools using exact matching, GO/category graph logic, embeddings/NLI, and an Ollama judge.
 - `tests/`: mostly deterministic unit/API tests; some model-style tests require local model dependencies.
 - `gen_json/`, `trust_json/`, `test_json/`: generated examples, trusted annotation fixtures, and small comparison fixtures.
@@ -39,7 +39,7 @@ Runtime assumptions:
 - Internet access to NCBI Entrez/PubMed Central and optional UniProt lookup.
 - Local Ollama with the configured annotation/comparison models pulled.
 - SQLite for job queue state.
-- MongoDB optional, only for annotation history/search in the web app.
+- MongoDB optional, used by the backend for annotation history writes and by the Next.js server for annotation search/review reads.
 
 Python install:
 
@@ -96,7 +96,7 @@ Useful environment variables:
 - `AUTOANNOTATION_CONSENSUS_MODEL=model`
 - `AUTOANNOTATION_AGGREGATION_MODEL=model`
 - `OLLAMA_HOST=http://host:11434` when Ollama is not local.
-- `MONGO_URI` or `MONGODB_URI` to enable annotation history/search.
+- `MONGO_URI` or `MONGODB_URI` to enable annotation history/search. Set it for the FastAPI backend so completed jobs can be saved, and set it in `frontend/.env.local` so Next.js can read stored annotations directly.
 - `BACKEND_API_BASE_URL=http://127.0.0.1:8000` for the Next.js proxy/server calls.
 - `CORS_ORIGINS` and `CORS_ORIGIN_REGEX` for FastAPI browser access.
 - `GO_BASIC_OBO_PATH=data/go-basic.obo` for richer functional-category comparison.
@@ -106,6 +106,7 @@ Local/generated assets:
 - `.cache/` stores PMC text, parsed sections, LLM responses, and gene-name cache records.
 - `gen_json/` stores generated annotation JSON.
 - `backend/jobs.sqlite3` stores queued/completed web jobs and is ignored by git.
+- `frontend/.env.local` stores Next.js server configuration such as `MONGO_URI` for annotation reads and is ignored by git.
 - `Mycobacterium_tuberculosis_H37Rv_txt_v5.txt` is referenced for MTB annotation-table gene names but is not committed.
 - `creds/` is ignored and is only needed for the Google Sheets benchmark script.
 
@@ -174,8 +175,8 @@ Some comparison/model tests may need HuggingFace model downloads and local Ollam
 - `GET /jobs?order=queue|newest`: list job history and queue summary.
 - `DELETE /jobs/history`: clear completed/failed jobs only.
 - `GET /jobs/{job_id}` and `/jobs/{job_id}/result`: job metadata/result.
-- `GET /annotations/search?query=...`: search stored Mongo annotations.
-- `GET /annotations/{annotation_id}` and `/versions`: current annotation and older versions.
+- `GET /annotations/search?query=...`: FastAPI-compatible annotation search endpoint; the frontend now uses its own Next.js `/api/annotations/...` routes for Mongo reads.
+- `GET /annotations/{annotation_id}` and `/versions`: FastAPI-compatible current annotation and older version endpoints; the frontend reads the same Mongo documents through Next.js routes.
 
 ## Current Limitations
 
@@ -184,7 +185,7 @@ Some comparison/model tests may need HuggingFace model downloads and local Ollam
 - Only one annotation job runs at a time.
 - Web progress is coarse (`queued`, `running`, `saving_result`, `completed`, `failed`).
 - API request paths such as `cache_dir` and `output_dir` are trusted server paths.
-- MongoDB is optional; if unavailable, jobs can complete but annotation search/history will not work.
+- MongoDB is optional; if unavailable to FastAPI, jobs can complete but completed annotations will not be saved to MongoDB. If unavailable to the Next.js server, annotation search/review will not work even if FastAPI is online.
 - Literature parsing handles common top-level PMC/JATS sections and may miss nested or unusual section layouts.
 - Relevance scoring is heuristic and should be tuned with `get_papers.py` plus tests.
 - LLM validation checks JSON shape and gene identity, not factual correctness.

@@ -39,16 +39,21 @@ Check that it is reachable:
 curl http://10.158.45.197:8000/health
 ```
 
-Annotation search/history uses MongoDB. Put your local connection string in the
-project root `.env` file:
+Annotation history writes use MongoDB. Put your local connection string in the
+project root `.env` file so completed backend jobs can be saved:
 
 ```bash
 MONGO_URI=mongodb://localhost:27017/gene_autoannotator
 ```
 
 The API will still start if MongoDB is unavailable, but `/health` will report
-annotation storage as unavailable and annotation search endpoints will return a
-service error until the connection is fixed.
+backend annotation storage as unavailable and completed jobs will record an
+annotation storage warning until the connection is fixed.
+
+The Next.js frontend reads stored annotations directly from MongoDB through its
+own `/api/annotations/...` routes. Add the same `MONGO_URI` value to
+`frontend/.env.local` so annotation search/review continues to work even when
+this FastAPI process is offline.
 
 The annotator's Ollama models can also be configured in `.env`. This is useful
 when the backend sees a different model list than the original development
@@ -83,6 +88,6 @@ terminal command, including Ollama and the configured LLM models.
   persisted in SQLite and executed sequentially; only one job runs at a time.
 - `GET /jobs/{job_id}`: returns job status and metadata.
 - `GET /jobs/{job_id}/result`: returns completed annotation JSON.
-- `GET /annotations/search?query=...`: searches current generated annotations.
-- `GET /annotations/{annotation_id}`: returns the current stored annotation.
-- `GET /annotations/{annotation_id}/versions`: returns older stored versions.
+- `GET /annotations/search?query=...`: searches current generated annotations through FastAPI; the Next.js UI uses its own direct MongoDB read route.
+- `GET /annotations/{annotation_id}`: returns the current stored annotation through FastAPI; the Next.js UI uses its own direct MongoDB read route.
+- `GET /annotations/{annotation_id}/versions`: returns older stored versions through FastAPI; the Next.js UI uses its own direct MongoDB read route.
