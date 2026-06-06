@@ -1,12 +1,6 @@
+import { copyProxyHeaders, fetchBackendResponse } from "../../../../lib/backendProxy";
+
 const DEFAULT_BACKEND_API_BASE_URL = "http://127.0.0.1:8000";
-const HOP_BY_HOP_HEADERS = new Set([
-  "connection",
-  "content-encoding",
-  "content-length",
-  "keep-alive",
-  "transfer-encoding",
-  "upgrade",
-]);
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,16 +10,6 @@ export const runtime = "nodejs";
 // URL to client bundles.
 function getBackendApiBaseUrl() {
   return process.env.BACKEND_API_BASE_URL || DEFAULT_BACKEND_API_BASE_URL;
-}
-
-function copyProxyHeaders(headers) {
-  // Hop-by-hop headers describe one network connection and can break streamed
-  // proxy responses if forwarded unchanged.
-  const copied = new Headers(headers);
-  for (const header of HOP_BY_HOP_HEADERS) {
-    copied.delete(header);
-  }
-  return copied;
 }
 
 async function buildBackendUrl(request, context) {
@@ -51,12 +35,7 @@ async function proxyRequest(request, context) {
     init.body = await request.arrayBuffer();
   }
 
-  const response = await fetch(backendUrl, init);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: copyProxyHeaders(response.headers),
-  });
+  return fetchBackendResponse(backendUrl, init);
 }
 
 export const GET = proxyRequest;
