@@ -1,5 +1,6 @@
 const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 const BROWSER_API_BASE_URL = "/api/backend";
+const ANNOTATION_API_BASE_URL = "/api/annotations";
 
 function getBrowserApiBaseUrl() {
   if (typeof window === "undefined") {
@@ -20,8 +21,12 @@ export function getApiBaseUrl() {
   return process.env.BACKEND_API_BASE_URL || DEFAULT_API_BASE_URL;
 }
 
-async function apiFetch(path, options = {}) {
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+export function getAnnotationApiBaseUrl() {
+  return ANNOTATION_API_BASE_URL;
+}
+
+async function apiFetchFrom(baseUrl, path, options = {}) {
+  const response = await fetch(`${baseUrl}${path}`, {
     cache: "no-store",
     ...options,
     headers: {
@@ -36,6 +41,14 @@ async function apiFetch(path, options = {}) {
     throw new Error(detail);
   }
   return payload;
+}
+
+async function apiFetch(path, options = {}) {
+  return apiFetchFrom(getApiBaseUrl(), path, options);
+}
+
+async function annotationApiFetch(path, options = {}) {
+  return apiFetchFrom(getAnnotationApiBaseUrl(), path, options);
 }
 
 export async function getHealth() {
@@ -76,13 +89,24 @@ export async function clearFinishedJobHistory() {
 }
 
 export async function searchAnnotations(query) {
-  return apiFetch(`/annotations/search?query=${encodeURIComponent(query)}`);
+  return annotationApiFetch(`/search?query=${encodeURIComponent(query)}`);
 }
 
 export async function getAnnotation(annotationId) {
-  return apiFetch(`/annotations/${encodeURIComponent(annotationId)}`);
+  return annotationApiFetch(`/${encodeURIComponent(annotationId)}`);
 }
 
 export async function getAnnotationVersions(annotationId) {
-  return apiFetch(`/annotations/${encodeURIComponent(annotationId)}/versions`);
+  return annotationApiFetch(`/${encodeURIComponent(annotationId)}/versions`);
+}
+
+export async function getAnnotationHealth() {
+  const response = await fetch(`${getAnnotationApiBaseUrl()}/health`, {
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok && !payload) {
+    throw new Error(`Annotation health returned HTTP ${response.status}`);
+  }
+  return payload;
 }
