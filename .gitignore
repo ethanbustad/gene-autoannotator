@@ -18,3 +18,7 @@ dist/
 build/
 
 docs/
+
+gen_json/
+test_json/
+trust_json/
