@@ -2,7 +2,7 @@
   "gene_id": "Rv0001",
   "name": "dnaA",
   "rv_id": "Rv0001",
-  "function": "Chromosomal replication initiation protein (PMID: 34040136, 24705740)",
+  "function": "Chromosomal replication initiation protein (PMID: 34040136) / Initiates chromosomal replication (PMID: 24705740) / Initiator protein involved in DNA replication from chromosomal origin (oriC) (PMID: 19127296)",
   "functional_category": [
     "DNA Replication Initiation",
     "Initiation of chromosome replication"
@@ -11,9 +11,9 @@
   "infection_impact": "Higher intramacrophage multiplication observed for Variant 1 compared to non-transmitted variants (p=0.0244) (PMID: 34040136)",
   "essential_in_vitro": true,
   "essential_in_vivo": null,
-  "annotation_notes": "Twelve papers were analyzed, representing a strong literature base given the gene's relevance and the number of high-relevance papers available. The functional category remains somewhat fragmented across papers, with some describing it as 'DNA Replication Initiation' and others as 'Initiation of chromosome replication'.  The 'essential_in_vivo' status is consistently null across all papers, indicating a lack of direct experimental evidence.  The 'infection_impact' field is only supported by one paper (PMID: 34040136), which reports a correlation between a specific variant and increased intramacrophage multiplication.  Fields such as 'drug_susc_impact' remain null due to a lack of supporting evidence.",
+  "annotation_notes": "Twelve papers were analyzed, representing a strong literature base given the gene's relevance and the number of high-relevance papers available. The functional category was populated from PMID: 28473824. Infection impact was described in PMID: 34040136. Essentiality in vitro was consistently reported across multiple papers, but essentiality in vivo was not supported by experimental evidence and remains null. The functional descriptions were harmonized, prioritizing the most descriptive language. No conflicts were identified.",
   "annotation_metadata": {
-    "generated_at": "2026-05-29T19:10:33.639908+00:00",
+    "generated_at": "2026-06-10T02:28:23.199156+00:00",
     "gene": "Rv0001",
     "gene_name": "dnaA",
     "profile_id": "mtb-h37rv",
@@ -28,8 +28,8 @@
     "gene_name_warnings": [],
     "selection_mode": "cumulative_relevance_budget",
     "literature": {
-      "total_papers_retrieved": 1157,
-      "papers_eligible": 343,
+      "total_papers_retrieved": 1160,
+      "papers_eligible": 345,
       "papers_selected": 12,
       "papers_analyzed": 12,
       "sections_analyzed": 27,
@@ -135,6 +135,7 @@
         "10746227",
         "4816341",
         "4395146",
+        "13225438",
         "13157036",
         "12859060",
         "4222909",
@@ -376,6 +377,7 @@
         "4238387",
         "3710928",
         "3081668",
+        "13244258",
         "13095176",
         "4215301",
         "12744557",
@@ -528,10 +530,11 @@
         "11200800",
         "4460585",
         "10568018",
-        "13186107",
+        "13224001",
         "13201069",
         "13193902",
         "13189361",
+        "13186107",
         "13167532",
         "13160400",
         "13158851",
@@ -1117,9 +1120,9 @@
         "548372",
         "311145",
         "539007",
+        "534758",
         "534684",
         "534683",
-        "534758",
         "528795",
         "316777",
         "515132",
@@ -1143,15 +1146,15 @@
         "209906",
         "206107",
         "216721",
-        "235069",
-        "235315",
-        "235165",
-        "206947",
-        "213599",
         "213954",
-        "197193",
         "210765",
+        "213599",
         "212561",
+        "235315",
+        "235069",
+        "235165",
+        "197193",
+        "206947",
         "141039",
         "137899",
         "232616",
@@ -1390,10 +1393,78 @@
         }
       ]
     },
+    "llm_usage": {
+      "calls": 133,
+      "cache_hits": 132,
+      "known_input_tokens": 3728,
+      "known_output_tokens": 296,
+      "known_total_tokens": 4024,
+      "usage_records_with_missing_tokens": 132,
+      "by_role": {
+        "section_summary": {
+          "calls": 99,
+          "cache_hits": 99,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 99
+        },
+        "section_consensus": {
+          "calls": 33,
+          "cache_hits": 33,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 33
+        },
+        "gene_aggregation": {
+          "calls": 1,
+          "cache_hits": 0,
+          "known_input_tokens": 3728,
+          "known_output_tokens": 296,
+          "known_total_tokens": 4024,
+          "usage_records_with_missing_tokens": 0
+        }
+      },
+      "by_model": {
+        "mistral-nemo:12b": {
+          "calls": 33,
+          "cache_hits": 33,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 33
+        },
+        "llama3:8b": {
+          "calls": 33,
+          "cache_hits": 33,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 33
+        },
+        "gemma3:12b": {
+          "calls": 34,
+          "cache_hits": 33,
+          "known_input_tokens": 3728,
+          "known_output_tokens": 296,
+          "known_total_tokens": 4024,
+          "usage_records_with_missing_tokens": 33
+        },
+        "phi4:14b": {
+          "calls": 33,
+          "cache_hits": 33,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 33
+        }
+      }
+    },
     "quality_flags": [
       "strong_literature_support"
     ],
-    "duration_sec": 23131.0,
+    "duration_sec": 527.4,
     "field_coverage": {
       "function": "supported",
       "functional_category": "supported",

@@ -13,16 +13,16 @@
   "essential_in_vivo": true,
   "annotation_notes": "Multiple papers describe conflicting roles for this gene. Some papers indicate it is essential for in vitro and in vivo growth, while others describe it as a transcriptional regulator. The most recent and highest-scoring evidence supports a role as a transcriptional regulator and essential for in vivo viability.",
   "annotation_metadata": {
-    "generated_at": "2026-05-27T07:53:15.391951+00:00",
+    "generated_at": "2026-06-10T02:18:03.877236+00:00",
     "gene": "Rv2612c",
     "gene_name": "pgsA1",
     "profile_id": "mtb-h37rv",
     "canonical_name": "Mycobacterium tuberculosis H37Rv",
     "species_name": "Mycobacterium tuberculosis",
     "strain": "H37Rv",
-    "gene_name_source": "annotation_table",
-    "gene_name_source_detail": "./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt",
-    "gene_name_confidence": "profile_table",
+    "gene_name_source": "supplied",
+    "gene_name_source_detail": "supplied argument",
+    "gene_name_confidence": "curator_supplied",
     "gene_name_aliases": [],
     "gene_name_candidates": [],
     "gene_name_warnings": [],
@@ -318,8 +318,76 @@
         }
       ]
     },
+    "llm_usage": {
+      "calls": 121,
+      "cache_hits": 121,
+      "known_input_tokens": 0,
+      "known_output_tokens": 0,
+      "known_total_tokens": 0,
+      "usage_records_with_missing_tokens": 121,
+      "by_role": {
+        "section_summary": {
+          "calls": 90,
+          "cache_hits": 90,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 90
+        },
+        "section_consensus": {
+          "calls": 30,
+          "cache_hits": 30,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 30
+        },
+        "gene_aggregation": {
+          "calls": 1,
+          "cache_hits": 1,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 1
+        }
+      },
+      "by_model": {
+        "mistral-nemo:12b": {
+          "calls": 30,
+          "cache_hits": 30,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 30
+        },
+        "llama3:8b": {
+          "calls": 30,
+          "cache_hits": 30,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 30
+        },
+        "gemma3:12b": {
+          "calls": 31,
+          "cache_hits": 31,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 31
+        },
+        "phi4:14b": {
+          "calls": 30,
+          "cache_hits": 30,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 30
+        }
+      }
+    },
     "quality_flags": [],
-    "duration_sec": 19973.8,
+    "duration_sec": 1.7,
     "field_coverage": {
       "function": "supported",
       "functional_category": "supported",

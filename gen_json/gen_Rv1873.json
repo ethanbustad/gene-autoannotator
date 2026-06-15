@@ -1,0 +1,194 @@
+{
+  "gene_id": "Rv1873",
+  "name": "Rv1873",
+  "rv_id": "Rv1873",
+  "function": null,
+  "functional_category": null,
+  "drug_susc_impact": null,
+  "infection_impact": null,
+  "essential_in_vitro": null,
+  "essential_in_vivo": null,
+  "annotation_notes": "Four papers were analyzed, representing a limited literature base. The relevance scores ranged from 0.302 to 0.960. Due to the limited number of eligible papers, all four were included in the analysis. Fields related to function, functional category, drug susceptibility impact, infection impact, in vitro essentiality, and in vivo essentiality remain null due to a lack of supporting evidence. A conflict arose in PMID 28970579, which initially reported a function for Rv0001 (DnaA) but subsequently returned to reporting data for Rv1873 with null values. This inconsistency was resolved by prioritizing the Rv1873 data from the higher-relevance sources.",
+  "annotation_metadata": {
+    "generated_at": "2026-06-10T19:43:05.938004+00:00",
+    "gene": "Rv1873",
+    "gene_name": "Rv1873",
+    "profile_id": "mtb-h37rv",
+    "canonical_name": "Mycobacterium tuberculosis H37Rv",
+    "species_name": "Mycobacterium tuberculosis",
+    "strain": "H37Rv",
+    "gene_name_source": "annotation_table",
+    "gene_name_source_detail": "./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt",
+    "gene_name_confidence": "profile_table",
+    "gene_name_aliases": [],
+    "gene_name_candidates": [],
+    "gene_name_warnings": [],
+    "selection_mode": "all_eligible_limited_literature",
+    "literature": {
+      "total_papers_retrieved": 7,
+      "papers_eligible": 4,
+      "papers_selected": 4,
+      "papers_analyzed": 4,
+      "sections_analyzed": 8,
+      "cumulative_relevance": 3.895,
+      "target_relevance": 9.0,
+      "min_papers_requested": 5,
+      "max_papers_allowed": 20,
+      "mean_selected_relevance": 0.688,
+      "pmc_ids_retrieved": [
+        "2225384",
+        "10230547",
+        "5624866",
+        "5744980",
+        "12013269",
+        "5974470",
+        "1913421"
+      ],
+      "pmc_ids_selected": [
+        "2225384",
+        "10230547",
+        "5624866",
+        "1913421"
+      ],
+      "pmc_ids_analyzed": [
+        "2225384",
+        "10230547",
+        "5624866",
+        "1913421"
+      ],
+      "pmids_analyzed": [
+        "17142896",
+        "37266022",
+        "28970579",
+        "17384189"
+      ],
+      "selected_paper_summaries": [
+        {
+          "pmc_id": "2225384",
+          "pmid": "17142896",
+          "score": 0.96,
+          "title": "The molecular structure of Rv1873, a conserved hypothetical protein from Mycobacterium tuberculosis, at 1.38\u2005\u00c5 resolution",
+          "year": 2006,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "10230547",
+          "pmid": "37266022",
+          "score": 0.862,
+          "title": "Genomic characteristics of Mycobacterium tuberculosis isolates of cutaneous tuberculosis",
+          "year": 2023,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "5624866",
+          "pmid": "28970579",
+          "score": 0.627,
+          "title": "A genome-wide structure-based survey of nucleotide binding proteins in M. tuberculosis",
+          "year": 2017,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        },
+        {
+          "pmc_id": "1913421",
+          "pmid": "17384189",
+          "score": 0.302,
+          "title": "Mycobacterial Bacilli Are Metabolically Active during Chronic Tuberculosis in Murine Lungs: Insights from Genome-Wide Transcriptional Profiling\u25bf  \u2020 ",
+          "year": 2007,
+          "retrieval_sources": [
+            "locus"
+          ],
+          "warnings": []
+        }
+      ]
+    },
+    "llm_usage": {
+      "calls": 33,
+      "cache_hits": 3,
+      "known_input_tokens": 43129,
+      "known_output_tokens": 2546,
+      "known_total_tokens": 45675,
+      "usage_records_with_missing_tokens": 0,
+      "by_role": {
+        "section_summary": {
+          "calls": 24,
+          "cache_hits": 0,
+          "known_input_tokens": 38817,
+          "known_output_tokens": 1794,
+          "known_total_tokens": 40611,
+          "usage_records_with_missing_tokens": 0
+        },
+        "section_consensus": {
+          "calls": 8,
+          "cache_hits": 3,
+          "known_input_tokens": 2873,
+          "known_output_tokens": 524,
+          "known_total_tokens": 3397,
+          "usage_records_with_missing_tokens": 0
+        },
+        "gene_aggregation": {
+          "calls": 1,
+          "cache_hits": 0,
+          "known_input_tokens": 1439,
+          "known_output_tokens": 228,
+          "known_total_tokens": 1667,
+          "usage_records_with_missing_tokens": 0
+        }
+      },
+      "by_model": {
+        "mistral-nemo:12b": {
+          "calls": 8,
+          "cache_hits": 0,
+          "known_input_tokens": 13072,
+          "known_output_tokens": 611,
+          "known_total_tokens": 13683,
+          "usage_records_with_missing_tokens": 0
+        },
+        "llama3:8b": {
+          "calls": 8,
+          "cache_hits": 0,
+          "known_input_tokens": 12668,
+          "known_output_tokens": 515,
+          "known_total_tokens": 13183,
+          "usage_records_with_missing_tokens": 0
+        },
+        "gemma3:12b": {
+          "calls": 9,
+          "cache_hits": 0,
+          "known_input_tokens": 14516,
+          "known_output_tokens": 896,
+          "known_total_tokens": 15412,
+          "usage_records_with_missing_tokens": 0
+        },
+        "phi4:14b": {
+          "calls": 8,
+          "cache_hits": 3,
+          "known_input_tokens": 2873,
+          "known_output_tokens": 524,
+          "known_total_tokens": 3397,
+          "usage_records_with_missing_tokens": 0
+        }
+      }
+    },
+    "quality_flags": [
+      "limited_literature",
+      "below_min_papers_requested"
+    ],
+    "duration_sec": 5148.6,
+    "field_coverage": {
+      "function": "insufficient_evidence",
+      "functional_category": "insufficient_evidence",
+      "drug_susc_impact": "insufficient_evidence",
+      "infection_impact": "insufficient_evidence",
+      "essential_in_vitro": "insufficient_evidence",
+      "essential_in_vivo": "insufficient_evidence"
+    }
+  }
+}

@@ -10,16 +10,16 @@
   "essential_in_vivo": null,
   "annotation_notes": "Two papers were analyzed, representing a limited literature base. The relevance scores of the selected papers were 0.887 and 0.407. Several annotation fields remain unknown (null) due to insufficient evidence, including functional_category, drug_susc_impact, infection_impact, and essential_in_vivo. A limitation is the small number of eligible papers, which restricts the depth of the annotation. There was a conflict regarding essential_in_vitro; one paper reported false while another did not provide data, so this field was set to null.",
   "annotation_metadata": {
-    "generated_at": "2026-05-30T11:45:41.091859+00:00",
+    "generated_at": "2026-06-10T02:16:29.927602+00:00",
     "gene": "Rv2418c",
     "gene_name": "octT",
     "profile_id": "mtb-h37rv",
     "canonical_name": "Mycobacterium tuberculosis H37Rv",
     "species_name": "Mycobacterium tuberculosis",
     "strain": "H37Rv",
-    "gene_name_source": "annotation_table",
-    "gene_name_source_detail": "./Mycobacterium_tuberculosis_H37Rv_txt_v5.txt",
-    "gene_name_confidence": "profile_table",
+    "gene_name_source": "supplied",
+    "gene_name_source_detail": "supplied argument",
+    "gene_name_confidence": "curator_supplied",
     "gene_name_aliases": [],
     "gene_name_candidates": [],
     "gene_name_warnings": [],
@@ -86,11 +86,79 @@
         }
       ]
     },
+    "llm_usage": {
+      "calls": 17,
+      "cache_hits": 17,
+      "known_input_tokens": 0,
+      "known_output_tokens": 0,
+      "known_total_tokens": 0,
+      "usage_records_with_missing_tokens": 17,
+      "by_role": {
+        "section_summary": {
+          "calls": 12,
+          "cache_hits": 12,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 12
+        },
+        "section_consensus": {
+          "calls": 4,
+          "cache_hits": 4,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 4
+        },
+        "gene_aggregation": {
+          "calls": 1,
+          "cache_hits": 1,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 1
+        }
+      },
+      "by_model": {
+        "mistral-nemo:12b": {
+          "calls": 4,
+          "cache_hits": 4,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 4
+        },
+        "llama3:8b": {
+          "calls": 4,
+          "cache_hits": 4,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 4
+        },
+        "gemma3:12b": {
+          "calls": 5,
+          "cache_hits": 5,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 5
+        },
+        "phi4:14b": {
+          "calls": 4,
+          "cache_hits": 4,
+          "known_input_tokens": 0,
+          "known_output_tokens": 0,
+          "known_total_tokens": 0,
+          "usage_records_with_missing_tokens": 4
+        }
+      }
+    },
     "quality_flags": [
       "limited_literature",
       "below_min_papers_requested"
     ],
-    "duration_sec": 3049.1,
+    "duration_sec": 2.2,
     "field_coverage": {
       "function": "supported",
       "functional_category": "insufficient_evidence",
