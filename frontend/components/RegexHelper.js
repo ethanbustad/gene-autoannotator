@@ -1,0 +1,188 @@
+"use client";
+
+import { useState } from "react";
+
+import {
+  generateRegexFromDescription,
+  generateRegexFromExamples,
+} from "../lib/api";
+
+const TABS = [
+  { id: "examples", label: "From examples" },
+  { id: "description", label: "From description" },
+];
+
+export default function RegexHelper({ onApply }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("examples");
+  const [examplesText, setExamplesText] = useState("");
+  const [description, setDescription] = useState("");
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  function resetOutput() {
+    setResult(null);
+    setError("");
+  }
+
+  async function handleGenerateExamples() {
+    resetOutput();
+    const examples = examplesText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (examples.length === 0) {
+      setError("Enter at least one example locus.");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const payload = await generateRegexFromExamples({ examples });
+      setResult(payload);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handleGenerateDescription() {
+    resetOutput();
+    if (description.trim().length === 0) {
+      setError("Describe the locus format first.");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const payload = await generateRegexFromDescription({ description });
+      setResult(payload);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  function handleApply() {
+    if (result?.regex && typeof onApply === "function") {
+      onApply(result.regex);
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-dashed workbench-border bg-white/40 p-4">
+      <button
+        type="button"
+        onClick={() => setIsOpen((value) => !value)}
+        className="workbench-foreground text-sm font-bold tracking-[-0.01em]"
+      >
+        {isOpen ? "Hide regex helper" : "Don't know the exact regex?"}
+      </button>
+
+      {isOpen ? (
+        <div className="mt-4 grid gap-4">
+          <div className="flex gap-2">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  resetOutput();
+                }}
+                className={`workbench-button ${
+                  activeTab === tab.id
+                    ? "workbench-button-primary"
+                    : "workbench-button-secondary"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "examples" ? (
+            <label className="grid gap-2 text-sm font-medium">
+              Example loci (one per line)
+              <textarea
+                value={examplesText}
+                onChange={(event) => setExamplesText(event.target.value)}
+                className="workbench-input min-h-28"
+                placeholder={"Rv1000\nRv2070c\nRv3415A"}
+              />
+              <button
+                type="button"
+                onClick={handleGenerateExamples}
+                disabled={isGenerating}
+                className="workbench-button workbench-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGenerating ? "Generating..." : "Generate from examples"}
+              </button>
+              <span className="workbench-muted text-xs">
+                Three or more varied examples give the best results.
+              </span>
+            </label>
+          ) : (
+            <label className="grid gap-2 text-sm font-medium">
+              Describe the locus format
+              <input
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                className="workbench-input"
+                placeholder="Rv followed by 4 digits, then a c, A, or nothing"
+              />
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={isGenerating}
+                className="workbench-button workbench-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isGenerating ? "Generating..." : "Generate from description"}
+              </button>
+              <span className="workbench-muted text-xs">
+                Uses a local model. If it is unavailable, try the examples tab.
+              </span>
+            </label>
+          )}
+
+          {error ? (
+            <p className="workbench-amber-bg rounded-xl border workbench-border p-3 text-sm text-[#5f4b2e]">
+              {error}
+            </p>
+          ) : null}
+
+          {result?.regex ? (
+            <div className="grid gap-3 rounded-xl border workbench-border bg-white/60 p-4">
+              <code className="break-all rounded bg-black/5 px-2 py-1 text-sm">
+                {result.regex}
+              </code>
+              {result.explanation ? (
+                <p className="workbench-muted text-sm leading-6">
+                  {result.explanation}
+                </p>
+              ) : null}
+              {result.matched?.length ? (
+                <ul className="grid gap-1 text-sm">
+                  {result.matched.map((entry) => (
+                    <li key={entry.value} className="flex items-center gap-2">
+                      <span aria-hidden="true">{entry.ok ? "✓" : "✗"}</span>
+                      <code>{entry.value}</code>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleApply}
+                className="workbench-button workbench-button-primary"
+              >
+                Use this regex
+              </button>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
