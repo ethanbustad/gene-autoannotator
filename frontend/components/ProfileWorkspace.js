@@ -390,7 +390,7 @@ export default function ProfileWorkspace() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border workbench-border bg-white/70 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
+                      <span className="inline-flex items-center rounded-full border workbench-border bg-white/70 px-3 py-1 leading-none text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
                         {profile.read_only ? "Read-only" : "User"}
                       </span>
                       {!profile.read_only ? (

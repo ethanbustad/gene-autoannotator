@@ -79,3 +79,12 @@ test("profile detail cards include synonym fields", async () => {
   assert.match(workspace, /\["Species synonyms", profile\.species_synonyms\?\.join\(", "\)\]/);
   assert.match(workspace, /\["Strain synonyms", profile\.strain_synonyms\?\.join\(", "\)\]/);
 });
+
+test("profile source chip centers its label", async () => {
+  const workspace = await readProjectFile("components/ProfileWorkspace.js");
+
+  assert.match(
+    workspace,
+    /className="inline-flex items-center rounded-full border workbench-border bg-white\/70 px-3 py-1 leading-none text-xs font-bold uppercase tracking-wide text-\[#3f4b43\]"/,
+  );
+});

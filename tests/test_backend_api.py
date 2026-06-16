@@ -522,6 +522,46 @@ def test_job_submission_stores_profile_config_for_user_profile(tmp_path):
     assert "target_preflight" in listed_job["request"]
 
 
+def test_worker_marks_stale_invalid_saved_profile_locus_job_failed(tmp_path):
+    profile_store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+    profile_store.create_user_profile({
+        "profile_id": "ecoli-k12-mg1655",
+        "canonical_name": "Escherichia coli K-12 MG1655",
+        "species_name": "Escherichia coli",
+        "strain": "K-12 MG1655",
+        "locus_regex": r"^b\d{4}$",
+        "target_patterns": [r"Escherichia\s+coli"],
+    })
+    job_store = JobStore(tmp_path / "jobs.sqlite3")
+    queued = job_store.create_job({
+        "profile": "ecoli-k12-mg1655",
+        "locus": "hello",
+        "allow_online_name_lookup": False,
+        "refresh_gene_name_cache": False,
+        "cache_supplied_name": False,
+    })
+
+    def fail_if_called(_request):
+        raise AssertionError("invalid locus job should fail before annotation runner")
+
+    app = create_app(
+        job_store=job_store,
+        profile_store=profile_store,
+        run_job=fail_if_called,
+        start_worker=True,
+    )
+
+    with TestClient(app):
+        for _ in range(20):
+            job = job_store.get_job(queued["id"])
+            if job["status"] != "queued":
+                break
+            time.sleep(0.05)
+
+    assert job["status"] == "failed"
+    assert job["error"] == "Locus does not match the profile locus schema."
+
+
 def test_job_submission_rejects_missing_name_and_locus(tmp_path):
     app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
     client = TestClient(app)

@@ -117,6 +117,10 @@ def create_app(
                     return
                 try:
                     request = AnnotationJobRequest(**job["request"])
+                    target = _resolve_target_for_request(request)
+                    invalid_target_detail = _invalid_target_detail(target)
+                    if invalid_target_detail is not None:
+                        raise ValueError(invalid_target_detail)
                     result = run_job(request)
                     store.mark_step(job["id"], "saving_result")
                     output_path = result.get("output_path") if result else None
@@ -229,11 +233,11 @@ def create_app(
             stored_request["profile_config"] = _profile_config_from_target(target)
         return stored_request
 
-    def _reject_invalid_target(target):
+    def _invalid_target_detail(target):
         preflight = target.to_preflight_dict()
         if preflight["valid"]:
-            return
-        detail = next(
+            return None
+        return next(
             (
                 warning["message"]
                 for warning in preflight["warnings"]
@@ -241,6 +245,11 @@ def create_app(
             ),
             "The target could not be submitted.",
         )
+
+    def _reject_invalid_target(target):
+        detail = _invalid_target_detail(target)
+        if detail is None:
+            return
         raise HTTPException(status_code=422, detail=detail)
 
     def _public_job_record(job):
