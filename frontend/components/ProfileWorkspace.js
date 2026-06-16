@@ -161,7 +161,7 @@ export default function ProfileWorkspace() {
   const [profileQuery, setProfileQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState(PROFILE_SOURCE_FILTERS.ALL);
   const [statusMessage, setStatusMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const formRef = useRef(null);
 

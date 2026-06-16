@@ -99,6 +99,13 @@ test("profile workspace mounts the regex helper under the form", async () => {
   );
 });
 
+test("profile workspace avoids loading-only submit hydration mismatches", async () => {
+  const workspace = await readProjectFile("components/ProfileWorkspace.js");
+
+  assert.match(workspace, /const \[isLoading, setIsLoading\] = useState\(false\);/);
+  assert.match(workspace, /disabled=\{isSaving \|\| isLoading\}/);
+});
+
 test("available profiles are searchable filterable and grouped", async () => {
   const workspace = await readProjectFile("components/ProfileWorkspace.js");
 
