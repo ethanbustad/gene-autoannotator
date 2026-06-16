@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createProfile,
@@ -8,6 +8,11 @@ import {
   getProfiles,
   updateProfile,
 } from "../lib/api";
+import {
+  filterProfiles,
+  groupProfilesBySpecies,
+  PROFILE_SOURCE_FILTERS,
+} from "../lib/profileFilters";
 import { buildProfilePayload } from "../lib/profileStore";
 import RegexHelper from "./RegexHelper";
 
@@ -152,9 +157,22 @@ export default function ProfileWorkspace() {
   const [profiles, setProfiles] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingProfileId, setEditingProfileId] = useState("");
+  const [expandedProfileId, setExpandedProfileId] = useState("");
+  const [profileQuery, setProfileQuery] = useState("");
+  const [sourceFilter, setSourceFilter] = useState(PROFILE_SOURCE_FILTERS.ALL);
   const [statusMessage, setStatusMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const formRef = useRef(null);
+
+  const visibleProfiles = useMemo(
+    () => filterProfiles(profiles, { query: profileQuery, sourceFilter }),
+    [profiles, profileQuery, sourceFilter],
+  );
+  const profileGroups = useMemo(
+    () => groupProfilesBySpecies(visibleProfiles),
+    [visibleProfiles],
+  );
 
   async function refreshProfiles() {
     const payload = await getProfiles();
@@ -193,7 +211,9 @@ export default function ProfileWorkspace() {
     }
     setForm(profileToForm(profile));
     setEditingProfileId(profile.profile_id);
+    setExpandedProfileId(profile.profile_id);
     setStatusMessage(`Editing ${profile.profile_id}.`);
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function handleSubmit(event) {
@@ -273,7 +293,7 @@ export default function ProfileWorkspace() {
       </section>
 
       <div className="grid items-start gap-5 lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="workbench-card p-6">
+        <section ref={formRef} className="workbench-card p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="workbench-foreground text-2xl font-bold tracking-[-0.03em]">
@@ -355,7 +375,7 @@ export default function ProfileWorkspace() {
                 Available profiles
               </h2>
               <p className="workbench-muted mt-2 text-sm">
-                {profiles.length} profile{profiles.length === 1 ? "" : "s"} loaded
+                {visibleProfiles.length} of {profiles.length} profile{profiles.length === 1 ? "" : "s"} shown
               </p>
             </div>
             <button
@@ -372,54 +392,114 @@ export default function ProfileWorkspace() {
             </button>
           </div>
 
-          <div className="mt-6 grid gap-4">
+          <div className="mt-6 grid gap-3">
+            <label className="grid gap-2 text-sm font-medium">
+              Search profiles
+              <input
+                value={profileQuery}
+                onChange={(event) => setProfileQuery(event.target.value)}
+                className="workbench-input"
+                placeholder="Search profile ID, organism, strain, or synonym"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSourceFilter(PROFILE_SOURCE_FILTERS.ALL)}
+                className={`workbench-button ${sourceFilter === PROFILE_SOURCE_FILTERS.ALL ? "workbench-button-primary" : "workbench-button-secondary"}`}
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceFilter(PROFILE_SOURCE_FILTERS.BUILTIN)}
+                className={`workbench-button ${sourceFilter === PROFILE_SOURCE_FILTERS.BUILTIN ? "workbench-button-primary" : "workbench-button-secondary"}`}
+              >
+                Built-in
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceFilter(PROFILE_SOURCE_FILTERS.USER)}
+                className={`workbench-button ${sourceFilter === PROFILE_SOURCE_FILTERS.USER ? "workbench-button-primary" : "workbench-button-secondary"}`}
+              >
+                User
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-6 grid max-h-[760px] gap-4 overflow-y-auto pr-1">
             {isLoading ? (
               <div className="workbench-muted rounded-2xl border border-dashed workbench-border p-8 text-center">
                 Loading profiles...
               </div>
-            ) : profiles.length > 0 ? (
-              profiles.map((profile) => (
-                <article
-                  key={profile.profile_id}
-                  className="rounded-2xl border workbench-border bg-white/50 p-4"
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="workbench-foreground text-lg font-bold tracking-[-0.02em]">
-                        {profile.canonical_name}
-                      </p>
-                      <p className="workbench-muted mt-1 text-sm">
-                        {profile.profile_id} · {profile.source || "user"}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="inline-flex items-center rounded-full border workbench-border bg-white/70 px-3 py-1 leading-none text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
-                        {profile.read_only ? "Read-only" : "User"}
-                      </span>
-                      {!profile.read_only ? (
-                        <>
+            ) : visibleProfiles.length > 0 ? (
+              profileGroups.map((group) => (
+                <section key={group.speciesName} className="grid gap-3">
+                  <h3 className="workbench-muted text-xs font-bold uppercase tracking-[0.14em]">
+                    {group.speciesName}
+                  </h3>
+                  {group.profiles.map((profile) => {
+                    const isExpanded = expandedProfileId === profile.profile_id;
+                    return (
+                      <article
+                        key={profile.profile_id}
+                        className={`rounded-2xl border workbench-border bg-white/50 p-4 ${isExpanded ? "shadow-sm" : ""}`}
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <button
                             type="button"
-                            onClick={() => startEditing(profile)}
-                            className="workbench-button workbench-button-secondary"
+                            onClick={() => setExpandedProfileId(isExpanded ? "" : profile.profile_id)}
+                            className="min-w-0 text-left"
                           >
-                            Edit
+                            <p className="workbench-foreground text-lg font-bold tracking-[-0.02em]">
+                              {profile.canonical_name}
+                            </p>
+                            <p className="workbench-muted mt-1 text-sm">
+                              {profile.profile_id} · {profile.strain || "No strain"}
+                            </p>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(profile.profile_id)}
-                            className="workbench-button workbench-button-secondary workbench-red"
-                          >
-                            Delete
-                          </button>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="inline-flex items-center rounded-full border workbench-border bg-white/70 px-3 py-1 leading-none text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
+                              {profile.read_only ? "Read-only" : "User"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedProfileId(isExpanded ? "" : profile.profile_id)}
+                              className="workbench-button workbench-button-secondary"
+                            >
+                              {isExpanded ? "Collapse" : "Expand"}
+                            </button>
+                            {!profile.read_only ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditing(profile)}
+                                  className="workbench-button workbench-button-secondary"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(profile.profile_id)}
+                                  className="workbench-button workbench-button-secondary workbench-red"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
 
-                  <ProfileDetailList profile={profile} />
-                </article>
+                        {isExpanded ? <ProfileDetailList profile={profile} /> : null}
+                      </article>
+                    );
+                  })}
+                </section>
               ))
+            ) : profiles.length > 0 ? (
+              <div className="workbench-muted rounded-2xl border border-dashed workbench-border p-8 text-center">
+                No profiles match the current search or filter.
+              </div>
             ) : (
               <div className="workbench-muted rounded-2xl border border-dashed workbench-border p-8 text-center">
                 No profiles were returned by the backend.

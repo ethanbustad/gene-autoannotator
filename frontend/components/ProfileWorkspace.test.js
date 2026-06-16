@@ -98,3 +98,25 @@ test("profile workspace mounts the regex helper under the form", async () => {
     /<RegexHelper onApply=\{\(regex\) => updateForm\("locusRegex", regex\)\} \/>/,
   );
 });
+
+test("available profiles are searchable filterable and grouped", async () => {
+  const workspace = await readProjectFile("components/ProfileWorkspace.js");
+
+  assert.match(
+    workspace,
+    /import \{\s*filterProfiles,\s*groupProfilesBySpecies,\s*PROFILE_SOURCE_FILTERS,\s*\} from "\.\.\/lib\/profileFilters";/s,
+  );
+  assert.match(workspace, /placeholder="Search profile ID, organism, strain, or synonym"/);
+  assert.match(workspace, /setSourceFilter\(PROFILE_SOURCE_FILTERS\.BUILTIN\)/);
+  assert.match(workspace, /setSourceFilter\(PROFILE_SOURCE_FILTERS\.USER\)/);
+  assert.match(workspace, /groupProfilesBySpecies\(visibleProfiles\)/);
+});
+
+test("profile rows are compact and expand details one at a time", async () => {
+  const workspace = await readProjectFile("components/ProfileWorkspace.js");
+
+  assert.match(workspace, /const \[expandedProfileId, setExpandedProfileId\] = useState\(""\);/);
+  assert.match(workspace, /expandedProfileId === profile\.profile_id/);
+  assert.match(workspace, /setExpandedProfileId\(isExpanded \? "" : profile\.profile_id\)/);
+  assert.match(workspace, /\{isExpanded \? <ProfileDetailList profile=\{profile\} \/> : null\}/);
+});
