@@ -50,3 +50,6 @@ MODEL_SUMMARY = (
 )
 MODEL_CONSENSUS = os.getenv('AUTOANNOTATION_CONSENSUS_MODEL') or MODEL_SET['consensus']
 MODEL_AGGREGATION = os.getenv('AUTOANNOTATION_AGGREGATION_MODEL') or MODEL_SET['aggregation']
+# Regex generation reuses the reconciliation-strength model by default because
+# it must produce a single, well-formed pattern rather than creative prose.
+MODEL_REGEX = os.getenv('AUTOANNOTATION_REGEX_MODEL') or MODEL_CONSENSUS

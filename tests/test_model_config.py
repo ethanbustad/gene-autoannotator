@@ -9,6 +9,7 @@ def reload_models(monkeypatch, **env):
         "AUTOANNOTATION_SUMMARY_MODELS",
         "AUTOANNOTATION_CONSENSUS_MODEL",
         "AUTOANNOTATION_AGGREGATION_MODEL",
+        "AUTOANNOTATION_REGEX_MODEL",
     ):
         monkeypatch.delenv(key, raising=False)
     for key, value in env.items():
@@ -57,3 +58,15 @@ def test_model_config_can_be_overridden_by_environment(monkeypatch):
     ]
     assert configured.MODEL_CONSENSUS == "phi3:3.8b"
     assert configured.MODEL_AGGREGATION == "gemma3:4b"
+
+
+def test_regex_model_defaults_to_consensus_model(monkeypatch):
+    configured = reload_models(monkeypatch)
+
+    assert configured.MODEL_REGEX == "phi4:14b"
+
+
+def test_regex_model_can_be_overridden(monkeypatch):
+    configured = reload_models(monkeypatch, AUTOANNOTATION_REGEX_MODEL="qwen2.5:7b-instruct")
+
+    assert configured.MODEL_REGEX == "qwen2.5:7b-instruct"
