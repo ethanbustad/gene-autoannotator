@@ -116,6 +116,20 @@ export async function validateJob(payload) {
   });
 }
 
+export async function generateRegexFromExamples(payload) {
+  return apiFetch("/regex/from-examples", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function generateRegexFromDescription(payload) {
+  return apiFetch("/regex/from-description", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function createJob(payload) {
   return apiFetch("/jobs", {
     method: "POST",

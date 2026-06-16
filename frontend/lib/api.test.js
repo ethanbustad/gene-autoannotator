@@ -4,6 +4,8 @@ import { afterEach, test } from "node:test";
 import {
   createProfile,
   deleteProfile,
+  generateRegexFromDescription,
+  generateRegexFromExamples,
   getAnnotationApiBaseUrl,
   getApiBaseUrl,
   getProfile,
@@ -68,6 +70,34 @@ test("profile helpers call encoded profile endpoints", async () => {
         JSON.stringify({ canonical_name: "Custom" }),
       ],
       ["http://backend.test/profiles/custom%2Fprofile%201", "DELETE", undefined],
+    ],
+  );
+});
+
+test("regex helpers post to the generation endpoints", async () => {
+  process.env.BACKEND_API_BASE_URL = "http://backend.test";
+  const calls = [];
+  mockFetch((url, options) => {
+    calls.push({ url, options });
+    return { regex: "^Rv\\d{4}[Ac]?$" };
+  });
+
+  await generateRegexFromExamples({ examples: ["Rv1000"] });
+  await generateRegexFromDescription({ description: "Rv then 4 digits" });
+
+  assert.deepEqual(
+    calls.map((call) => [call.url, call.options.method, call.options.body]),
+    [
+      [
+        "http://backend.test/regex/from-examples",
+        "POST",
+        JSON.stringify({ examples: ["Rv1000"] }),
+      ],
+      [
+        "http://backend.test/regex/from-description",
+        "POST",
+        JSON.stringify({ description: "Rv then 4 digits" }),
+      ],
     ],
   );
 });
