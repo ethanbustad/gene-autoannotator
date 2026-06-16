@@ -117,14 +117,16 @@ export default function RegexHelper({ onApply }) {
           </div>
 
           {activeTab === "examples" ? (
-            <label className="grid gap-2 text-sm font-medium">
-              Example loci (one per line)
-              <textarea
-                value={examplesText}
-                onChange={(event) => setExamplesText(event.target.value)}
-                className="workbench-input min-h-28"
-                placeholder={"Rv1000\nRv2070c\nRv3415A"}
-              />
+            <div className="grid gap-2 text-sm font-medium">
+              <label className="grid gap-2">
+                Example loci (one per line)
+                <textarea
+                  value={examplesText}
+                  onChange={(event) => setExamplesText(event.target.value)}
+                  className="workbench-input min-h-28"
+                  placeholder={"Rv1000\nRv2070c\nRv3415A"}
+                />
+              </label>
               <button
                 type="button"
                 onClick={handleGenerateExamples}
@@ -136,16 +138,18 @@ export default function RegexHelper({ onApply }) {
               <span className="workbench-muted text-xs">
                 Three or more varied examples give the best results.
               </span>
-            </label>
+            </div>
           ) : (
-            <label className="grid gap-2 text-sm font-medium">
-              Describe the locus format
-              <input
-                value={description}
-                onChange={(event) => setDescription(event.target.value)}
-                className="workbench-input"
-                placeholder="Rv followed by 4 digits, then a c, A, or nothing"
-              />
+            <div className="grid gap-2 text-sm font-medium">
+              <label className="grid gap-2">
+                Describe the locus format
+                <input
+                  value={description}
+                  onChange={(event) => setDescription(event.target.value)}
+                  className="workbench-input"
+                  placeholder="Rv followed by 4 digits, then a c, A, or nothing"
+                />
+              </label>
               <button
                 type="button"
                 onClick={handleGenerateDescription}
@@ -157,7 +161,7 @@ export default function RegexHelper({ onApply }) {
               <span className="workbench-muted text-xs">
                 Uses a local model. If it is unavailable, try the examples tab.
               </span>
-            </label>
+            </div>
           )}
 
           {error ? (
