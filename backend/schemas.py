@@ -122,6 +122,21 @@ class ProfilePayload(BaseModel):
     excluded_species_patterns: list[str] = Field(default_factory=list)
 
 
+class RegexFromExamplesRequest(BaseModel):
+    examples: list[str] = Field(default_factory=list)
+
+
+class RegexFromDescriptionRequest(BaseModel):
+    description: str = Field(min_length=1)
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def normalize_description(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+
 class ProfileDetailResponse(ProfileResponse):
     source: str = "builtin"
     trusted: bool = True
