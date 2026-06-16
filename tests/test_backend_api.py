@@ -258,6 +258,44 @@ def test_validate_accepts_name_only_custom_organism(tmp_path):
 
 
 @pytest.mark.parametrize("endpoint", ["/validate", "/jobs"])
+def test_target_requests_reject_saved_profile_locus_schema_mismatch(tmp_path, endpoint):
+    user_store = InMemoryUserProfileStore()
+    user_store.create_profile(
+        {
+            "profile_id": "ecoli-k12-mg1655",
+            "canonical_name": "Escherichia coli K-12 MG1655",
+            "species_name": "Escherichia coli",
+            "strain": "K-12 MG1655",
+            "locus_regex": r"^b\d{4}$",
+            "target_patterns": [r"Escherichia\s+coli"],
+        }
+    )
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=BuiltinAndUserProfileStore(user_store=user_store),
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        endpoint,
+        json={"profile": "ecoli-k12-mg1655", "locus": "hello"},
+    )
+
+    if endpoint == "/validate":
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["valid"] is False
+        assert {warning["code"] for warning in payload["warnings"]} >= {
+            "locus_schema_mismatch"
+        }
+    else:
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Locus does not match the profile locus schema."
+
+
+@pytest.mark.parametrize("endpoint", ["/validate", "/jobs"])
 def test_target_requests_reject_whitespace_only_locus_and_name(tmp_path, endpoint):
     app = create_app(
         job_store=JobStore(tmp_path / "jobs.sqlite3"),

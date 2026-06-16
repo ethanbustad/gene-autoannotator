@@ -229,6 +229,20 @@ def create_app(
             stored_request["profile_config"] = _profile_config_from_target(target)
         return stored_request
 
+    def _reject_invalid_target(target):
+        preflight = target.to_preflight_dict()
+        if preflight["valid"]:
+            return
+        detail = next(
+            (
+                warning["message"]
+                for warning in preflight["warnings"]
+                if warning["code"] == targets.LOCUS_SCHEMA_MISMATCH
+            ),
+            "The target could not be submitted.",
+        )
+        raise HTTPException(status_code=422, detail=detail)
+
     def _public_job_record(job):
         public_job = dict(job)
         public_request = dict(public_job.get("request") or {})
@@ -332,6 +346,7 @@ def create_app(
     )
     def create_job(request: AnnotationJobRequest, background_tasks: BackgroundTasks):
         target = _resolve_target_for_request(request)
+        _reject_invalid_target(target)
         stored_request = _stored_request_for_target(request, target)
         job = store.create_job(stored_request)
         if run_jobs_inline:

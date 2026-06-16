@@ -48,7 +48,7 @@ class AnnotationTarget:
 
     def to_preflight_dict(self):
         return {
-            'valid': True,
+            'valid': LOCUS_SCHEMA_MISMATCH not in self.warnings,
             'profile_id': self.profile.profile_id,
             'profile_source': self.profile_source,
             'canonical_name': self.profile.canonical_name,

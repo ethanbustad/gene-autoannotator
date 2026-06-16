@@ -98,7 +98,7 @@ def test_name_only_builtin_target_warns_when_resolved_locus_mismatches_schema(mo
     assert "locus_schema_mismatch" in result.warnings
 
     preflight = result.to_preflight_dict()
-    assert preflight["valid"] is True
+    assert preflight["valid"] is False
     assert {
         "code": "locus_schema_mismatch",
         "message": targets.TARGET_WARNING_MESSAGES["locus_schema_mismatch"],
