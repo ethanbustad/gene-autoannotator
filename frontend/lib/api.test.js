@@ -1,7 +1,113 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { afterEach, test } from "node:test";
 
-import { getAnnotationApiBaseUrl, getApiBaseUrl } from "./api.js";
+import {
+  createProfile,
+  deleteProfile,
+  getAnnotationApiBaseUrl,
+  getApiBaseUrl,
+  getProfile,
+  updateProfile,
+  validateJob,
+} from "./api.js";
+
+const originalFetch = globalThis.fetch;
+const originalBackendApiBaseUrl = process.env.BACKEND_API_BASE_URL;
+
+afterEach(() => {
+  if (originalFetch === undefined) {
+    delete globalThis.fetch;
+  } else {
+    globalThis.fetch = originalFetch;
+  }
+  if (originalBackendApiBaseUrl === undefined) {
+    delete process.env.BACKEND_API_BASE_URL;
+  } else {
+    process.env.BACKEND_API_BASE_URL = originalBackendApiBaseUrl;
+  }
+});
+
+function mockFetch(handler) {
+  globalThis.fetch = async (url, options = {}) => {
+    const result = handler(url, options);
+    return {
+      ok: true,
+      json: async () => result ?? {},
+    };
+  };
+}
+
+function mockErrorFetch(payload, status = 422) {
+  globalThis.fetch = async () => ({
+    ok: false,
+    status,
+    json: async () => payload,
+  });
+}
+
+test("profile helpers call encoded profile endpoints", async () => {
+  process.env.BACKEND_API_BASE_URL = "http://backend.test";
+  const calls = [];
+  mockFetch((url, options) => {
+    calls.push({ url, options });
+  });
+
+  await getProfile("custom/profile 1");
+  await createProfile({ profile_id: "new-profile" });
+  await updateProfile("custom/profile 1", { canonical_name: "Custom" });
+  await deleteProfile("custom/profile 1");
+
+  assert.deepEqual(
+    calls.map((call) => [call.url, call.options.method, call.options.body]),
+    [
+      ["http://backend.test/profiles/custom%2Fprofile%201", undefined, undefined],
+      ["http://backend.test/profiles", "POST", JSON.stringify({ profile_id: "new-profile" })],
+      [
+        "http://backend.test/profiles/custom%2Fprofile%201",
+        "PUT",
+        JSON.stringify({ canonical_name: "Custom" }),
+      ],
+      ["http://backend.test/profiles/custom%2Fprofile%201", "DELETE", undefined],
+    ],
+  );
+});
+
+test("validateJob forwards the complete flexible target payload", async () => {
+  process.env.BACKEND_API_BASE_URL = "http://backend.test";
+  const payload = {
+    profile: "",
+    organism: "Trypanosoma cruzi",
+    strain: "CL Brener",
+    locus: "TcCLB.503799.4",
+    name: "calmodulin",
+    locus_regex: "^TcCLB",
+    search_terms: ["T. cruzi"],
+    target_patterns: ["Trypanosoma cruzi"],
+    off_target_patterns: ["Trypanosoma"],
+    excluded_species_patterns: ["Trypanosoma brucei"],
+  };
+  let received;
+  mockFetch((url, options) => {
+    received = { url, options };
+    return { valid: true };
+  });
+
+  await validateJob(payload);
+
+  assert.equal(received.url, "http://backend.test/validate");
+  assert.equal(received.options.method, "POST");
+  assert.deepEqual(JSON.parse(received.options.body), payload);
+});
+
+test("api helpers render FastAPI validation detail arrays as readable error messages", async () => {
+  process.env.BACKEND_API_BASE_URL = "http://backend.test";
+  mockErrorFetch({ detail: [{ msg: "name or locus is required" }] });
+
+  await assert.rejects(
+    () => getProfile("mtb-h37rv"),
+    /name or locus is required/,
+  );
+});
 
 function withBrowserLocation(location, callback) {
   const originalWindow = globalThis.window;

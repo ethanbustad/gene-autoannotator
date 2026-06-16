@@ -1,8 +1,10 @@
+import { splitLines } from "./profileStore.js";
+
 export function buildJobPayload(values) {
   // Convert React form naming to the snake_case FastAPI/Pydantic contract while
   // omitting empty optional fields so backend defaults remain authoritative.
+  const profile = values.profile?.trim();
   const payload = {
-    locus: values.locus?.trim(),
     allow_online_name_lookup: Boolean(values.allowOnlineNameLookup),
     refresh_gene_name_cache: Boolean(values.refreshGeneNameCache),
     cache_supplied_name: Boolean(values.cacheSuppliedName),
@@ -10,13 +12,43 @@ export function buildJobPayload(values) {
 
   for (const [source, target] of [
     ["profile", "profile"],
-    ["organism", "organism"],
-    ["strain", "strain"],
+    ["locus", "locus"],
     ["name", "name"],
   ]) {
     const value = values[source]?.trim();
     if (value) {
       payload[target] = value;
+    }
+  }
+
+  if (profile) {
+    return payload;
+  }
+
+  for (const [source, target] of [
+    ["organism", "organism"],
+    ["strain", "strain"],
+  ]) {
+    const value = values[source]?.trim();
+    if (value) {
+      payload[target] = value;
+    }
+  }
+
+  const locusRegex = values.locusRegex?.trim();
+  if (locusRegex) {
+    payload.locus_regex = locusRegex;
+  }
+
+  for (const [source, target] of [
+    ["searchTerms", "search_terms"],
+    ["targetPatterns", "target_patterns"],
+    ["offTargetPatterns", "off_target_patterns"],
+    ["excludedSpeciesPatterns", "excluded_species_patterns"],
+  ]) {
+    const entries = splitLines(values[source]);
+    if (entries.length > 0) {
+      payload[target] = entries;
     }
   }
 

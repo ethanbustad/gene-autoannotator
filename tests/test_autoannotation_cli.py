@@ -2,7 +2,25 @@ import json
 
 import pytest
 
+from autoannotation import autoannotation as annotation_pipeline
 from autoannotation import __main__ as annotation_cli
+
+
+def _custom_profile_config():
+    return {
+        "profile_id": "custom-profile",
+        "canonical_name": "Custom organism",
+        "species_name": "Custom organism",
+        "strain": "Lab strain",
+        "synonyms": ["custom-profile"],
+        "species_synonyms": ["Custom organism"],
+        "strain_synonyms": ["Lab strain"],
+        "locus_regex": r"^CUS_\d+$",
+        "search_terms": ["Custom organism"],
+        "target_patterns": [r"Custom\s+organism"],
+        "off_target_patterns": [],
+        "excluded_species_patterns": [],
+    }
 
 
 def test_annotation_cli_namespaces_non_mtb_outputs(monkeypatch, tmp_path):
@@ -39,6 +57,99 @@ def test_annotation_cli_namespaces_non_mtb_outputs(monkeypatch, tmp_path):
     )
     payload = json.loads((tmp_path / "tcruzi-clbrener" / "gen_TcCLB.503799.4.json").read_text())
     assert payload["gene_id"] == "TcCLB.503799.4"
+
+
+def test_cli_main_accepts_name_only(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_get_gene_annotation(**kwargs):
+        captured.update(kwargs)
+        return {
+            "gene_annotation": {"gene_id": None, "name": "abc1"},
+            "pmc_ids": ["1"],
+            "used_ids": ["1"],
+            "selection_mode": "target_relevance_reached",
+            "cumulative_relevance": 1.0,
+        }
+
+    monkeypatch.setattr(annotation_cli, "get_gene_annotation", fake_get_gene_annotation)
+
+    result = annotation_cli.main(
+        organism="Custom bacterium",
+        name="abc1",
+        output_dir=tmp_path,
+        no_online_name_lookup=True,
+    )
+
+    assert captured["locus"] is None
+    assert captured["name"] == "abc1"
+    assert result["annotation"]["name"] == "abc1"
+    assert result["output_path"].endswith("gen_abc1.json")
+
+
+def test_cli_main_passes_profile_config_to_annotation_pipeline(monkeypatch, tmp_path):
+    captured = {}
+    profile_config = _custom_profile_config()
+
+    def fake_get_gene_annotation(**kwargs):
+        captured.update(kwargs)
+        return {
+            "gene_annotation": {
+                "gene_id": "CUS_0001",
+                "name": "abc1",
+                "annotation_metadata": {"profile_id": "custom-profile"},
+            },
+            "pmc_ids": ["1"],
+            "used_ids": ["1"],
+            "selection_mode": "target_relevance_reached",
+            "cumulative_relevance": 1.0,
+        }
+
+    monkeypatch.setattr(annotation_cli, "get_gene_annotation", fake_get_gene_annotation)
+
+    annotation_cli.main(
+        profile="custom-profile",
+        profile_config=profile_config,
+        locus="CUS_0001",
+        name="abc1",
+        output_dir=tmp_path,
+        no_online_name_lookup=True,
+    )
+
+    assert captured["profile"] == "custom-profile"
+    assert captured["profile_config"] == profile_config
+
+
+def test_get_gene_annotation_uses_profile_config_for_non_builtin_profile(monkeypatch, tmp_path):
+    profile_config = _custom_profile_config()
+
+    class ReachedFakePipeline(Exception):
+        def __init__(self, profile):
+            self.profile = profile
+
+    class FakeLlmHandler:
+        def __init__(self, cache_dir):
+            self.cache_dir = cache_dir
+
+    class FakePaperManager:
+        def __init__(self, cache_dir, organism_profile):
+            raise ReachedFakePipeline(organism_profile)
+
+    monkeypatch.setattr(annotation_pipeline.llms, "LlmHandler", FakeLlmHandler)
+    monkeypatch.setattr(annotation_pipeline.pmc, "PmcPaperManager", FakePaperManager)
+
+    with pytest.raises(ReachedFakePipeline) as exc_info:
+        annotation_pipeline.get_gene_annotation(
+            profile="custom-profile",
+            profile_config=profile_config,
+            locus="CUS_0001",
+            name="abc1",
+            cache_dir=str(tmp_path),
+            allow_online_name_lookup=False,
+        )
+
+    assert exc_info.value.profile.profile_id == "custom-profile"
+    assert exc_info.value.profile.canonical_name == "Custom organism"
 
 
 def test_annotation_cli_keeps_mtb_legacy_output_path(monkeypatch, tmp_path):

@@ -164,43 +164,45 @@ class PmcPaperManager(papers.PaperManager):
             return None
 
     def get_pmc_id_sources(self, gene, name):
-        log.info(f'Searching PubMed Central for gene {gene}')
-
-        search_term_locus = search_term_locus_tmpl.format(locus=gene)
-        search_url1 = search_url_tmpl.format(term=search_term_locus)
-
-        log.debug(f'Searching PubMed Central by gene locus {gene}')
-        idlist1 = self._search_pmc_idlist(search_url1, search_term_locus, f'{gene} locus')
-        log.debug(
-            f'Found {len(idlist1)} paper{utils.s_if_plural(idlist1)} by locus for gene {gene}'
-        )
-
-        if name == gene:
-            log.debug(f'No name available for gene {gene}; moving on with obtained papers')
-            return {pmc_id: {'locus'} for pmc_id in idlist1}
-
-        log.debug(f'Searching PubMed Central by gene name {name}')
-
-        search_term_name = self._build_name_search_term(name)
-        search_url2 = search_url_tmpl.format(term=search_term_name)
-
-        idlist2 = self._search_pmc_idlist(search_url2, search_term_name, f'{gene} name')
-        log.debug(f'Found {len(idlist2)} papers by name ({name}) for gene {gene}')
-
+        search_label = gene or name
+        log.info(f'Searching PubMed Central for gene {search_label}')
         combined = {}
-        for pmc_id in idlist1:
-            combined.setdefault(pmc_id, set()).add('locus')
-        for pmc_id in idlist2:
-            combined.setdefault(pmc_id, set()).add('name')
+
+        if gene:
+            search_term_locus = search_term_locus_tmpl.format(locus=gene)
+            search_url1 = search_url_tmpl.format(term=search_term_locus)
+
+            log.debug(f'Searching PubMed Central by gene locus {gene}')
+            idlist1 = self._search_pmc_idlist(search_url1, search_term_locus, f'{gene} locus')
+            log.debug(
+                f'Found {len(idlist1)} paper{utils.s_if_plural(idlist1)} by locus for gene {gene}'
+            )
+            for pmc_id in idlist1:
+                combined.setdefault(pmc_id, set()).add('locus')
+        else:
+            log.debug(f'No gene locus available for {search_label}; skipping locus search')
+
+        if name and name != gene:
+            log.debug(f'Searching PubMed Central by gene name {name}')
+
+            search_term_name = self._build_name_search_term(name)
+            search_url2 = search_url_tmpl.format(term=search_term_name)
+
+            idlist2 = self._search_pmc_idlist(search_url2, search_term_name, f'{search_label} name')
+            log.debug(f'Found {len(idlist2)} papers by name ({name}) for gene {search_label}')
+            for pmc_id in idlist2:
+                combined.setdefault(pmc_id, set()).add('name')
+        elif gene:
+            log.debug(f'No distinct name available for gene {gene}; moving on with obtained papers')
 
         if len(combined) < 3:
             log.warning(
-                f'Found only {len(combined)} paper{utils.s_if_plural(combined)} for gene {gene}'
+                f'Found only {len(combined)} paper{utils.s_if_plural(combined)} for gene {search_label}'
             )
         else:
             log.debug(
                 f'That makes total of {len(combined)} paper{utils.s_if_plural(combined)} for ' + \
-                    f'gene {gene}'
+                    f'gene {search_label}'
             )
 
         return combined
@@ -305,8 +307,8 @@ class PmcPaperManager(papers.PaperManager):
         year = self._get_publication_year(pmc_id)
 
         abstract = self.get_abstract(pmc_id)
-        gene_lower = gene.lower()
-        name_lower = name.lower()
+        gene_lower = gene.lower() if gene else None
+        name_lower = name.lower() if name else None
         sections = {
             'title': title or '',
             'abstract': abstract or '',
@@ -315,8 +317,11 @@ class PmcPaperManager(papers.PaperManager):
         }
         section_hits = {
             label: {
-                'locus': text.lower().count(gene_lower),
-                'name': 0 if name_lower == gene_lower else text.lower().count(name_lower),
+                'locus': text.lower().count(gene_lower) if gene_lower else 0,
+                'name': (
+                    text.lower().count(name_lower)
+                    if name_lower and name_lower != gene_lower else 0
+                ),
                 'target_organism': self._count_patterns(text, self.species_incl_patterns),
                 'organism': self._count_patterns(text, self.species_incl_patterns),
                 'off_target_organism': self._count_patterns(

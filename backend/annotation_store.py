@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import re
@@ -22,6 +23,13 @@ def _annotation_id(profile_id, normalized_locus):
     return f"{profile_id}:{normalized_locus}"
 
 
+def _name_annotation_id(profile_id, gene_name):
+    normalized_name = str(gene_name).strip().casefold()
+    readable_slug = organisms.normalize_identifier(normalized_name) or "gene"
+    digest = hashlib.sha256(normalized_name.encode("utf-8")).hexdigest()[:10]
+    return f"{profile_id}:name:{readable_slug}-{digest}"
+
+
 def _extract_generated_at(job, result):
     annotation = result.get("annotation") or {}
     metadata = annotation.get("annotation_metadata") or {}
@@ -35,6 +43,54 @@ def _extract_gene_name(job, result, normalized_locus):
         or annotation.get("gene_name")
         or job.get("request", {}).get("name")
         or normalized_locus
+    )
+
+
+def _metadata_identity(job, result):
+    annotation = result.get("annotation") or {}
+    metadata = annotation.get("annotation_metadata") or {}
+    profile_id = metadata.get("profile_id")
+    normalized_locus = metadata.get("resolved_locus") or metadata.get("gene")
+    gene_name = (
+        metadata.get("resolved_name")
+        or annotation.get("name")
+        or job.get("request", {}).get("name")
+    )
+
+    if profile_id and normalized_locus:
+        return {
+            "annotation_id": _annotation_id(profile_id, normalized_locus),
+            "profile_id": profile_id,
+            "canonical_name": metadata.get("canonical_name"),
+            "species_name": metadata.get("species_name"),
+            "strain": metadata.get("strain"),
+            "normalized_locus": normalized_locus,
+            "gene_name": gene_name,
+        }
+    if profile_id and gene_name:
+        return {
+            "annotation_id": _name_annotation_id(profile_id, gene_name),
+            "profile_id": profile_id,
+            "canonical_name": metadata.get("canonical_name"),
+            "species_name": metadata.get("species_name"),
+            "strain": metadata.get("strain"),
+            "normalized_locus": None,
+            "gene_name": gene_name,
+        }
+    return None
+
+
+def _annotation_identity_from_metadata(job, result):
+    identity = _metadata_identity(job, result)
+    if identity is not None:
+        return identity["annotation_id"], identity["normalized_locus"], identity["gene_name"]
+
+    validation = _validation_for_job(job)
+    gene_name = _extract_gene_name(job, result, validation.normalized_locus)
+    return (
+        _annotation_id(validation.profile_id, validation.normalized_locus),
+        validation.normalized_locus,
+        gene_name,
     )
 
 
@@ -83,11 +139,25 @@ def _build_document(job, existing=None):
     # `current`; the previous current result is copied into `versions` so the UI
     # can show history without searching multiple collections.
     result = job.get("result") or {}
-    validation = _validation_for_job(job)
-    normalized_locus = validation.normalized_locus
-    gene_name = _extract_gene_name(job, result, normalized_locus)
+    identity = _metadata_identity(job, result)
+    if identity is not None:
+        annotation_id = identity["annotation_id"]
+        profile_id = identity["profile_id"]
+        canonical_name = identity["canonical_name"]
+        species_name = identity["species_name"]
+        strain = identity["strain"]
+        normalized_locus = identity["normalized_locus"]
+        gene_name = identity["gene_name"] or normalized_locus
+    else:
+        validation = _validation_for_job(job)
+        profile_id = validation.profile_id
+        canonical_name = validation.canonical_name
+        species_name = validation.species_name
+        strain = validation.strain
+        normalized_locus = validation.normalized_locus
+        gene_name = _extract_gene_name(job, result, normalized_locus)
+        annotation_id = _annotation_id(profile_id, normalized_locus)
     generated_at = _extract_generated_at(job, result)
-    annotation_id = _annotation_id(validation.profile_id, normalized_locus)
     current = {
         "job_id": job["id"],
         "generated_at": generated_at,
@@ -102,10 +172,10 @@ def _build_document(job, existing=None):
     search_text = " ".join(
         str(part)
         for part in (
-            validation.profile_id,
-            validation.canonical_name,
-            validation.species_name,
-            validation.strain,
+            profile_id,
+            canonical_name,
+            species_name,
+            strain,
             normalized_locus,
             gene_name,
             json.dumps(result, sort_keys=True),
@@ -118,10 +188,10 @@ def _build_document(job, existing=None):
     # search if the annotation library grows.
     return {
         "_id": annotation_id,
-        "profile_id": validation.profile_id,
-        "canonical_name": validation.canonical_name,
-        "species_name": validation.species_name,
-        "strain": validation.strain,
+        "profile_id": profile_id,
+        "canonical_name": canonical_name,
+        "species_name": species_name,
+        "strain": strain,
         "normalized_locus": normalized_locus,
         "gene_name": gene_name,
         "generated_at": generated_at,
@@ -183,9 +253,9 @@ class InMemoryAnnotationStore:
         return {"status": "ok"}
 
     def save_completed_job(self, job):
-        existing = self._documents.get(
-            _annotation_id(_validation_for_job(job).profile_id, _validation_for_job(job).normalized_locus)
-        )
+        result = job.get("result") or {}
+        annotation_id, _, _ = _annotation_identity_from_metadata(job, result)
+        existing = self._documents.get(annotation_id)
         document = _build_document(job, existing=existing)
         self._documents[document["_id"]] = document
         return document["_id"]
@@ -250,12 +320,12 @@ class MongoAnnotationStore:
 
     def save_completed_job(self, job):
         collection = self._get_collection()
-        validation = _validation_for_job(job)
-        annotation_id = _annotation_id(validation.profile_id, validation.normalized_locus)
+        result = job.get("result") or {}
+        annotation_id, _, _ = _annotation_identity_from_metadata(job, result)
         existing = collection.find_one({"_id": annotation_id})
         document = _build_document(job, existing=existing)
-        collection.replace_one({"_id": annotation_id}, document, upsert=True)
-        return annotation_id
+        collection.replace_one({"_id": document["_id"]}, document, upsert=True)
+        return document["_id"]
 
     def search(self, query, limit=20):
         collection = self._get_collection()

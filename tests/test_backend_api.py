@@ -1,9 +1,29 @@
 import time
 
+import pytest
 from fastapi.testclient import TestClient
 
+from backend.annotation_store import InMemoryAnnotationStore
 from backend.api import create_app
 from backend.job_store import JobStore
+from backend.profile_store import BuiltinAndUserProfileStore, InMemoryUserProfileStore
+
+
+class FailingProfileStore:
+    def health(self):
+        return {"status": "unavailable", "message": "mongo down"}
+
+    def list_profiles(self):
+        raise RuntimeError("mongo down")
+
+    def get_profile(self, profile_id):
+        raise RuntimeError("mongo down")
+
+
+@pytest.fixture(autouse=True)
+def clear_mongo_env(monkeypatch):
+    monkeypatch.delenv("MONGO_URI", raising=False)
+    monkeypatch.delenv("MONGODB_URI", raising=False)
 
 
 def test_health_endpoint(tmp_path):
@@ -16,6 +36,7 @@ def test_health_endpoint(tmp_path):
     payload = response.json()
     assert payload["status"] == "ok"
     assert payload["stores"]["jobs"]["status"] == "ok"
+    assert payload["stores"]["profiles"]["status"] == "ok"
     assert "queue" in payload
     assert payload["resources"]["status"] == "ok"
     assert "cpu_percent" in payload["resources"]
@@ -70,6 +91,131 @@ def test_profiles_endpoint_lists_configured_profiles(tmp_path):
     assert "tcruzi-clbrener" in profile_ids
 
 
+def test_profiles_endpoint_includes_user_profiles(tmp_path):
+    profile_store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+    profile_store.create_user_profile({
+        "profile_id": "custom-profile",
+        "canonical_name": "Custom organism",
+        "species_name": "Custom organism",
+        "locus_regex": r"^CUS_\d+$",
+    })
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=profile_store,
+    )
+    client = TestClient(app)
+
+    response = client.get("/profiles")
+
+    assert response.status_code == 200
+    profiles = {profile["profile_id"]: profile for profile in response.json()["profiles"]}
+    assert profiles["mtb-h37rv"]["source"] == "builtin"
+    assert profiles["custom-profile"]["source"] == "user"
+
+
+def test_profiles_endpoint_reports_store_failures_as_unavailable(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=FailingProfileStore(),
+    )
+    client = TestClient(app)
+
+    response = client.get("/profiles")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "mongo down"
+
+
+def test_profile_detail_endpoint_reports_store_failures_as_unavailable(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=FailingProfileStore(),
+    )
+    client = TestClient(app)
+
+    response = client.get("/profiles/custom-profile")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "mongo down"
+
+
+def test_profile_crud_rejects_builtin_update(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore()),
+    )
+    client = TestClient(app)
+
+    response = client.put(
+        "/profiles/mtb-h37rv",
+        json={
+            "profile_id": "mtb-h37rv",
+            "canonical_name": "Changed",
+            "species_name": "Changed",
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "built-in profiles are read-only"
+
+
+def test_profile_creation_without_user_store_returns_unavailable(tmp_path):
+    app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
+    client = TestClient(app)
+
+    response = client.post(
+        "/profiles",
+        json={
+            "profile_id": "custom-profile",
+            "canonical_name": "Custom organism",
+            "species_name": "Custom organism",
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "MONGO_URI is not configured"
+
+
+def test_profile_crud_creates_reads_updates_and_deletes_user_profile(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore()),
+    )
+    client = TestClient(app)
+
+    create_response = client.post(
+        "/profiles",
+        json={
+            "profile_id": "custom-profile",
+            "canonical_name": "Custom organism",
+            "species_name": "Custom organism",
+            "strain": "Lab strain",
+            "locus_regex": r"^CUS_\d+$",
+            "search_terms": ["Custom organism"],
+        },
+    )
+    read_response = client.get("/profiles/custom-profile")
+    update_response = client.put(
+        "/profiles/custom-profile",
+        json={
+            "profile_id": "custom-profile",
+            "canonical_name": "Custom organism edited",
+            "species_name": "Custom organism",
+        },
+    )
+    delete_response = client.delete("/profiles/custom-profile")
+    missing_response = client.get("/profiles/custom-profile")
+
+    assert create_response.status_code == 201
+    assert read_response.status_code == 200
+    assert read_response.json()["canonical_name"] == "Custom organism"
+    assert update_response.status_code == 200
+    assert update_response.json()["canonical_name"] == "Custom organism edited"
+    assert delete_response.status_code == 200
+    assert delete_response.json() == {"deleted": True}
+    assert missing_response.status_code == 404
+
+
 def test_validate_endpoint_wraps_existing_locus_validation(tmp_path):
     app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
     client = TestClient(app)
@@ -87,6 +233,82 @@ def test_validate_endpoint_wraps_existing_locus_validation(tmp_path):
     payload = response.json()
     assert payload["valid"] is True
     assert payload["profile_id"] == "tcruzi-clbrener"
+
+
+def test_validate_accepts_name_only_custom_organism(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore()),
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/validate",
+        json={"organism": "Custom bacterium", "name": "abc1"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["valid"] is True
+    assert payload["primary_identifier"] == "abc1"
+    assert {warning["code"] for warning in payload["warnings"]} >= {
+        "ad_hoc_profile",
+        "missing_locus",
+    }
+
+
+@pytest.mark.parametrize("endpoint", ["/validate", "/jobs"])
+def test_target_requests_reject_whitespace_only_locus_and_name(tmp_path, endpoint):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+
+    response = client.post(
+        endpoint,
+        json={"organism": "Custom bacterium", "locus": "   ", "name": "\t"},
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("endpoint", ["/validate", "/jobs"])
+def test_target_requests_report_unknown_profile_as_not_found(tmp_path, endpoint):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+
+    response = client.post(
+        endpoint,
+        json={"profile": "missing-profile", "locus": "CUS_0001"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Profile not found"
+
+
+@pytest.mark.parametrize("endpoint", ["/validate", "/jobs"])
+def test_target_requests_report_profile_store_failures_as_unavailable(tmp_path, endpoint):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        profile_store=FailingProfileStore(),
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+
+    response = client.post(
+        endpoint,
+        json={"profile": "custom-profile", "locus": "CUS_0001"},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "mongo down"
 
 
 def test_job_submission_can_complete_inline_with_injected_runner(tmp_path):
@@ -126,6 +348,149 @@ def test_job_submission_can_complete_inline_with_injected_runner(tmp_path):
     assert status_response.json()["status"] == "completed"
     assert result_response.status_code == 200
     assert result_response.json()["annotation"]["gene_id"] == "TcCLB.503799.4"
+
+
+def test_job_submission_accepts_name_without_locus(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_job=lambda request: {"annotation": {"gene_id": None, "name": request.name}},
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/jobs",
+        json={"organism": "Custom bacterium", "name": "abc1"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "queued"
+
+
+def test_job_submission_stores_target_preflight_warnings(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_job=lambda request: {"annotation": {"gene_id": None, "name": request.name}},
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app)
+
+    created = client.post(
+        "/jobs",
+        json={"organism": "Custom bacterium", "name": "abc1"},
+    ).json()
+    job = client.get(f"/jobs/{created['job_id']}").json()
+
+    assert "target_preflight" in job["request"]
+    assert {warning["code"] for warning in job["request"]["target_preflight"]["warnings"]} >= {
+        "ad_hoc_profile",
+        "missing_locus",
+    }
+
+
+def test_job_submission_executes_inferred_builtin_profile(tmp_path):
+    captured_request = {}
+
+    def fake_runner(request):
+        captured_request["profile"] = request.profile
+        captured_request["organism"] = request.organism
+        captured_request["strain"] = request.strain
+        return {"annotation": {"gene_id": request.locus}}
+
+    job_store = JobStore(tmp_path / "jobs.sqlite3")
+    app = create_app(
+        job_store=job_store,
+        run_job=fake_runner,
+        run_jobs_inline=True,
+    )
+    client = TestClient(app)
+
+    created = client.post(
+        "/jobs",
+        json={"organism": "Mycobacterium tuberculosis", "locus": "Rv0001"},
+    )
+    stored_job = job_store.get_job(created.json()["job_id"])
+
+    assert created.status_code == 201
+    assert created.json()["status"] == "completed"
+    assert captured_request == {
+        "profile": "mtb-h37rv",
+        "organism": None,
+        "strain": None,
+    }
+    assert stored_job["request"]["profile"] == "mtb-h37rv"
+    assert stored_job["request"]["organism"] is None
+    assert stored_job["request"]["strain"] is None
+    assert stored_job["request"]["target_preflight"]["profile_id"] == "mtb-h37rv"
+
+
+def test_job_submission_stores_profile_config_for_user_profile(tmp_path):
+    profile_store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+    profile_store.create_user_profile({
+        "profile_id": "custom-profile",
+        "canonical_name": "Custom organism",
+        "species_name": "Custom organism",
+        "strain": "Lab strain",
+        "synonyms": ["custom-profile", "Custom organism Lab strain"],
+        "species_synonyms": ["Custom organism"],
+        "strain_synonyms": ["Lab strain"],
+        "locus_regex": r"^CUS_\d+$",
+        "search_terms": ["Custom organism", "Lab strain"],
+        "target_patterns": [r"Custom\s+organism"],
+        "off_target_patterns": [r"Other\s+organism"],
+        "excluded_species_patterns": [r"Excluded\s+organism"],
+    })
+    job_store = JobStore(tmp_path / "jobs.sqlite3")
+    app = create_app(
+        job_store=job_store,
+        profile_store=profile_store,
+        run_job=lambda request: {"annotation": {"gene_id": request.locus}},
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app)
+
+    created = client.post(
+        "/jobs",
+        json={
+            "profile": "custom-profile",
+            "locus": "CUS_0001",
+            "name": "abc1",
+        },
+    ).json()
+    stored_job = job_store.get_job(created["job_id"])
+    public_job = client.get(f"/jobs/{created['job_id']}").json()
+    list_response = client.get("/jobs").json()
+
+    profile_config = stored_job["request"]["profile_config"]
+    assert profile_config["profile_id"] == "custom-profile"
+    assert profile_config["canonical_name"] == "Custom organism"
+    assert profile_config["species_name"] == "Custom organism"
+    assert profile_config["strain"] == "Lab strain"
+    assert profile_config["synonyms"] == ["custom-profile", "Custom organism Lab strain"]
+    assert profile_config["species_synonyms"] == ["Custom organism"]
+    assert profile_config["strain_synonyms"] == ["Lab strain"]
+    assert profile_config["locus_regex"] == r"^CUS_\d+$"
+    assert profile_config["search_terms"] == ["Custom organism", "Lab strain"]
+    assert profile_config["target_patterns"] == [r"Custom\s+organism"]
+    assert profile_config["off_target_patterns"] == [r"Other\s+organism"]
+    assert profile_config["excluded_species_patterns"] == [r"Excluded\s+organism"]
+    assert "profile_config" not in public_job["request"]
+    assert "target_preflight" in public_job["request"]
+    listed_job = next(job for job in list_response["jobs"] if job["id"] == created["job_id"])
+    assert "profile_config" not in listed_job["request"]
+    assert "target_preflight" in listed_job["request"]
+
+
+def test_job_submission_rejects_missing_name_and_locus(tmp_path):
+    app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
+    client = TestClient(app)
+
+    response = client.post("/jobs", json={"organism": "Custom bacterium"})
+
+    assert response.status_code == 422
 
 
 def test_result_endpoint_rejects_unfinished_jobs(tmp_path):
@@ -372,6 +737,46 @@ def test_annotation_endpoints_use_annotation_store(tmp_path):
     assert detail_response.json()["result"]["annotation"]["gene_id"] == "Rv0001"
     assert versions_response.status_code == 200
     assert versions_response.json()["versions"][0]["version_id"] == "old-version"
+
+
+def test_annotation_endpoints_serialize_name_only_annotations(tmp_path):
+    annotation_store = InMemoryAnnotationStore()
+    annotation_id = annotation_store.save_completed_job({
+        "id": "name-only-job",
+        "request": {"organism": "Custom bacterium", "name": "abc1"},
+        "result": {
+            "annotation": {
+                "gene_id": None,
+                "name": "abc1",
+                "annotation_metadata": {
+                    "generated_at": "2026-01-01T00:00:00Z",
+                    "profile_id": "ad-hoc-custom-bacterium",
+                    "canonical_name": "Custom bacterium",
+                    "species_name": "Custom bacterium",
+                    "strain": None,
+                    "resolved_locus": None,
+                    "resolved_name": "abc1",
+                    "profile_source": "ad_hoc",
+                },
+            }
+        },
+        "finished_at": "2026-01-01T00:00:00Z",
+    })
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        annotation_store=annotation_store,
+        start_worker=False,
+    )
+    client = TestClient(app, raise_server_exceptions=False)
+
+    search_response = client.get("/annotations/search?query=abc1")
+    detail_response = client.get(f"/annotations/{annotation_id}")
+
+    assert search_response.status_code == 200
+    assert search_response.json()["matches"][0]["normalized_locus"] is None
+    assert detail_response.status_code == 200
+    assert detail_response.json()["normalized_locus"] is None
+    assert detail_response.json()["result"]["annotation"]["name"] == "abc1"
 
 
 def test_annotation_search_rejects_unbounded_limit(tmp_path):

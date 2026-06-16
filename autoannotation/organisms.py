@@ -355,6 +355,23 @@ def validate_locus(profile, locus):
     return re.fullmatch(profile.locus_regex, locus) is not None
 
 
+def profile_from_mapping(payload):
+    return OrganismProfile(
+        profile_id=payload["profile_id"],
+        canonical_name=payload["canonical_name"],
+        species_name=payload["species_name"],
+        strain=payload.get("strain"),
+        synonyms=tuple(payload.get("synonyms") or ()),
+        species_synonyms=tuple(payload.get("species_synonyms") or ()),
+        strain_synonyms=tuple(payload.get("strain_synonyms") or ()),
+        locus_regex=payload.get("locus_regex") or "",
+        search_terms=tuple(payload.get("search_terms") or ()),
+        target_patterns=tuple(payload.get("target_patterns") or ()),
+        off_target_patterns=tuple(payload.get("off_target_patterns") or ()),
+        excluded_species_patterns=tuple(payload.get("excluded_species_patterns") or ()),
+    )
+
+
 def _result_for_profile(profile, organism_identifier, locus, *, valid, reason=None):
     return LocusValidationResult(
         valid=valid,

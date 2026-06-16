@@ -3,6 +3,7 @@ import json
 import pandas as pd
 
 from autoannotation import autoannotation
+from autoannotation.pmc import PaperSelectionResult
 from autoannotation.pmc import RelevanceRecord
 
 
@@ -36,7 +37,8 @@ class FakeLlmHandler:
         self.cache_dir = cache_dir
 
     @staticmethod
-    def json_regex_filter(gene_json, organism_profile=None):
+    def json_regex_filter(gene_json, organism_profile=None, expected_gene=None):
+        assert expected_gene in {"Rv0001", "TcCLB.503799.4"}
         return True
 
     def get_llm_gene_info_json(
@@ -51,20 +53,22 @@ class FakeLlmHandler:
 
     def get_llm_consensus_json(
         self, json1, json2, json3, model, section_type='abstract',
-        organism_profile=None,
+        organism_profile=None, allow_missing_locus=False,
     ):
         assert section_type == 'abstract'
+        assert allow_missing_locus is False
         if organism_profile and organism_profile.profile_id == "tcruzi-clbrener":
             return TCRUZI_JSON, 0.1
         return GENE_JSON, 0.1
 
     def get_llm_aggregate_json(
         self, json_responses, pmids, model, literature_context=None, relevance_scores=None,
-        organism_profile=None,
+        organism_profile=None, allow_missing_locus=False,
     ):
         assert literature_context is not None
         assert "Papers selected for analysis" in literature_context
         assert relevance_scores is not None
+        assert allow_missing_locus is False
         if organism_profile and organism_profile.profile_id == "tcruzi-clbrener":
             return TCRUZI_JSON, 0.1
         return GENE_JSON, 0.1
@@ -196,3 +200,50 @@ def test_get_gene_annotation_accepts_tcruzi_profile_without_table(monkeypatch, t
     assert metadata["profile_id"] == "tcruzi-clbrener"
     assert metadata["species_name"] == "Trypanosoma cruzi"
     assert metadata["gene_name_source"] == "locus_fallback"
+
+
+def test_name_only_ad_hoc_annotation_uses_safe_profile_aware_mapping_key(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakeNameOnlyPaperManager:
+        def __init__(self, cache_dir, organism_profile=None):
+            captured["profile_id"] = organism_profile.profile_id
+
+        def get_ranked_papers(self, gene, name):
+            captured["gene"] = gene
+            captured["name"] = name
+            return []
+
+        def save_gene_pmc_ids(self, gene, pmc_ids):
+            captured["saved_gene"] = gene
+            captured["pmc_ids"] = pmc_ids
+
+        def select_relevance_records(self, records, **kwargs):
+            return PaperSelectionResult(
+                selected_records=[],
+                cumulative_relevance=0.0,
+                selection_mode="all_eligible_limited_literature",
+                eligible_count=0,
+                total_retrieved=0,
+            )
+
+        def get_pmid(self, pmc_id):
+            return None
+
+    monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
+    monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakeNameOnlyPaperManager)
+
+    result = autoannotation.get_gene_annotation(
+        organism="Custom bacterium",
+        name="../unsafe/name",
+        cache_dir=tmp_path,
+        allow_online_name_lookup=False,
+    )
+
+    assert captured["gene"] is None
+    assert captured["name"] == "../unsafe/name"
+    assert captured["saved_gene"] != "../unsafe/name"
+    assert "/" not in captured["saved_gene"]
+    assert ".." not in captured["saved_gene"]
+    assert captured["profile_id"] in captured["saved_gene"]
+    assert result["annotation_metadata"]["gene"] is None

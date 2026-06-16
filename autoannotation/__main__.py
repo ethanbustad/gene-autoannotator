@@ -11,7 +11,7 @@ from autoannotation import gene_names
 # convention intentionally preserves legacy MTB files at gen_json/gen_<locus>.json
 # while namespacing newer organism profiles by profile_id.
 def main(
-    gene=None, cache_dir='./.cache', profile=None, organism=None, strain=None,
+    gene=None, cache_dir='./.cache', profile=None, profile_config=None, organism=None, strain=None,
     locus=None, name=None, output_dir='gen_json',
     gene_name_cache=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
     no_online_name_lookup=False,
@@ -24,6 +24,7 @@ def main(
         gene=gene,
         cache_dir=cache_dir,
         profile=profile,
+        profile_config=profile_config,
         organism=organism,
         strain=strain,
         locus=locus,
@@ -37,7 +38,7 @@ def main(
     if result is None:
         return
 
-    output_gene = locus or gene
+    output_gene = locus or gene or name
     pmc_ids = result["pmc_ids"]
     used = result["used_ids"]
     parsed = result.get("gene_annotation")
@@ -64,7 +65,8 @@ def main(
         output_parent = os.path.join(output_parent, profile_id)
     os.makedirs(output_parent, exist_ok=True)
 
-    output_path = os.path.join(output_parent, f"gen_{output_gene}.json")
+    safe_output_gene = str(output_gene).replace("/", "_").replace(" ", "_")
+    output_path = os.path.join(output_parent, f"gen_{safe_output_gene}.json")
 
     with open(output_path, "w") as f:
         json.dump(parsed, f, indent=2)

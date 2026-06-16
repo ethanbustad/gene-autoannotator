@@ -5,6 +5,20 @@ from autoannotation import metadata
 from autoannotation import organisms
 
 
+def _ad_hoc_profile_without_locus_regex():
+    return organisms.OrganismProfile(
+        profile_id='custom',
+        canonical_name='Custom organism',
+        species_name='Custom organism',
+        strain=None,
+        synonyms=(),
+        species_synonyms=(),
+        strain_synonyms=(),
+        locus_regex='',
+        search_terms=('Custom organism',),
+    )
+
+
 def test_is_unknown_value_treats_null_empty_and_placeholders():
     assert llms.is_unknown_value(None)
     assert llms.is_unknown_value('')
@@ -83,6 +97,34 @@ def test_json_regex_filter_rejects_cross_profile_locus():
     assert not llms.LlmHandler.json_regex_filter(
         section_json,
         organism_profile=organisms.resolve_profile('tcruzi-clbrener'),
+    )
+
+
+def test_json_regex_filter_accepts_expected_gene_when_profile_lacks_locus_regex():
+    section_json = json.dumps({
+        'gene_id': 'CUS_001',
+        'name': 'customA',
+        'function': 'Custom function.',
+    })
+
+    assert llms.LlmHandler.json_regex_filter(
+        section_json,
+        organism_profile=_ad_hoc_profile_without_locus_regex(),
+        expected_gene='CUS_001',
+    )
+
+
+def test_json_regex_filter_rejects_mismatching_expected_gene_without_locus_regex():
+    section_json = json.dumps({
+        'gene_id': 'CUS_002',
+        'name': 'customA',
+        'function': 'Custom function.',
+    })
+
+    assert not llms.LlmHandler.json_regex_filter(
+        section_json,
+        organism_profile=_ad_hoc_profile_without_locus_regex(),
+        expected_gene='CUS_001',
     )
 
 

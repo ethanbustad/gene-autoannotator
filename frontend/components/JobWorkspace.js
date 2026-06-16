@@ -28,6 +28,16 @@ const stepLabels = {
   failed: "Failed",
 };
 
+const emptyCustomFields = {
+  organism: "",
+  strain: "",
+  locusRegex: "",
+  searchTerms: "",
+  targetPatterns: "",
+  offTargetPatterns: "",
+  excludedSpeciesPatterns: "",
+};
+
 function statusTone(status) {
   if (status === "completed") return "job-card-completed";
   if (status === "failed") return "job-card-failed";
@@ -94,6 +104,12 @@ function formatResourceDetail(resources) {
 function JobTile({ job }) {
   const elapsed = formatJobElapsed(job);
   const request = job.request || {};
+  const annotationQuery =
+    request.locus ||
+    request.name ||
+    request.target_preflight?.resolved_name ||
+    request.target_preflight?.primary_identifier ||
+    "";
   const step = stepLabels[job.current_step] || stepLabels[job.status] || job.status;
   const showSpinner = shouldShowRunningSpinner(job);
 
@@ -158,7 +174,7 @@ function JobTile({ job }) {
 
       {job.result_available ? (
         <Link
-          href={`/annotations?query=${encodeURIComponent(request.locus || "")}`}
+          href={`/annotations?query=${encodeURIComponent(annotationQuery)}`}
           className="workbench-green mt-4 inline-flex text-sm font-bold hover:text-[#111a16]"
         >
           Search stored annotation
@@ -187,6 +203,11 @@ export default function JobWorkspace() {
     allowOnlineNameLookup: true,
     refreshGeneNameCache: false,
     cacheSuppliedName: false,
+    locusRegex: "",
+    searchTerms: "",
+    targetPatterns: "",
+    offTargetPatterns: "",
+    excludedSpeciesPatterns: "",
   });
 
   const apiAvailable = health?.status === "ok";
@@ -216,13 +237,15 @@ export default function JobWorkspace() {
     }
   }
 
-  async function refreshJobs() {
+  async function refreshJobs({ updateStatusOnError = true } = {}) {
     try {
       const payload = await listJobs("queue");
       setJobs(payload.jobs || []);
       setQueue(payload.queue || {});
     } catch (error) {
-      setStatusMessage(error.message);
+      if (updateStatusOnError) {
+        setStatusMessage(error.message);
+      }
     }
   }
 
@@ -254,9 +277,15 @@ export default function JobWorkspace() {
     () => profiles.find((profile) => profile.profile_id === form.profile),
     [profiles, form.profile],
   );
+  const isCustomProfile = form.profile === "";
 
   function updateForm(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      if (field === "profile" && value !== "") {
+        return { ...current, ...emptyCustomFields, profile: value };
+      }
+      return { ...current, [field]: value };
+    });
   }
 
   async function handleSubmit(event) {
@@ -266,16 +295,19 @@ export default function JobWorkspace() {
 
     try {
       const payload = buildJobPayload(form);
-      if (!payload.locus) {
-        throw new Error("Locus is required.");
+      if (!payload.locus && !payload.name) {
+        throw new Error("Gene name or locus is required.");
       }
       const validation = await validateJob(payload);
       if (!validation.valid) {
-        throw new Error(validation.reason || "The locus did not validate for this profile.");
+        throw new Error("The target could not be submitted.");
       }
       const created = await createJob(payload);
-      setStatusMessage(`Queued job ${created.job_id}. It will run when earlier jobs finish.`);
-      await refreshJobs();
+      const warningText = validation.warnings?.length
+        ? ` Warnings: ${validation.warnings.map((warning) => warning.message).join(" ")}`
+        : "";
+      setStatusMessage(`Queued job ${created.job_id}. It will run when earlier jobs finish.${warningText}`);
+      await refreshJobs({ updateStatusOnError: false });
     } catch (error) {
       setStatusMessage(error.message);
     } finally {
@@ -363,7 +395,7 @@ export default function JobWorkspace() {
         <section className="workbench-card p-6">
           <h2 className="text-2xl font-bold tracking-[-0.03em]">New annotation job</h2>
           <p className="workbench-muted mt-3 text-sm leading-6">
-            Choose a configured profile, provide the locus, and submit the run.
+            Choose a configured profile, provide a gene name, locus, or both, and submit the run.
             Jobs are queued and executed sequentially; a real annotation can take hours.
           </p>
 
@@ -384,14 +416,16 @@ export default function JobWorkspace() {
               </select>
             </label>
 
-            {selectedProfile ? (
+            {!isCustomProfile && selectedProfile ? (
               <div className="workbench-muted-bg workbench-muted rounded-xl border workbench-border p-4 text-sm">
                 Expected locus format:{" "}
                 <code className="rounded bg-[#eee6d9] px-1 py-0.5">
                   {selectedProfile.locus_regex}
                 </code>
               </div>
-            ) : (
+            ) : null}
+
+            {isCustomProfile ? (
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-medium">
                   Organism
@@ -412,10 +446,10 @@ export default function JobWorkspace() {
                   />
                 </label>
               </div>
-            )}
+            ) : null}
 
             <label className="grid gap-2 text-sm font-medium">
-              Locus
+              Locus (optional if gene name is supplied)
               <input
                 value={form.locus}
                 onChange={(event) => updateForm("locus", event.target.value)}
@@ -425,7 +459,7 @@ export default function JobWorkspace() {
             </label>
 
             <label className="grid gap-2 text-sm font-medium">
-              Optional gene name
+              Gene name (optional if locus is supplied)
               <input
                 value={form.name}
                 onChange={(event) => updateForm("name", event.target.value)}
@@ -460,6 +494,55 @@ export default function JobWorkspace() {
                 Cache supplied gene name
               </label>
             </div>
+
+            {isCustomProfile ? (
+              <details className="workbench-muted-bg rounded-xl border workbench-border p-4 text-sm">
+                <summary className="cursor-pointer font-bold">Advanced custom organism terms</summary>
+                <div className="mt-4 grid gap-4">
+                  <label className="grid gap-2">
+                    Locus regex
+                    <input
+                      value={form.locusRegex}
+                      onChange={(event) => updateForm("locusRegex", event.target.value)}
+                      className="workbench-input"
+                      placeholder="^CUS_\\d+$"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    Search terms, one per line
+                    <textarea
+                      value={form.searchTerms}
+                      onChange={(event) => updateForm("searchTerms", event.target.value)}
+                      className="workbench-input min-h-24"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    Target organism patterns, one per line
+                    <textarea
+                      value={form.targetPatterns}
+                      onChange={(event) => updateForm("targetPatterns", event.target.value)}
+                      className="workbench-input min-h-24"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    Off-target patterns, one per line
+                    <textarea
+                      value={form.offTargetPatterns}
+                      onChange={(event) => updateForm("offTargetPatterns", event.target.value)}
+                      className="workbench-input min-h-24"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    Excluded species patterns, one per line
+                    <textarea
+                      value={form.excludedSpeciesPatterns}
+                      onChange={(event) => updateForm("excludedSpeciesPatterns", event.target.value)}
+                      className="workbench-input min-h-24"
+                    />
+                  </label>
+                </div>
+              </details>
+            ) : null}
 
             {statusMessage ? (
               <p className="workbench-amber-bg rounded-xl border workbench-border p-4 text-sm text-[#5f4b2e]">

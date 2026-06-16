@@ -1,4 +1,6 @@
+import json
 
+from autoannotation import llms
 from compareannotations.scoring import llm_similarity
 
 def test_llm_same_fact_same_text():
@@ -141,4 +143,185 @@ def test_llm_missing_null_text():
 	for a, b in cases:
 		score = llm_similarity(a,b)
 		assert score < 0.5, f"\nA: {a}\nB: {b}\nScore: {score}"
+
+
+def test_json_schema_allows_null_gene_id_for_name_only_target():
+	schema = llms.build_json_schema(
+		require_biology=True,
+		aggregate=True,
+		allow_missing_locus=True,
+	)
+
+	assert schema["properties"]["gene_id"]["type"] == ["string", "null"]
+	assert "gene_id" in schema["required"]
+
+
+def test_identity_prompt_tells_model_not_to_invent_missing_locus():
+	prompt = llms.build_section_prompt(
+		gene=None,
+		name="abc1",
+		text="abc1 is required for growth.",
+		section_type="abstract",
+		organism_profile=None,
+	)
+
+	assert "Do not invent a locus identifier" in prompt
+	assert "No locus identifier was supplied or resolved" in prompt
+	assert "gene_id to null" in prompt
+	assert "named abc1" in prompt
+	assert "unknown locus" not in prompt
+
+
+def test_json_filter_accepts_null_gene_id_for_name_only_target():
+	handler = llms.LlmHandler(".cache")
+	response = '{"gene_id": null, "name": "abc1", "function": null, "functional_category": null, "drug_susc_impact": null, "infection_impact": null, "essential_in_vitro": null, "essential_in_vivo": null}'
+
+	assert handler.json_regex_filter(
+		response,
+		organism_profile=None,
+		expected_gene=None,
+	) is True
+
+
+def test_json_filter_rejects_null_gene_id_when_expected_gene_exists():
+	handler = llms.LlmHandler(".cache")
+	response = '{"gene_id": null, "name": "dnaA", "function": null, "functional_category": null, "drug_susc_impact": null, "infection_impact": null, "essential_in_vitro": null, "essential_in_vivo": null}'
+
+	assert handler.json_regex_filter(
+		response,
+		organism_profile=None,
+		expected_gene="Rv0001",
+	) is False
+
+
+def test_section_summary_uses_nullable_schema_when_gene_missing():
+	captured = {}
+	handler = llms.LlmHandler(cache_dir="./.cache")
+
+	def fake_read_cache(model, prompt, json_schema):
+		captured["prompt"] = prompt
+		captured["schema"] = json_schema
+		return json.dumps({"gene_id": None, "name": "abc1"}), 0.1
+
+	handler._read_cache = fake_read_cache
+
+	response, _ = handler.get_llm_gene_info_json(
+		None,
+		"abc1",
+		"abc1 is required for growth.",
+		"fake-model",
+		organism_profile=None,
+	)
+
+	assert captured["schema"]["properties"]["gene_id"]["type"] == ["string", "null"]
+	assert "Do not invent a locus identifier" in captured["prompt"]
+	assert json.loads(response)["gene_id"] is None
+
+
+def test_consensus_schema_stays_strict_by_default_when_candidate_gene_id_is_null():
+	captured = {}
+	handler = llms.LlmHandler(cache_dir="./.cache")
+	null_candidate = json.dumps({"gene_id": None, "name": "abc1"})
+	locus_candidate = json.dumps({"gene_id": "Rv0001", "name": "abc1"})
+
+	def fake_read_cache(model, prompt, json_schema):
+		captured["schema"] = json_schema
+		return locus_candidate, 0.1
+
+	handler._read_cache = fake_read_cache
+
+	handler.get_llm_consensus_json(
+		null_candidate,
+		locus_candidate,
+		locus_candidate,
+		model="fake-model",
+	)
+
+	assert captured["schema"]["properties"]["gene_id"]["type"] == "string"
+
+
+def test_consensus_schema_allows_null_gene_id_when_explicitly_enabled():
+	captured = {}
+	handler = llms.LlmHandler(cache_dir="./.cache")
+	null_candidate = json.dumps({"gene_id": None, "name": "abc1"})
+	locus_candidate = json.dumps({"gene_id": "Rv0001", "name": "abc1"})
+
+	def fake_read_cache(model, prompt, json_schema):
+		captured["schema"] = json_schema
+		return null_candidate, 0.1
+
+	handler._read_cache = fake_read_cache
+
+	handler.get_llm_consensus_json(
+		null_candidate,
+		locus_candidate,
+		locus_candidate,
+		model="fake-model",
+		allow_missing_locus=True,
+	)
+
+	assert captured["schema"]["properties"]["gene_id"]["type"] == ["string", "null"]
+
+
+def test_aggregate_schema_stays_strict_by_default_when_section_gene_id_is_null():
+	captured = {}
+	handler = llms.LlmHandler(cache_dir="./.cache")
+	null_section = json.dumps({"gene_id": None, "name": "abc1"})
+	locus_aggregate = json.dumps({
+		"gene_id": "Rv0001",
+		"name": "abc1",
+		"function": None,
+		"functional_category": None,
+		"drug_susc_impact": None,
+		"infection_impact": None,
+		"essential_in_vitro": None,
+		"essential_in_vivo": None,
+		"annotation_notes": None,
+	})
+
+	def fake_read_cache(model, prompt, json_schema):
+		captured["schema"] = json_schema
+		return locus_aggregate, 0.1
+
+	handler._read_cache = fake_read_cache
+
+	handler.get_llm_aggregate_json(
+		[null_section],
+		["12345"],
+		model="fake-model",
+	)
+
+	assert captured["schema"]["properties"]["gene_id"]["type"] == "string"
+
+
+def test_aggregate_schema_allows_null_gene_id_when_explicitly_enabled():
+	captured = {}
+	handler = llms.LlmHandler(cache_dir="./.cache")
+	null_section = json.dumps({"gene_id": None, "name": "abc1"})
+	null_aggregate = json.dumps({
+		"gene_id": None,
+		"name": "abc1",
+		"function": None,
+		"functional_category": None,
+		"drug_susc_impact": None,
+		"infection_impact": None,
+		"essential_in_vitro": None,
+		"essential_in_vivo": None,
+		"annotation_notes": None,
+	})
+
+	def fake_read_cache(model, prompt, json_schema):
+		captured["schema"] = json_schema
+		return null_aggregate, 0.1
+
+	handler._read_cache = fake_read_cache
+
+	handler.get_llm_aggregate_json(
+		[null_section],
+		["12345"],
+		model="fake-model",
+		allow_missing_locus=True,
+	)
+
+	assert captured["schema"]["properties"]["gene_id"]["type"] == ["string", "null"]
 

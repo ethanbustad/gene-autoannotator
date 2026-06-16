@@ -126,3 +126,37 @@ def test_build_annotation_metadata_includes_profile_fields():
     assert annotation_metadata["gene_name_candidates"] == ["TcUBP1"]
     assert annotation_metadata["gene_name_confidence"] == "curated"
     assert annotation_metadata["gene_name_aliases"] == ["UBP1"]
+
+
+def test_annotation_metadata_records_submitted_and_resolved_target_fields():
+    annotation_metadata = metadata.build_annotation_metadata(
+        gene=None,
+        gene_name="abc1",
+        ranked_records=[],
+        selected_records=[],
+        analyzed_pmc_ids=[],
+        pmids_analyzed=[],
+        sections_analyzed=0,
+        selection_mode="all_eligible_limited_literature",
+        eligible_count=0,
+        cumulative_relevance=0,
+        target_relevance=9,
+        min_papers=5,
+        max_papers=20,
+        duration_sec=1,
+        profile_id="ad-hoc-custom",
+        canonical_name="Custom bacterium",
+        species_name="Custom bacterium",
+        target_warnings=["ad_hoc_profile", "missing_locus"],
+        submitted_locus=None,
+        submitted_name="abc1",
+        resolved_locus=None,
+        resolved_name="abc1",
+        profile_source="ad_hoc",
+    )
+
+    assert annotation_metadata["submitted_locus"] is None
+    assert annotation_metadata["submitted_name"] == "abc1"
+    assert annotation_metadata["resolved_name"] == "abc1"
+    assert annotation_metadata["profile_source"] == "ad_hoc"
+    assert annotation_metadata["target_warnings"] == ["ad_hoc_profile", "missing_locus"]

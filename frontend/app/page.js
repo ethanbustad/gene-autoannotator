@@ -14,11 +14,11 @@ export default function Home() {
             Generate literature-backed gene annotations.
           </h1>
           <p className="workbench-muted mt-5 text-lg leading-8">
-            The autoannotator takes an organism profile and locus, gathers
-            relevant literature, asks the configured model to synthesize an
-            annotation, and stores the generated result for review. Runs can
-            take a long time, so the web app submits work to a backend queue
-            and lets you come back later.
+            The autoannotator takes a saved profile or custom organism plus a
+            gene name, locus, or both, gathers relevant literature, asks the
+            configured model to synthesize an annotation, and stores the
+            generated result for review. Runs can take a long time, so the web
+            app submits work to a backend queue and lets you come back later.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -52,8 +52,9 @@ export default function Home() {
         <div className="workbench-card p-6">
           <h2 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">Inputs</h2>
           <p className="workbench-muted mt-3 text-sm leading-6">
-            A job needs a profile or organism/strain pair plus a locus. A gene
-            name can be supplied when you already know the preferred symbol.
+            Jobs need a profile or organism plus either a gene name or locus.
+            Profiles improve validation and retrieval, but custom organisms can
+            still be submitted.
           </p>
         </div>
 
@@ -68,8 +69,8 @@ export default function Home() {
         <div className="workbench-card p-6">
           <h2 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">Results</h2>
           <p className="workbench-muted mt-3 text-sm leading-6">
-            Completed jobs are saved to MongoDB by canonical organism profile
-            and normalized locus. New runs preserve older versions.
+            Completed jobs are saved to MongoDB by profile/locus or profile/name
+            for name-only submissions. New runs preserve older versions.
           </p>
         </div>
       </section>

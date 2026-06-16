@@ -275,3 +275,32 @@ def test_resolver_ambiguous_online_result_falls_back_to_locus(tmp_path):
     assert result.gene_name == "TcCLB.507093.220"
     assert result.source == "locus_fallback"
     assert result.candidates == ["TcUBP1", "TcUBP2"]
+
+
+def test_locus_resolver_skips_sources_without_lookup_locus_and_preserves_no_hit_details():
+    class GeneNameOnlySource:
+        def lookup(self, profile, locus):
+            raise AssertionError("locus resolver should not call gene-name lookup")
+
+    class NoLocusSource:
+        def lookup_locus(self, profile, gene_name):
+            return gene_names.GeneLocusLookupResult(
+                locus=None,
+                source="test_no_locus",
+                source_detail="ambiguous test fixture",
+                candidates=["CUS_0001", "CUS_0002"],
+                warnings=["ambiguous_locus"],
+            )
+
+    result = gene_names.resolve_locus_from_gene_name(
+        organisms.resolve_profile("mtb-h37rv"),
+        "abc1",
+        allow_online_lookup=True,
+        sources=[GeneNameOnlySource(), NoLocusSource()],
+    )
+
+    assert result.locus is None
+    assert result.source == "test_no_locus"
+    assert result.source_detail == "ambiguous test fixture"
+    assert result.candidates == ["CUS_0001", "CUS_0002"]
+    assert result.warnings == ["ambiguous_locus"]

@@ -30,6 +30,64 @@ test("buildJobPayload omits empty optional fields and maps option names", () => 
   );
 });
 
+test("buildJobPayload supports name-only custom organism jobs", () => {
+  assert.deepEqual(
+    buildJobPayload({
+      profile: "",
+      organism: "Custom bacterium",
+      strain: "Lab A",
+      locus: "",
+      name: "abc1",
+      allowOnlineNameLookup: true,
+      refreshGeneNameCache: false,
+      cacheSuppliedName: false,
+      locusRegex: "",
+      searchTerms: "Custom bacterium\nC. bacterium",
+      targetPatterns: "Custom bacterium",
+      offTargetPatterns: "",
+      excludedSpeciesPatterns: "",
+    }),
+    {
+      organism: "Custom bacterium",
+      strain: "Lab A",
+      name: "abc1",
+      allow_online_name_lookup: true,
+      refresh_gene_name_cache: false,
+      cache_supplied_name: false,
+      search_terms: ["Custom bacterium", "C. bacterium"],
+      target_patterns: ["Custom bacterium"],
+    },
+  );
+});
+
+test("buildJobPayload omits stale custom organism fields when a profile is selected", () => {
+  assert.deepEqual(
+    buildJobPayload({
+      profile: "mtb-h37rv",
+      organism: "Stale organism",
+      strain: "Stale strain",
+      locus: "Rv0001",
+      name: "dnaA",
+      allowOnlineNameLookup: true,
+      refreshGeneNameCache: false,
+      cacheSuppliedName: true,
+      locusRegex: "^STALE_\\d+$",
+      searchTerms: "stale search",
+      targetPatterns: "stale target",
+      offTargetPatterns: "stale off target",
+      excludedSpeciesPatterns: "stale excluded",
+    }),
+    {
+      profile: "mtb-h37rv",
+      locus: "Rv0001",
+      name: "dnaA",
+      allow_online_name_lookup: true,
+      refresh_gene_name_cache: false,
+      cache_supplied_name: true,
+    },
+  );
+});
+
 test("buildJobPrefillHref creates a jobs URL from annotation identity", () => {
   assert.equal(
     buildJobPrefillHref({

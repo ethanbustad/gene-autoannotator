@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 
 import pandas as pd
@@ -13,6 +14,7 @@ from . import gene_names
 from . import metadata
 from . import organisms
 from . import pmc
+from . import targets
 from . import utils
 
 from .models import MODEL_SUMMARY, MODEL_AGGREGATION, MODEL_CONSENSUS
@@ -21,46 +23,123 @@ logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+
+def _safe_mapping_component(value):
+    component = re.sub(r'[^A-Za-z0-9._-]+', '_', str(value).strip())
+    component = re.sub(r'\.+', '.', component).strip('._-')
+    return component or 'target'
+
+
+def _pmc_mapping_cache_key(profile, target):
+    identifier = _safe_mapping_component(target.primary_identifier)
+    if profile.profile_id == 'mtb-h37rv' and target.resolved_locus:
+        return identifier
+    profile_component = _safe_mapping_component(profile.profile_id)
+    return f'{profile_component}__{identifier}'
+
+
+def _profile_lookup_from_config(profile_config):
+    if not profile_config or profile_config.get('source') == 'builtin':
+        return None
+
+    identifiers = [
+        profile_config.get('profile_id'),
+        profile_config.get('canonical_name'),
+        *(profile_config.get('synonyms') or ()),
+    ]
+    normalized_identifiers = {
+        organisms.normalize_identifier(str(identifier))
+        for identifier in identifiers
+        if identifier
+    }
+
+    def lookup_profile(profile_identifier):
+        if profile_identifier is None:
+            return None
+        normalized_identifier = organisms.normalize_identifier(str(profile_identifier))
+        if normalized_identifier in normalized_identifiers:
+            return profile_config
+        return None
+
+    return lookup_profile
+
+
 def get_gene_annotation(
-    gene=None, cache_dir='./.cache', profile=None, organism=None, strain=None,
+    gene=None, cache_dir='./.cache', profile=None, profile_config=None, organism=None, strain=None,
     locus=None, name=None, gene_name_cache_dir=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
     allow_online_name_lookup=True, refresh_gene_name_cache=False,
     cache_supplied_name=False,
 ):
-    locus = locus or gene
-    if locus is None:
-        raise ValueError('A gene locus is required')
+    if locus is None and gene is not None:
+        locus = gene
     if profile is None and organism is None:
         profile = 'mtb-h37rv'
-    context = organisms.resolve_gene_context(
+    target = targets.resolve_annotation_target(
         profile_identifier=profile,
         organism_identifier=organism,
         strain_identifier=strain,
         locus=locus,
         name=name,
+        profile_lookup=_profile_lookup_from_config(profile_config),
         gene_name_cache_dir=gene_name_cache_dir,
         allow_online_name_lookup=allow_online_name_lookup,
-        refresh_gene_name_cache=refresh_gene_name_cache,
-        cache_supplied_name=cache_supplied_name,
     )
-    gene = context.locus
-    name = context.gene_name
+    gene = target.resolved_locus
+    name = target.resolved_name
+    display_gene = target.primary_identifier
+    profile_context = target.profile
+
+    gene_name_source = target.gene_name_source
+    gene_name_source_detail = target.gene_name_source_detail
+    gene_name_confidence = target.gene_name_confidence
+    gene_name_aliases = target.gene_name_aliases
+    gene_name_candidates = target.gene_name_candidates
+    gene_name_warnings = target.gene_name_warnings
+
+    if target.submitted_name is not None:
+        gene_name_source = gene_name_source or 'supplied'
+        gene_name_source_detail = gene_name_source_detail or 'supplied argument'
+        gene_name_confidence = gene_name_confidence or 'curator_supplied'
+        if cache_supplied_name and gene is not None and name:
+            gene_names.cache_supplied_gene_name(
+                profile_context,
+                gene,
+                name,
+                cache_dir=gene_name_cache_dir,
+            )
+    elif refresh_gene_name_cache and gene is not None:
+        lookup_result = gene_names.resolve_gene_name(
+            profile_context,
+            gene,
+            cache_dir=gene_name_cache_dir,
+            allow_online_lookup=allow_online_name_lookup,
+            refresh_cache=True,
+        )
+        name = lookup_result.gene_name
+        gene_name_source = lookup_result.source
+        gene_name_source_detail = lookup_result.source_detail
+        gene_name_confidence = lookup_result.confidence
+        gene_name_aliases = list(lookup_result.aliases)
+        gene_name_candidates = list(lookup_result.candidates)
+        gene_name_warnings = list(lookup_result.warnings)
 
     log.info(
-        f'Starting annotation process for {context.profile.canonical_name} gene {gene}'
+        f'Starting annotation process for {profile_context.canonical_name} gene {display_gene}'
     )
     start = time.time()
     llm_handler = llms.LlmHandler(cache_dir)
-    paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=context.profile)
+    paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=profile_context)
 
     ranked_papers = paper_manager.get_ranked_papers(gene, name)
     pmc_ids = [record.pmc_id for record in ranked_papers]
-    paper_manager.save_gene_pmc_ids(gene, pmc_ids)
+    paper_manager.save_gene_pmc_ids(_pmc_mapping_cache_key(profile_context, target), pmc_ids)
     section_distillation_candidates = []
     section_distillations = []
 
     if len(pmc_ids) < 3:
-        log.warning(f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {gene}')
+        log.warning(
+            f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {display_gene}'
+        )
 
     # Selection happens before any LLM calls because each analyzed section is
     # expensive: three model summaries, one consensus call, then final
@@ -79,7 +158,7 @@ def get_gene_annotation(
 
     if selection.selection_mode == metadata.SELECTION_MODE_LIMITED:
         log.warning(
-            f'Limited literature for gene {gene}: analyzing all '
+            f'Limited literature for gene {display_gene}: analyzing all '
             f'{len(papers_to_analyze)} eligible paper{utils.s_if_plural(papers_to_analyze)} '
             f'(fewer than minimum {pmc.DEFAULT_MIN_PAPERS})'
         )
@@ -100,7 +179,7 @@ def get_gene_annotation(
         relevance_record = relevance_by_pmc_id.get(pmc_id)
         relevance_score = relevance_record.score if relevance_record is not None else 0.0
         log.info(
-            f'Starting inference process for gene {gene} with paper PMC{pmc_id} '
+            f'Starting inference process for gene {display_gene} with paper PMC{pmc_id} '
             f'(relevance score {relevance_score:.3f})'
         )
         used.append(pmc_id)
@@ -123,26 +202,30 @@ def get_gene_annotation(
         for label, section in sections:
             log.debug(f'Starting processing for PMC{pmc_id} {label}')
             section_distillation_candidates_cur = []
+            llm_gene = gene
+            llm_name = name or display_gene
             # Consensus assumes exactly three independent candidates. Model
             # configuration enforces that cardinality, so callers should change
             # the consensus interface before changing the number of summaries.
             for model in (MODEL_SUMMARY): #for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
                 section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
-                    gene, name, section, model, section_type=label,
-                    organism_profile=context.profile,
+                    llm_gene, llm_name, section, model, section_type=label,
+                    organism_profile=profile_context,
                 )
                 section_distillation_candidates_cur.append(section_distillation_candidate)
                 section_distillation_candidates.append((
-                    f'PMC{pmc_id}', label, model, gene, name, section_distillation_candidate,
+                    f'PMC{pmc_id}', label, model, llm_gene, llm_name, section_distillation_candidate,
                     duration_sec
                 ))
             section_distillation, duration_sec = llm_handler.get_llm_consensus_json(
                 section_distillation_candidates_cur[0], section_distillation_candidates_cur[1],
                 section_distillation_candidates_cur[2], model=MODEL_CONSENSUS,
-                section_type=label, organism_profile=context.profile,
+                section_type=label, organism_profile=profile_context,
+                allow_missing_locus=gene is None,
             )
             section_distillations.append((
-                f'PMC{pmc_id}', label, MODEL_CONSENSUS, gene, name, section_distillation, duration_sec
+                f'PMC{pmc_id}', label, MODEL_CONSENSUS, llm_gene, llm_name,
+                section_distillation, duration_sec
             ))
 
     section_distillation_candidate_df = pd.DataFrame(
@@ -160,7 +243,7 @@ def get_gene_annotation(
         'total summaries generated for',
         str(len(section_distillation_df)),
         f'total paper section{utils.s_if_plural(section_distillation_df)} for gene',
-        gene
+        display_gene
     )))
     # The dataframes are temporary bookkeeping for prompt construction,
     # filtering, and metadata. They are not part of a persisted schema.
@@ -174,14 +257,15 @@ def get_gene_annotation(
         section_distillation_df['Response'].map(
             lambda response: llm_handler.json_regex_filter(
                 response,
-                organism_profile=context.profile,
+                organism_profile=profile_context,
+                expected_gene=gene,
             )
         ),
         :
     ]
     log.debug(
         f'Filtered down to {len(section_distillation_filtered_df)} valid ' +\
-            f'section{utils.s_if_plural(section_distillation_filtered_df)} for gene {gene}'
+            f'section{utils.s_if_plural(section_distillation_filtered_df)} for gene {display_gene}'
     )
 
     pmids_analyzed = []
@@ -216,14 +300,15 @@ def get_gene_annotation(
             model=MODEL_AGGREGATION,
             literature_context=literature_context,
             relevance_scores=relevance_scores.tolist(),
-            organism_profile=context.profile,
+            organism_profile=profile_context,
+            allow_missing_locus=gene is None,
         )
     else:
         gene_distillation = None
 
     duration = time.time() - start
     log.info(
-        f'Finished annotation process for gene {gene} in {utils.seconds_to_str(duration)}'
+        f'Finished annotation process for gene {display_gene} in {utils.seconds_to_str(duration)}'
     )
 
     llm_usage = llm_handler.summarize_usage()
@@ -243,16 +328,22 @@ def get_gene_annotation(
         min_papers=pmc.DEFAULT_MIN_PAPERS,
         max_papers=pmc.DEFAULT_MAX_PAPERS,
         duration_sec=duration,
-        profile_id=context.profile.profile_id,
-        canonical_name=context.profile.canonical_name,
-        species_name=context.profile.species_name,
-        strain=context.profile.strain,
-        gene_name_source=context.gene_name_source,
-        gene_name_source_detail=context.gene_name_source_detail,
-        gene_name_candidates=context.gene_name_candidates,
-        gene_name_confidence=context.gene_name_confidence,
-        gene_name_aliases=context.gene_name_aliases,
-        gene_name_warnings=context.gene_name_warnings,
+        profile_id=profile_context.profile_id,
+        canonical_name=profile_context.canonical_name,
+        species_name=profile_context.species_name,
+        strain=profile_context.strain,
+        gene_name_source=gene_name_source,
+        gene_name_source_detail=gene_name_source_detail,
+        gene_name_candidates=gene_name_candidates,
+        gene_name_confidence=gene_name_confidence,
+        gene_name_aliases=gene_name_aliases,
+        gene_name_warnings=gene_name_warnings,
+        submitted_locus=target.submitted_locus,
+        submitted_name=target.submitted_name,
+        resolved_locus=target.resolved_locus,
+        resolved_name=target.resolved_name,
+        profile_source=target.profile_source,
+        target_warnings=target.warnings,
         llm_usage=llm_usage,
     )
 

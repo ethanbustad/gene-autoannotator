@@ -69,7 +69,7 @@ def is_unknown_value(value):
 
 
 def normalize_annotation_fields(parsed, *, require_biology_keys=False, organism_profile=None):
-    """Map empty or placeholder values to JSON null; keep gene identity fields as strings."""
+    """Map empty or placeholder values to JSON null while preserving supplied identity."""
     normalized = {
         'gene_id': parsed.get('gene_id') or parsed.get('rv_id'),
         'name': parsed.get('name'),
@@ -161,16 +161,19 @@ def _biology_properties(organism_label='the organism'):
     }
 
 
-def _identity_properties(organism_profile=None):
+def _identity_properties(organism_profile=None, *, allow_missing_locus=False):
+    gene_id_type = ['string', 'null'] if allow_missing_locus else 'string'
     locus_description = 'The gene locus identifier as supplied for this annotation.'
-    if organism_profile is not None:
+    if allow_missing_locus:
+        locus_description += ' Use null when no locus was supplied or resolved.'
+    elif organism_profile is not None:
         locus_description = (
             f'The gene locus identifier for {organism_profile.canonical_name}; '
             f'must match this profile regex: {organism_profile.locus_regex}'
         )
     return {
         'gene_id': {
-            'type': 'string',
+            'type': gene_id_type,
             'description': locus_description,
         },
         'name': {
@@ -183,7 +186,13 @@ def _identity_properties(organism_profile=None):
     }
 
 
-def build_json_schema(organism_profile=None, *, require_biology=False, aggregate=False):
+def build_json_schema(
+    organism_profile=None,
+    *,
+    require_biology=False,
+    aggregate=False,
+    allow_missing_locus=False,
+):
     # Ollama's structured output support is used as the first guardrail. The
     # schema is intentionally small because factual support still comes from
     # prompts, section selection, and later curator review.
@@ -194,7 +203,7 @@ def build_json_schema(organism_profile=None, *, require_biology=False, aggregate
     if require_biology:
         required += list(BIOLOGY_FIELDS)
     properties = {
-        **_identity_properties(organism_profile),
+        **_identity_properties(organism_profile, allow_missing_locus=allow_missing_locus),
         **_biology_properties(organism_label),
     }
     if aggregate:
@@ -238,6 +247,31 @@ essential_in_vivo.
 Excerpt:
 {2}
 '''
+
+
+def build_section_prompt(gene, name, text, *, section_type, organism_profile=None):
+    organism_label = (
+        organism_profile.canonical_name
+        if organism_profile is not None
+        else 'the submitted organism'
+    )
+    gene_label = gene if gene else 'with no supplied or resolved locus identifier'
+    name_label = name if name else gene_label
+    missing_locus_rule = ''
+    if gene is None:
+        missing_locus_rule = (
+            '\n- No locus identifier was supplied or resolved. Do not invent a locus '
+            'identifier; set gene_id to null.'
+        )
+    return prompt1_tmpl.format(
+        gene_label,
+        name_label,
+        text,
+        section_type,
+        SECTION_HINTS.get(section_type, ''),
+        organism_label,
+    ) + missing_locus_rule
+
 
 # json consensus prompt
 prompt2_tmpl = '''
@@ -288,21 +322,34 @@ class LlmHandler:
     def json_regex_filter(
         gene_json, rv_ptrn='[Rr]v[0-9]{4}[ABc]?',
         name_ptrn='([a-z]{3}[a-zA-Z0-9.]*)|([PE_GRS]{2,7}[0-9A]{1,3})',
-        organism_profile=None,
+        organism_profile=None, expected_gene=None,
     ):
         # This is only a shape/profile filter for model outputs. It rejects
         # wrong-locus or malformed JSON before aggregation but does not check
         # whether the biological statements are true.
         locus_ptrn = organism_profile.locus_regex if organism_profile is not None else rv_ptrn
+        has_locus_regex = bool(locus_ptrn)
         if organism_profile is not None:
             name_ptrn = rf'[\w.\-:/]+|{locus_ptrn}'
         else:
             name_ptrn += '|' + locus_ptrn
         try:
             gene_info = json.loads(gene_json)
-            gene_id = gene_info.get('gene_id') or gene_info.get('rv_id', '')
-            if not re.fullmatch(locus_ptrn, gene_id):
-                return False
+            gene_id = gene_info.get('gene_id')
+            if gene_id is None:
+                gene_id = gene_info.get('rv_id')
+            if gene_id is None:
+                if expected_gene is not None:
+                    return False
+            else:
+                if not isinstance(gene_id, str):
+                    return False
+                if expected_gene is not None and gene_id != expected_gene:
+                    return False
+                if expected_gene is None and not gene_id:
+                    return False
+                if has_locus_regex and not re.fullmatch(locus_ptrn, gene_id):
+                    return False
             if not re.fullmatch(name_ptrn, gene_info.get('name', '')):
                 return False
             return True
@@ -413,10 +460,13 @@ class LlmHandler:
     def get_llm_aggregate_json(
         self, json_responses, pmids, model='gemma3:12b',
         json_schema=None, retry=True, literature_context=None,
-        relevance_scores=None, organism_profile=None,
+        relevance_scores=None, organism_profile=None, allow_missing_locus=False,
     ):
+        json_responses = list(json_responses)
+        pmids = list(pmids)
         json_schema = json_schema or build_json_schema(
             organism_profile, require_biology=True, aggregate=True,
+            allow_missing_locus=allow_missing_locus,
         )
         prompt = prompt3_prefix
         if literature_context:
@@ -488,6 +538,7 @@ class LlmHandler:
                     json_responses, pmids, model=model, json_schema=json_schema,
                     retry=False, literature_context=literature_context,
                     relevance_scores=relevance_scores, organism_profile=organism_profile,
+                    allow_missing_locus=allow_missing_locus,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
@@ -495,9 +546,12 @@ class LlmHandler:
 
     def get_llm_consensus_json(
         self, json1, json2, json3, model='gemma3:12b', json_schema=None,
-        retry=True, section_type='unknown', organism_profile=None,
+        retry=True, section_type='unknown', organism_profile=None, allow_missing_locus=False,
     ):
-        json_schema = json_schema or build_json_schema(organism_profile)
+        json_schema = json_schema or build_json_schema(
+            organism_profile,
+            allow_missing_locus=allow_missing_locus,
+        )
         json1 = self.normalize_response_json(json1, organism_profile=organism_profile)
         json2 = self.normalize_response_json(json2, organism_profile=organism_profile)
         json3 = self.normalize_response_json(json3, organism_profile=organism_profile)
@@ -553,6 +607,7 @@ class LlmHandler:
                 return self.get_llm_consensus_json(
                     json1, json2, json3, model=model, json_schema=json_schema, retry=False,
                     section_type=section_type, organism_profile=organism_profile,
+                    allow_missing_locus=allow_missing_locus,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
@@ -563,11 +618,16 @@ class LlmHandler:
         retry=True, section_type='unknown', organism_profile=None,
     ):
         organism_profile = organism_profile or organisms.resolve_profile('mtb-h37rv')
-        json_schema = json_schema or build_json_schema(organism_profile)
-        section_hint = SECTION_HINTS.get(section_type, '')
-        prompt = prompt1_tmpl.format(
-            gene_id, gene_name, info_text, section_type, section_hint,
-            organism_profile.canonical_name,
+        json_schema = json_schema or build_json_schema(
+            organism_profile,
+            allow_missing_locus=gene_id is None,
+        )
+        prompt = build_section_prompt(
+            gene_id,
+            gene_name,
+            info_text,
+            section_type=section_type,
+            organism_profile=organism_profile,
         )
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)

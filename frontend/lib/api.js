@@ -25,6 +25,32 @@ export function getAnnotationApiBaseUrl() {
   return ANNOTATION_API_BASE_URL;
 }
 
+function formatErrorDetail(detail, fallback) {
+  if (!detail) {
+    return fallback;
+  }
+  if (typeof detail === "string") {
+    return detail;
+  }
+  if (Array.isArray(detail)) {
+    const messages = detail.map((entry) => formatErrorDetail(entry, "")).filter(Boolean);
+    return messages.length > 0 ? messages.join(" ") : fallback;
+  }
+  if (typeof detail === "object") {
+    if (detail.msg) {
+      return formatErrorDetail(detail.msg, fallback);
+    }
+    if (detail.message) {
+      return formatErrorDetail(detail.message, fallback);
+    }
+    if (detail.detail) {
+      return formatErrorDetail(detail.detail, fallback);
+    }
+    return JSON.stringify(detail);
+  }
+  return String(detail);
+}
+
 async function apiFetchFrom(baseUrl, path, options = {}) {
   const response = await fetch(`${baseUrl}${path}`, {
     cache: "no-store",
@@ -37,7 +63,7 @@ async function apiFetchFrom(baseUrl, path, options = {}) {
 
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    const detail = payload?.detail || `Backend returned HTTP ${response.status}`;
+    const detail = formatErrorDetail(payload?.detail, `Backend returned HTTP ${response.status}`);
     throw new Error(detail);
   }
   return payload;
@@ -59,15 +85,34 @@ export async function getProfiles() {
   return apiFetch("/profiles");
 }
 
+export async function getProfile(profileId) {
+  return apiFetch(`/profiles/${encodeURIComponent(profileId)}`);
+}
+
+export async function createProfile(payload) {
+  return apiFetch("/profiles", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateProfile(profileId, payload) {
+  return apiFetch(`/profiles/${encodeURIComponent(profileId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteProfile(profileId) {
+  return apiFetch(`/profiles/${encodeURIComponent(profileId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function validateJob(payload) {
   return apiFetch("/validate", {
     method: "POST",
-    body: JSON.stringify({
-      profile: payload.profile,
-      organism: payload.organism,
-      strain: payload.strain,
-      locus: payload.locus,
-    }),
+    body: JSON.stringify(payload),
   });
 }
 

@@ -86,6 +86,16 @@ class GeneNameLookupResult:
         )
 
 
+@dataclass(frozen=True)
+class GeneLocusLookupResult:
+    locus: str | None
+    source: str
+    source_detail: str | None = None
+    confidence: str = 'clear'
+    candidates: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+
+
 class GeneNameSource(Protocol):
     def lookup(self, profile, locus) -> GeneNameLookupResult | None:
         ...
@@ -312,6 +322,51 @@ class UniProtSource:
 
 def default_online_sources():
     return [NcbiGeneSource(), UniProtSource()]
+
+
+def resolve_locus_from_gene_name(
+    profile,
+    gene_name,
+    *,
+    allow_online_lookup=False,
+    sources=None,
+):
+    if not allow_online_lookup:
+        return GeneLocusLookupResult(
+            locus=None,
+            source='disabled',
+            warnings=['name_to_locus_lookup_disabled'],
+        )
+    no_locus_result = None
+    candidates = []
+    warnings = []
+    for source in sources or []:
+        lookup_locus = getattr(source, 'lookup_locus', None)
+        if lookup_locus is None:
+            continue
+        result = lookup_locus(profile, gene_name)
+        if result is None:
+            continue
+        if result and result.locus:
+            return result
+        if no_locus_result is None:
+            no_locus_result = result
+        candidates.extend(result.candidates)
+        warnings.extend(result.warnings)
+    if no_locus_result is not None:
+        return GeneLocusLookupResult(
+            locus=None,
+            source=no_locus_result.source,
+            source_detail=no_locus_result.source_detail,
+            confidence=no_locus_result.confidence,
+            candidates=candidates,
+            warnings=warnings,
+        )
+    return GeneLocusLookupResult(
+        locus=None,
+        source='online',
+        warnings=['name_to_locus_unavailable'],
+    )
 
 
 def _fallback_result(locus, candidates=None, warnings=None):

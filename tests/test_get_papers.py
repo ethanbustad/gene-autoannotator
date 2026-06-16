@@ -1,6 +1,7 @@
 import json
 
 import get_papers
+from autoannotation import pmc
 from autoannotation.pmc import PaperSelectionResult
 from autoannotation.pmc import RelevanceRecord
 from get_papers import summarize_ranked_records
@@ -19,6 +20,23 @@ def make_record(pmc_id, score, sources, warnings=None):
         score_components={"component": score},
         warnings=warnings or [],
     )
+
+
+def test_pmc_id_sources_supports_name_only(monkeypatch, tmp_path):
+    manager = pmc.PmcPaperManager(tmp_path)
+    calls = []
+
+    def fake_search(url, term, label):
+        calls.append((term, label))
+        return ["123"] if "abc1" in term else []
+
+    monkeypatch.setattr(manager, "_search_pmc_idlist", fake_search)
+
+    sources = manager.get_pmc_id_sources(None, "abc1")
+
+    assert sources == {"123": {"name"}}
+    assert any("abc1" in term for term, _label in calls)
+    assert all("None" not in term and "None" not in label for term, label in calls)
 
 
 def test_summarize_ranked_records_reports_counts_and_score_distribution():
@@ -138,6 +156,52 @@ def test_get_papers_cli_uses_gene_name_cache(monkeypatch, tmp_path):
     assert captured["name"] == "TcUBP1"
     assert result["gene_name_source"] == "manual_cache"
     assert result["gene_name_source_detail"] == "Curated from literature"
+
+
+def test_get_papers_cli_accepts_name_only_ad_hoc_target(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakePmcPaperManager:
+        def __init__(self, cache, organism_profile=None):
+            captured["profile_id"] = organism_profile.profile_id
+            captured["canonical_name"] = organism_profile.canonical_name
+
+        def get_ranked_papers(self, gene, name):
+            captured["gene"] = gene
+            captured["name"] = name
+            return [make_record("1", 0.9, ["name"])]
+
+        def select_relevance_records(self, records, **kwargs):
+            return PaperSelectionResult(
+                selected_records=records,
+                cumulative_relevance=1.8,
+                selection_mode="all_eligible_limited_literature",
+                eligible_count=len(records),
+                total_retrieved=len(records),
+            )
+
+    monkeypatch.setattr(get_papers, "PmcPaperManager", FakePmcPaperManager)
+    output_path = tmp_path / "ranked.json"
+
+    result = get_papers.main([
+        "--organism",
+        "Custom bacterium",
+        "--name",
+        "abc1",
+        "--no-online-name-lookup",
+        "--json-out",
+        str(output_path),
+    ])
+
+    assert captured["gene"] is None
+    assert captured["name"] == "abc1"
+    assert captured["profile_id"].startswith("ad-hoc-custom-bacterium-")
+    assert result["gene"] is None
+    assert result["name"] == "abc1"
+    payload = json.loads(output_path.read_text())
+    assert payload["gene"] is None
+    assert payload["name"] == "abc1"
+    assert payload["primary_identifier"] == "abc1"
 
 
 def test_get_papers_cli_can_cache_supplied_name(monkeypatch, tmp_path):

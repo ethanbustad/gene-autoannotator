@@ -14,6 +14,7 @@ def run_annotation_job(request: AnnotationJobRequest, annotation_main=None):
     return main(
         gene=None,
         profile=request.profile,
+        profile_config=request.profile_config,
         organism=request.organism,
         strain=request.strain,
         locus=request.locus,

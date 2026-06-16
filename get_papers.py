@@ -2,7 +2,7 @@ import argparse
 from collections import Counter
 import json
 from autoannotation import gene_names
-from autoannotation import organisms
+from autoannotation import targets
 from autoannotation.pmc import (
     PmcPaperManager,
     DEFAULT_MAX_PAPERS,
@@ -117,47 +117,77 @@ def print_summary(summary):
         for warning, count in sorted(summary["warnings"].items()):
             print(f"  {warning}: {count}")
 
-def _resolve_context_from_args(args, parser):
+def _resolve_target_from_args(args, parser):
     locus = args.locus or args.gene
-    if locus is None:
-        parser.error("a gene locus is required")
     if args.profile and args.organism:
         parser.error("use either --profile or --organism, not both")
-    if args.profile:
-        return organisms.resolve_gene_context(
-            profile_identifier=args.profile,
-            locus=locus,
-            name=args.name,
-            gene_name_cache_dir=args.gene_name_cache,
-            allow_online_name_lookup=not args.no_online_name_lookup,
-            refresh_gene_name_cache=args.refresh_gene_name_cache,
-            cache_supplied_name=args.cache_supplied_name,
-        )
-    if args.organism:
-        return organisms.resolve_gene_context(
+    profile = args.profile
+    if profile is None and args.organism is None:
+        profile = "mtb-h37rv"
+    try:
+        target = targets.resolve_annotation_target(
+            profile_identifier=profile,
             organism_identifier=args.organism,
             strain_identifier=args.strain,
             locus=locus,
             name=args.name,
             gene_name_cache_dir=args.gene_name_cache,
             allow_online_name_lookup=not args.no_online_name_lookup,
-            refresh_gene_name_cache=args.refresh_gene_name_cache,
-            cache_supplied_name=args.cache_supplied_name,
         )
-    return organisms.resolve_gene_context(
-        profile_identifier="mtb-h37rv",
-        locus=locus,
-        name=args.name,
-        gene_name_cache_dir=args.gene_name_cache,
-        allow_online_name_lookup=not args.no_online_name_lookup,
-        refresh_gene_name_cache=args.refresh_gene_name_cache,
-        cache_supplied_name=args.cache_supplied_name,
-    )
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    gene_name_source = target.gene_name_source
+    gene_name_source_detail = target.gene_name_source_detail
+    gene_name_confidence = target.gene_name_confidence
+    gene_name_aliases = target.gene_name_aliases
+    gene_name_candidates = target.gene_name_candidates
+    gene_name_warnings = target.gene_name_warnings
+    resolved_name = target.resolved_name
+
+    if target.submitted_name is not None:
+        gene_name_source = gene_name_source or "supplied"
+        gene_name_source_detail = gene_name_source_detail or "supplied argument"
+        gene_name_confidence = gene_name_confidence or "curator_supplied"
+        if args.cache_supplied_name and target.resolved_locus is not None and resolved_name:
+            gene_names.cache_supplied_gene_name(
+                target.profile,
+                target.resolved_locus,
+                resolved_name,
+                cache_dir=args.gene_name_cache,
+            )
+    elif args.refresh_gene_name_cache and target.resolved_locus is not None:
+        lookup_result = gene_names.resolve_gene_name(
+            target.profile,
+            target.resolved_locus,
+            cache_dir=args.gene_name_cache,
+            allow_online_lookup=not args.no_online_name_lookup,
+            refresh_cache=True,
+        )
+        resolved_name = lookup_result.gene_name
+        gene_name_source = lookup_result.source
+        gene_name_source_detail = lookup_result.source_detail
+        gene_name_confidence = lookup_result.confidence
+        gene_name_aliases = list(lookup_result.aliases)
+        gene_name_candidates = list(lookup_result.candidates)
+        gene_name_warnings = list(lookup_result.warnings)
+
+    return {
+        "target": target,
+        "gene": target.resolved_locus,
+        "name": resolved_name,
+        "gene_name_source": gene_name_source,
+        "gene_name_source_detail": gene_name_source_detail,
+        "gene_name_confidence": gene_name_confidence,
+        "gene_name_aliases": gene_name_aliases,
+        "gene_name_candidates": gene_name_candidates,
+        "gene_name_warnings": gene_name_warnings,
+    }
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(
-        description="Fetch PMC IDs for a gene locus"
+        description="Fetch and rank PMC papers for a gene target"
     )
     parser.add_argument("gene", nargs="?", help="Legacy gene locus shorthand (e.g. Rv0001)")
     parser.add_argument("--profile", help="Configured organism profile, e.g. mtb-h37rv")
@@ -196,10 +226,13 @@ def main(argv=None):
     parser.add_argument("--json-out", help="Optional path for full ranked relevance JSON")
 
     args = parser.parse_args(argv)
-    context = _resolve_context_from_args(args, parser)
+    context = _resolve_target_from_args(args, parser)
+    target = context["target"]
+    gene = context["gene"]
+    name = context["name"]
 
-    manager = PmcPaperManager(args.cache, organism_profile=context.profile)
-    ranked_records = manager.get_ranked_papers(context.locus, context.gene_name)
+    manager = PmcPaperManager(args.cache, organism_profile=target.profile)
+    ranked_records = manager.get_ranked_papers(gene, name)
     summary = summarize_ranked_records(ranked_records)
     selection = manager.select_relevance_records(
         ranked_records,
@@ -212,15 +245,15 @@ def main(argv=None):
     selected = selection.selected_records
     cumulative = selection.cumulative_relevance
 
-    print(f"\n\nProfile: {context.profile.profile_id}")
-    print(f"Organism: {context.profile.canonical_name}")
-    print(f"Gene: {context.locus}")
-    print(f"Name: {context.gene_name}")
-    print(f"Name source: {context.gene_name_source}")
-    if context.gene_name_source_detail:
-        print(f"Name source detail: {context.gene_name_source_detail}")
-    if context.gene_name_candidates:
-        print("Name candidates:", ", ".join(context.gene_name_candidates))
+    print(f"\n\nProfile: {target.profile.profile_id}")
+    print(f"Organism: {target.profile.canonical_name}")
+    print(f"Gene: {gene}")
+    print(f"Name: {name}")
+    print(f"Name source: {context['gene_name_source']}")
+    if context["gene_name_source_detail"]:
+        print(f"Name source detail: {context['gene_name_source_detail']}")
+    if context["gene_name_candidates"]:
+        print("Name candidates:", ", ".join(context["gene_name_candidates"]))
     print_summary(summary)
 
     print(f"\nTop {args.top} PMC papers by relevance:")
@@ -249,12 +282,15 @@ def main(argv=None):
             # be compared across runs or reviewed without scraping console text.
             json.dump(
                 {
-                    "gene": context.locus,
-                    "name": context.gene_name,
-                    "gene_name_source": context.gene_name_source,
-                    "gene_name_source_detail": context.gene_name_source_detail,
-                    "gene_name_candidates": context.gene_name_candidates,
-                    **context.to_metadata(),
+                    "gene": gene,
+                    "name": name,
+                    "gene_name_source": context["gene_name_source"],
+                    "gene_name_source_detail": context["gene_name_source_detail"],
+                    "gene_name_candidates": context["gene_name_candidates"],
+                    "gene_name_confidence": context["gene_name_confidence"],
+                    "gene_name_aliases": context["gene_name_aliases"],
+                    "gene_name_warnings": context["gene_name_warnings"],
+                    **target.to_preflight_dict(),
                     "summary": summary,
                     "ranked_records": [
                         relevance_record_to_dict(record)
@@ -267,15 +303,16 @@ def main(argv=None):
         print(f"\nWrote ranked relevance data to {args.json_out}")
 
     return {
-        "gene": context.locus,
-        "name": context.gene_name,
-        "gene_name_source": context.gene_name_source,
-        "gene_name_source_detail": context.gene_name_source_detail,
-        "gene_name_candidates": context.gene_name_candidates,
-        "profile_id": context.profile.profile_id,
-        "canonical_name": context.profile.canonical_name,
-        "species_name": context.profile.species_name,
-        "strain": context.profile.strain,
+        "gene": gene,
+        "name": name,
+        "primary_identifier": target.primary_identifier,
+        "gene_name_source": context["gene_name_source"],
+        "gene_name_source_detail": context["gene_name_source_detail"],
+        "gene_name_candidates": context["gene_name_candidates"],
+        "profile_id": target.profile.profile_id,
+        "canonical_name": target.profile.canonical_name,
+        "species_name": target.profile.species_name,
+        "strain": target.profile.strain,
         "summary": summary,
         "ranked_records": ranked_records,
         "selection": selection,
