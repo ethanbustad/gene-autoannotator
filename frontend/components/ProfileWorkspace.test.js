@@ -88,3 +88,13 @@ test("profile source chip centers its label", async () => {
     /className="inline-flex items-center rounded-full border workbench-border bg-white\/70 px-3 py-1 leading-none text-xs font-bold uppercase tracking-wide text-\[#3f4b43\]"/,
   );
 });
+
+test("profile workspace mounts the regex helper under the form", async () => {
+  const workspace = await readProjectFile("components/ProfileWorkspace.js");
+
+  assert.match(workspace, /import RegexHelper from "\.\/RegexHelper";/);
+  assert.match(
+    workspace,
+    /<RegexHelper onApply=\{\(regex\) => updateForm\("locusRegex", regex\)\} \/>/,
+  );
+});

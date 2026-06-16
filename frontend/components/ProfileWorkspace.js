@@ -9,6 +9,7 @@ import {
   updateProfile,
 } from "../lib/api";
 import { buildProfilePayload } from "../lib/profileStore";
+import RegexHelper from "./RegexHelper";
 
 const emptyForm = {
   profileId: "",
@@ -310,6 +311,8 @@ export default function ProfileWorkspace() {
                 </label>
               ))}
             </div>
+
+            <RegexHelper onApply={(regex) => updateForm("locusRegex", regex)} />
 
             <div className="grid gap-4 sm:grid-cols-2">
               {listFields.map((field) => (
