@@ -30,3 +30,59 @@ def test_regex_from_examples_strips_and_dedupes():
 def test_regex_from_examples_requires_examples():
     with pytest.raises(ValueError):
         regex_gen.regex_from_examples(["", "   "])
+
+
+class _FakeOllama:
+    def __init__(self, content=None, error=None):
+        self._content = content
+        self._error = error
+        self.calls = []
+
+    def chat(self, **kwargs):
+        self.calls.append(kwargs)
+        if self._error is not None:
+            raise self._error
+        return {"message": {"content": self._content}}
+
+
+def test_regex_from_description_returns_validated_regex(monkeypatch):
+    fake = _FakeOllama(
+        content='{"regex": "^Rv\\\\d{4}[Ac]?$", "explanation": "Rv plus four digits."}'
+    )
+    monkeypatch.setattr(regex_gen, "ollama", fake)
+
+    result = regex_gen.regex_from_description("Rv then 4 digits then c, A, or nothing")
+
+    assert result["regex"] == r"^Rv\d{4}[Ac]?$"
+    assert result["explanation"] == "Rv plus four digits."
+    assert result["matched"] == []
+    assert fake.calls[0]["model"] == regex_gen.models.MODEL_REGEX
+
+
+def test_regex_from_description_requires_text():
+    with pytest.raises(ValueError):
+        regex_gen.regex_from_description("   ")
+
+
+def test_regex_from_description_raises_when_model_unavailable(monkeypatch):
+    fake = _FakeOllama(error=ConnectionError("connection refused"))
+    monkeypatch.setattr(regex_gen, "ollama", fake)
+
+    with pytest.raises(regex_gen.RegexGenerationError):
+        regex_gen.regex_from_description("anything")
+
+
+def test_regex_from_description_rejects_invalid_regex(monkeypatch):
+    fake = _FakeOllama(content='{"regex": "^Rv(\\\\d{4}", "explanation": "broken"}')
+    monkeypatch.setattr(regex_gen, "ollama", fake)
+
+    with pytest.raises(regex_gen.RegexGenerationError):
+        regex_gen.regex_from_description("Rv then digits")
+
+
+def test_regex_from_description_rejects_unparseable_response(monkeypatch):
+    fake = _FakeOllama(content="not json at all")
+    monkeypatch.setattr(regex_gen, "ollama", fake)
+
+    with pytest.raises(regex_gen.RegexGenerationError):
+        regex_gen.regex_from_description("Rv then digits")
