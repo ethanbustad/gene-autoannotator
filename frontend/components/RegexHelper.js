@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import {
   generateRegexFromDescription,
@@ -20,48 +20,59 @@ export default function RegexHelper({ onApply }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  // Identifies the latest request so a slow response from a previous tab or
+  // click cannot overwrite newer state after the user has moved on.
+  const requestRef = useRef(0);
 
   function resetOutput() {
     setResult(null);
     setError("");
   }
 
-  async function handleGenerateExamples() {
+  function cancelPendingRequest() {
+    requestRef.current += 1;
+  }
+
+  async function runGenerate(validationError, call) {
     resetOutput();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    const token = (requestRef.current += 1);
+    setIsGenerating(true);
+    try {
+      const payload = await call();
+      if (requestRef.current === token) {
+        setResult(payload);
+      }
+    } catch (err) {
+      if (requestRef.current === token) {
+        setError(err.message);
+      }
+    } finally {
+      if (requestRef.current === token) {
+        setIsGenerating(false);
+      }
+    }
+  }
+
+  function handleGenerateExamples() {
     const examples = examplesText
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean);
-    if (examples.length === 0) {
-      setError("Enter at least one example locus.");
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const payload = await generateRegexFromExamples({ examples });
-      setResult(payload);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsGenerating(false);
-    }
+    return runGenerate(
+      examples.length === 0 ? "Enter at least one example locus." : "",
+      () => generateRegexFromExamples({ examples }),
+    );
   }
 
-  async function handleGenerateDescription() {
-    resetOutput();
-    if (description.trim().length === 0) {
-      setError("Describe the locus format first.");
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const payload = await generateRegexFromDescription({ description });
-      setResult(payload);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsGenerating(false);
-    }
+  function handleGenerateDescription() {
+    return runGenerate(
+      description.trim().length === 0 ? "Describe the locus format first." : "",
+      () => generateRegexFromDescription({ description }),
+    );
   }
 
   function handleApply() {
@@ -75,6 +86,7 @@ export default function RegexHelper({ onApply }) {
       <button
         type="button"
         onClick={() => setIsOpen((value) => !value)}
+        aria-expanded={isOpen}
         className="workbench-foreground text-sm font-bold tracking-[-0.01em]"
       >
         {isOpen ? "Hide regex helper" : "Don't know the exact regex?"}
@@ -88,8 +100,10 @@ export default function RegexHelper({ onApply }) {
                 key={tab.id}
                 type="button"
                 onClick={() => {
+                  cancelPendingRequest();
                   setActiveTab(tab.id);
                   resetOutput();
+                  setIsGenerating(false);
                 }}
                 className={`workbench-button ${
                   activeTab === tab.id
@@ -147,7 +161,10 @@ export default function RegexHelper({ onApply }) {
           )}
 
           {error ? (
-            <p className="workbench-amber-bg rounded-xl border workbench-border p-3 text-sm text-[#5f4b2e]">
+            <p
+              role="alert"
+              className="workbench-amber-bg rounded-xl border workbench-border p-3 text-sm text-[#5f4b2e]"
+            >
               {error}
             </p>
           ) : null}
@@ -167,6 +184,9 @@ export default function RegexHelper({ onApply }) {
                   {result.matched.map((entry) => (
                     <li key={entry.value} className="flex items-center gap-2">
                       <span aria-hidden="true">{entry.ok ? "✓" : "✗"}</span>
+                      <span className="sr-only">
+                        {entry.ok ? "matches" : "does not match"}
+                      </span>
                       <code>{entry.value}</code>
                     </li>
                   ))}
