@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 
 import {
@@ -11,6 +12,23 @@ const TABS = [
   { id: "examples", label: "From examples" },
   { id: "description", label: "From description" },
 ];
+
+function GenerateButtonLabel({ isGenerating, idleLabel }) {
+  if (!isGenerating) {
+    return idleLabel;
+  }
+  return (
+    <span className="inline-flex items-center gap-2">
+      <motion.span
+        aria-hidden="true"
+        className="inline-block size-4 rounded-full border-2 border-white/40 border-t-white"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+      />
+      Generating...
+    </span>
+  );
+}
 
 export default function RegexHelper({ onApply }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -87,7 +105,7 @@ export default function RegexHelper({ onApply }) {
         type="button"
         onClick={() => setIsOpen((value) => !value)}
         aria-expanded={isOpen}
-        className="workbench-foreground text-sm font-bold tracking-[-0.01em]"
+        className="workbench-button workbench-button-secondary cursor-pointer"
       >
         {isOpen ? "Hide regex helper" : "Don't know the exact regex?"}
       </button>
@@ -105,7 +123,7 @@ export default function RegexHelper({ onApply }) {
                   resetOutput();
                   setIsGenerating(false);
                 }}
-                className={`workbench-button ${
+                className={`workbench-button cursor-pointer ${
                   activeTab === tab.id
                     ? "workbench-button-primary"
                     : "workbench-button-secondary"
@@ -131,9 +149,12 @@ export default function RegexHelper({ onApply }) {
                 type="button"
                 onClick={handleGenerateExamples}
                 disabled={isGenerating}
-                className="workbench-button workbench-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+                className="workbench-button workbench-button-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isGenerating ? "Generating..." : "Generate from examples"}
+                <GenerateButtonLabel
+                  isGenerating={isGenerating}
+                  idleLabel="Generate from examples"
+                />
               </button>
               <span className="workbench-muted text-xs">
                 Three or more varied examples give the best results.
@@ -154,9 +175,12 @@ export default function RegexHelper({ onApply }) {
                 type="button"
                 onClick={handleGenerateDescription}
                 disabled={isGenerating}
-                className="workbench-button workbench-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+                className="workbench-button workbench-button-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isGenerating ? "Generating..." : "Generate from description"}
+                <GenerateButtonLabel
+                  isGenerating={isGenerating}
+                  idleLabel="Generate from description"
+                />
               </button>
               <span className="workbench-muted text-xs">
                 Uses a local model. If it is unavailable, try the examples tab.
@@ -199,7 +223,7 @@ export default function RegexHelper({ onApply }) {
               <button
                 type="button"
                 onClick={handleApply}
-                className="workbench-button workbench-button-primary"
+                className="workbench-button workbench-button-primary cursor-pointer"
               >
                 Use this regex
               </button>
