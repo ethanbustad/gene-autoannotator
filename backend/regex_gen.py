@@ -70,18 +70,22 @@ def regex_from_examples(examples):
     }
 
 
+# regex-from-description prompt
+description_prompt_tmpl = '''
+You convert a description of a gene locus identifier format into a single
+Python-compatible regular expression.
+
+Rules:
+- Anchor the pattern with ^ and $.
+- The 'regex' field must contain only the regex: no code fences, no quotes, no commentary.
+- The 'explanation' field is a short plain-English description of what the regex matches.
+
+Description: {0}
+'''
+
+
 def _build_description_prompt(description):
-    return (
-        "You convert a description of a gene locus identifier format into a "
-        "single Python-compatible regular expression.\n"
-        "Rules:\n"
-        "- Anchor the pattern with ^ and $.\n"
-        "- The 'regex' field must contain only the regex: no code fences, no "
-        "quotes, no commentary.\n"
-        "- The 'explanation' field is a short plain-English description of what "
-        "the regex matches.\n"
-        f"Description: {description}\n"
-    )
+    return description_prompt_tmpl.format(description)
 
 
 def regex_from_description(description):
