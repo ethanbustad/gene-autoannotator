@@ -32,6 +32,36 @@ def test_regex_from_examples_requires_examples():
         regex_gen.regex_from_examples(["", "   "])
 
 
+class _FakeBuilder:
+    def __init__(self, pattern):
+        self._pattern = pattern
+
+    @classmethod
+    def factory(cls, pattern):
+        def from_test_cases(_cases):
+            return cls(pattern)
+
+        return type("_Builder", (), {"from_test_cases": staticmethod(from_test_cases)})
+
+    def with_conversion_of_digits(self):
+        return self
+
+    def with_conversion_of_repetitions(self):
+        return self
+
+    def build(self):
+        return self._pattern
+
+
+def test_regex_from_examples_rejects_uncompilable_pattern(monkeypatch):
+    monkeypatch.setattr(
+        regex_gen, "RegExpBuilder", _FakeBuilder.factory("^Rv(\\d{4}$")
+    )
+
+    with pytest.raises(ValueError):
+        regex_gen.regex_from_examples(["Rv1000"])
+
+
 class _FakeOllama:
     def __init__(self, content=None, error=None):
         self._content = content

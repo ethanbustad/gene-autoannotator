@@ -53,7 +53,15 @@ def regex_from_examples(examples):
         )
     except Exception as exc:  # noqa: BLE001 - surface degenerate input as a 422.
         raise ValueError(f"could not infer a regex from these examples: {exc}") from exc
-    compiled = re.compile(pattern)
+    # grex emits patterns in Rust's regex dialect, which is not guaranteed to be
+    # a strict subset of Python's re. Treat an uncompilable pattern as bad input
+    # rather than letting it crash the request.
+    try:
+        compiled = re.compile(pattern)
+    except re.error as exc:
+        raise ValueError(
+            f"the inferred pattern could not be compiled as a regex: {exc}"
+        ) from exc
     matched = [{"value": value, "ok": bool(compiled.fullmatch(value))} for value in cleaned]
     return {
         "regex": pattern,
