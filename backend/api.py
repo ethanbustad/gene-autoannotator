@@ -18,6 +18,7 @@ from .profile_store import (
     user_profile_store_from_env,
 )
 from .runner import run_annotation_job
+from . import regex_gen
 from .schemas import (
     AnnotationDetailResponse,
     AnnotationJobRequest,
@@ -29,6 +30,8 @@ from .schemas import (
     ProfileDetailResponse,
     ProfilePayload,
     ProfilesResponse,
+    RegexFromDescriptionRequest,
+    RegexFromExamplesRequest,
     ValidationRequest,
 )
 
@@ -347,6 +350,22 @@ def create_app(
     def validate_locus(request: ValidationRequest):
         target = _resolve_target_for_request(request)
         return target.to_preflight_dict()
+
+    @app.post("/regex/from-examples")
+    def regex_from_examples_endpoint(request: RegexFromExamplesRequest):
+        try:
+            return regex_gen.regex_from_examples(request.examples)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post("/regex/from-description")
+    def regex_from_description_endpoint(request: RegexFromDescriptionRequest):
+        try:
+            return regex_gen.regex_from_description(request.description)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        except regex_gen.RegexGenerationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     @app.post(
         "/jobs",

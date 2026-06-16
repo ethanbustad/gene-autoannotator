@@ -7,6 +7,7 @@ from backend.annotation_store import InMemoryAnnotationStore
 from backend.api import create_app
 from backend.job_store import JobStore
 from backend.profile_store import BuiltinAndUserProfileStore, InMemoryUserProfileStore
+from backend import regex_gen
 
 
 class FailingProfileStore:
@@ -896,3 +897,70 @@ def test_annotation_search_reports_store_runtime_errors_as_unavailable(tmp_path)
 
     assert response.status_code == 503
     assert response.json()["detail"] == "mongo server is unreachable"
+
+
+def _regex_app(tmp_path):
+    return create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
+
+
+def test_regex_from_examples_endpoint_returns_pattern(tmp_path):
+    client = TestClient(_regex_app(tmp_path))
+
+    response = client.post(
+        "/regex/from-examples",
+        json={"examples": ["Rv1000", "Rv2070c", "Rv3415A"]},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["regex"] == r"^Rv\d{4}[Ac]?$"
+    assert all(entry["ok"] for entry in payload["matched"])
+
+
+def test_regex_from_examples_endpoint_rejects_empty(tmp_path):
+    client = TestClient(_regex_app(tmp_path))
+
+    response = client.post("/regex/from-examples", json={"examples": ["  "]})
+
+    assert response.status_code == 422
+
+
+def test_regex_from_description_endpoint_returns_pattern(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        regex_gen,
+        "regex_from_description",
+        lambda description: {
+            "regex": r"^Rv\d{4}[Ac]?$",
+            "explanation": "Rv plus four digits.",
+            "matched": [],
+        },
+    )
+    client = TestClient(_regex_app(tmp_path))
+
+    response = client.post(
+        "/regex/from-description",
+        json={"description": "Rv then 4 digits then c, A, or nothing"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["regex"] == r"^Rv\d{4}[Ac]?$"
+
+
+def test_regex_from_description_endpoint_reports_model_failure(tmp_path, monkeypatch):
+    def _boom(description):
+        raise regex_gen.RegexGenerationError("regex model is unavailable")
+
+    monkeypatch.setattr(regex_gen, "regex_from_description", _boom)
+    client = TestClient(_regex_app(tmp_path))
+
+    response = client.post("/regex/from-description", json={"description": "anything"})
+
+    assert response.status_code == 503
+
+
+def test_regex_from_description_endpoint_requires_description(tmp_path):
+    client = TestClient(_regex_app(tmp_path))
+
+    response = client.post("/regex/from-description", json={"description": "   "})
+
+    assert response.status_code == 422
