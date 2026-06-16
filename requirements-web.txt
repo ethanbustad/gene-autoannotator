@@ -4,3 +4,4 @@ httpx
 pymongo
 python-dotenv
 psutil
+grex==1.0.2
