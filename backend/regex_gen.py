@@ -94,7 +94,7 @@ def regex_from_description(description):
     try:
         data = json.loads(content)
         regex = (data["regex"] or "").strip()
-    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+    except (json.JSONDecodeError, KeyError, TypeError, AttributeError) as exc:
         raise RegexGenerationError("model returned an unparseable response") from exc
     if not regex:
         raise RegexGenerationError("model did not return a regex")

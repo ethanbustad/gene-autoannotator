@@ -86,3 +86,11 @@ def test_regex_from_description_rejects_unparseable_response(monkeypatch):
 
     with pytest.raises(regex_gen.RegexGenerationError):
         regex_gen.regex_from_description("Rv then digits")
+
+
+def test_regex_from_description_rejects_non_string_regex(monkeypatch):
+    fake = _FakeOllama(content='{"regex": 1234, "explanation": "not a string"}')
+    monkeypatch.setattr(regex_gen, "ollama", fake)
+
+    with pytest.raises(regex_gen.RegexGenerationError):
+        regex_gen.regex_from_description("Rv then digits")
