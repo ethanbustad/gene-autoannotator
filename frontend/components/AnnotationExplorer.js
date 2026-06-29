@@ -17,6 +17,13 @@ import {
   getMetadataRows,
   getPmcIdsAnalyzed,
 } from "../lib/annotationDisplay";
+import {
+  annotationViewForVersion,
+  buildVersionOptions,
+  CURRENT_VERSION_KEY,
+  formatVersionLabel,
+  getTotalVersionCount,
+} from "../lib/annotationVersions";
 import { buildJobPrefillHref } from "../lib/form";
 
 function EmptyState({ query }) {
@@ -38,7 +45,171 @@ function EmptyState({ query }) {
   );
 }
 
-function AnnotationDetail({ annotation, versions, onLoadVersions }) {
+function AnnotationContent({ annotation }) {
+  const generatedRows = getGeneratedFieldRows(annotation);
+  const metadataRows = getMetadataRows(annotation);
+  const pmcIdsAnalyzed = getPmcIdsAnalyzed(annotation);
+
+  return (
+    <div className="grid gap-4">
+      <section className="rounded-xl border workbench-border bg-[#fffefa] p-5">
+        <h3 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">
+          Generated annotation fields
+        </h3>
+        <dl className="mt-5 grid gap-4">
+          {generatedRows.map((row) => (
+            <div key={row.key} className="workbench-muted-bg rounded-xl border workbench-border p-4">
+              <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
+                {row.label}
+              </dt>
+              <dd className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3d463f]">
+                {row.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <details className="rounded-xl border workbench-border bg-[#fffefa] p-4">
+        <summary className="workbench-foreground cursor-pointer text-sm font-bold">
+          Annotation metadata
+        </summary>
+        <dl className="mt-4 grid gap-3 text-sm">
+          {metadataRows.map((row) => (
+            <div key={row.key} className="workbench-muted-bg rounded-xl border workbench-border p-4">
+              <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
+                {row.label}
+              </dt>
+              <dd className="mt-2 whitespace-pre-wrap leading-6 text-[#3d463f]">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
+
+        <details className="workbench-muted-bg mt-4 rounded-xl border workbench-border p-4">
+          <summary className="workbench-foreground cursor-pointer text-sm font-bold">
+            PMC IDs analyzed
+          </summary>
+          {pmcIdsAnalyzed.length > 0 ? (
+            <ul className="mt-3 grid gap-2 text-sm text-[#3d463f] sm:grid-cols-2">
+              {pmcIdsAnalyzed.map((pmcId) => (
+                <li key={pmcId} className="rounded-lg bg-white/70 px-3 py-2">
+                  PMC{pmcId}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="workbench-muted mt-3 text-sm">No analyzed PMC IDs stored.</p>
+          )}
+        </details>
+      </details>
+
+      <details className="min-w-0 max-w-full overflow-hidden rounded-xl border workbench-border bg-[#fffefa] p-4">
+        <summary className="workbench-foreground cursor-pointer text-sm font-bold">
+          Raw JSON
+        </summary>
+        <pre className="annotation-raw-json workbench-muted-bg mt-4 max-h-96 rounded-xl p-4 text-xs leading-5 text-[#3d463f]">
+          {JSON.stringify(annotation.result, null, 2)}
+        </pre>
+      </details>
+    </div>
+  );
+}
+
+function VersionHistory({
+  annotation,
+  versions,
+  selectedVersionKey,
+  onSelectVersion,
+  onLoadVersions,
+  isLoadingVersions,
+}) {
+  const hasOlderVersions = (annotation.version_count || 0) > 0;
+  const versionOptions = versions ? buildVersionOptions(annotation, versions) : [];
+  const totalVersions = getTotalVersionCount(annotation, versions);
+
+  if (!hasOlderVersions && !versions) {
+    return null;
+  }
+
+  return (
+    <section className="mt-6 rounded-xl border workbench-border bg-[#fffefa] p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="workbench-foreground text-lg font-bold tracking-[-0.02em]">
+            Version history
+          </h3>
+          <p className="workbench-muted mt-1 text-sm">
+            {totalVersions} saved version{totalVersions === 1 ? "" : "s"}. Select one to review
+            its generated fields and metadata.
+          </p>
+        </div>
+        {hasOlderVersions && !versions && !isLoadingVersions ? (
+          <button
+            type="button"
+            onClick={onLoadVersions}
+            className="workbench-button workbench-button-secondary"
+          >
+            Load version history
+          </button>
+        ) : null}
+      </div>
+
+      {hasOlderVersions && !versions && isLoadingVersions ? (
+        <p className="workbench-muted mt-4 text-sm">Loading version history...</p>
+      ) : null}
+
+      {versions ? (
+        <div className="mt-4 grid gap-2">
+          {versionOptions.map((option) => {
+            const isSelected = selectedVersionKey === option.key;
+            const generated = option.generated_at
+              ? new Date(option.generated_at).toLocaleString()
+              : "Unknown";
+
+            return (
+              <button
+                type="button"
+                key={option.key}
+                onClick={() => onSelectVersion(option.key)}
+                className={`rounded-xl border p-4 text-left text-sm transition ${
+                  isSelected
+                    ? "border-[#557864] bg-[#eef4ef]"
+                    : "workbench-border workbench-muted-bg hover:border-[#557864]"
+                }`}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="workbench-foreground font-bold">
+                    {formatVersionLabel(option)}
+                  </span>
+                  {option.isCurrent ? (
+                    <span className="rounded-full bg-[#557864] px-2 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-white">
+                      Latest
+                    </span>
+                  ) : null}
+                </div>
+                <p className="workbench-muted mt-1">
+                  {option.gene_name || annotation.gene_name || annotation.normalized_locus}
+                </p>
+                <p className="workbench-muted mt-1">
+                  Generated {generated} · job {option.job_id || "Unknown"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function AnnotationDetail({
+  annotation,
+  versions,
+  selectedVersionKey,
+  onSelectVersion,
+  onLoadVersions,
+  isLoadingVersions,
+}) {
   if (!annotation) {
     return (
       <div className="workbench-card workbench-muted p-8">
@@ -47,36 +218,51 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
     );
   }
 
-  const generated = annotation.generated_at
-    ? new Date(annotation.generated_at).toLocaleString()
+  const displayAnnotation = annotationViewForVersion(annotation, selectedVersionKey, versions);
+  const selectedOption = buildVersionOptions(annotation, versions).find(
+    (option) => option.key === selectedVersionKey,
+  );
+  const viewingHistorical = selectedVersionKey !== CURRENT_VERSION_KEY;
+  const generated = displayAnnotation.generated_at
+    ? new Date(displayAnnotation.generated_at).toLocaleString()
     : "Unknown";
-  const generatedRows = getGeneratedFieldRows(annotation);
-  const metadataRows = getMetadataRows(annotation);
-  const pmcIdsAnalyzed = getPmcIdsAnalyzed(annotation);
+  const totalVersions = getTotalVersionCount(annotation, versions);
 
-  // The backend returns the current annotation inline. Older versions are
-  // loaded on demand because most review sessions only need the latest result.
   return (
     <article className="workbench-card min-w-0 max-w-full overflow-hidden p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="workbench-kicker">
-            Current annotation
+            {viewingHistorical ? "Historical annotation" : "Current annotation"}
           </p>
           <h2 className="workbench-foreground mt-2 text-3xl font-bold tracking-[-0.04em]">
-            {annotation.gene_name || annotation.normalized_locus}
+            {displayAnnotation.gene_name || annotation.normalized_locus}
           </h2>
           <p className="workbench-muted mt-2 text-sm">
             {annotation.canonical_name} · {annotation.normalized_locus}
           </p>
+          {selectedOption ? (
+            <p className="workbench-muted mt-2 text-sm">
+              Viewing {formatVersionLabel(selectedOption)}
+            </p>
+          ) : null}
         </div>
-        <Link
-          href={buildJobPrefillHref(annotation)}
-          className="workbench-button workbench-button-secondary"
-        >
-          Update annotation
-        </Link>
+        {!viewingHistorical ? (
+          <Link
+            href={buildJobPrefillHref(annotation)}
+            className="workbench-button workbench-button-secondary"
+          >
+            Update annotation
+          </Link>
+        ) : null}
       </div>
+
+      {viewingHistorical ? (
+        <p className="workbench-amber mt-4 rounded-xl border workbench-border px-4 py-3 text-sm">
+          You are viewing an older saved version. Switch back to the latest version to see the
+          current annotation or queue a new run.
+        </p>
+      ) : null}
 
       <dl className="mt-6 grid overflow-hidden rounded-xl border workbench-border text-sm sm:grid-cols-3">
         <div className="workbench-muted-bg border-b workbench-border p-4 sm:border-r sm:border-b-0">
@@ -85,107 +271,25 @@ function AnnotationDetail({ annotation, versions, onLoadVersions }) {
         </div>
         <div className="workbench-muted-bg border-b workbench-border p-4 sm:border-r sm:border-b-0">
           <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Versions</dt>
-          <dd className="mt-1 text-[#3d463f]">{annotation.version_count}</dd>
+          <dd className="mt-1 text-[#3d463f]">{totalVersions}</dd>
         </div>
         <div className="workbench-muted-bg p-4">
           <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">Job</dt>
-          <dd className="mt-1 break-all text-[#3d463f]">{annotation.job_id || "Unknown"}</dd>
+          <dd className="mt-1 break-all text-[#3d463f]">{displayAnnotation.job_id || "Unknown"}</dd>
         </div>
       </dl>
 
-      <div className="mt-6 grid gap-4">
-        <section className="rounded-xl border workbench-border bg-[#fffefa] p-5">
-          <h3 className="workbench-foreground text-xl font-bold tracking-[-0.02em]">
-            Generated annotation fields
-          </h3>
-          <dl className="mt-5 grid gap-4">
-            {generatedRows.map((row) => (
-              <div key={row.key} className="workbench-muted-bg rounded-xl border workbench-border p-4">
-                <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
-                  {row.label}
-                </dt>
-                <dd className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3d463f]">
-                  {row.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        <details className="rounded-xl border workbench-border bg-[#fffefa] p-4">
-          <summary className="workbench-foreground cursor-pointer text-sm font-bold">
-            Annotation metadata
-          </summary>
-          <dl className="mt-4 grid gap-3 text-sm">
-            {metadataRows.map((row) => (
-              <div key={row.key} className="workbench-muted-bg rounded-xl border workbench-border p-4">
-                <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
-                  {row.label}
-                </dt>
-                <dd className="mt-2 whitespace-pre-wrap leading-6 text-[#3d463f]">{row.value}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <details className="workbench-muted-bg mt-4 rounded-xl border workbench-border p-4">
-            <summary className="workbench-foreground cursor-pointer text-sm font-bold">
-              PMC IDs analyzed
-            </summary>
-            {pmcIdsAnalyzed.length > 0 ? (
-              <ul className="mt-3 grid gap-2 text-sm text-[#3d463f] sm:grid-cols-2">
-                {pmcIdsAnalyzed.map((pmcId) => (
-                  <li key={pmcId} className="rounded-lg bg-white/70 px-3 py-2">
-                    PMC{pmcId}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="workbench-muted mt-3 text-sm">No analyzed PMC IDs stored.</p>
-            )}
-          </details>
-        </details>
-
-        <details className="min-w-0 max-w-full overflow-hidden rounded-xl border workbench-border bg-[#fffefa] p-4">
-          <summary className="workbench-foreground cursor-pointer text-sm font-bold">
-            Raw JSON
-          </summary>
-          <pre className="annotation-raw-json workbench-muted-bg mt-4 max-h-96 rounded-xl p-4 text-xs leading-5 text-[#3d463f]">
-            {JSON.stringify(annotation.result, null, 2)}
-          </pre>
-        </details>
-      </div>
+      <VersionHistory
+        annotation={annotation}
+        versions={versions}
+        selectedVersionKey={selectedVersionKey}
+        onSelectVersion={onSelectVersion}
+        onLoadVersions={onLoadVersions}
+        isLoadingVersions={isLoadingVersions}
+      />
 
       <div className="mt-6">
-        <button
-          type="button"
-          onClick={onLoadVersions}
-          className="workbench-button workbench-button-secondary"
-        >
-          {versions ? "Refresh older versions" : "Show older versions"}
-        </button>
-
-        {versions ? (
-          <div className="mt-4 grid gap-3">
-            {versions.length > 0 ? (
-              versions.map((version) => (
-                <div
-                  key={version.version_id}
-                  className="workbench-muted-bg rounded-xl border workbench-border p-4 text-sm"
-                >
-                  <p className="workbench-foreground font-bold">
-                    {version.gene_name || "Older annotation"}
-                  </p>
-                  <p className="workbench-muted mt-1">
-                    Generated {new Date(version.generated_at).toLocaleString()} · job{" "}
-                    {version.job_id}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="workbench-muted text-sm">No older versions stored yet.</p>
-            )}
-          </div>
-        ) : null}
+        <AnnotationContent annotation={displayAnnotation} />
       </div>
     </article>
   );
@@ -200,12 +304,26 @@ export default function AnnotationExplorer({
   const [matches, setMatches] = useState(initialMatches);
   const [selected, setSelected] = useState(null);
   const [versions, setVersions] = useState(null);
+  const [selectedVersionKey, setSelectedVersionKey] = useState(CURRENT_VERSION_KEY);
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const [message, setMessage] = useState(initialMessage);
   const [searchedQuery, setSearchedQuery] = useState(initialQuery);
   const [isSearching, setIsSearching] = useState(false);
   const [showAllMatches, setShowAllMatches] = useState(false);
   const hiddenMatchCount = getHiddenMatchCount(matches);
   const visibleMatches = getVisibleMatches(matches, showAllMatches);
+
+  async function fetchVersions(annotationId) {
+    setIsLoadingVersions(true);
+    try {
+      const payload = await getAnnotationVersions(annotationId);
+      setVersions(payload.versions || []);
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setIsLoadingVersions(false);
+    }
+  }
 
   async function runSearch(nextQuery = query) {
     const trimmed = nextQuery.trim();
@@ -218,11 +336,10 @@ export default function AnnotationExplorer({
     setMessage("");
     setSelected(null);
     setVersions(null);
+    setSelectedVersionKey(CURRENT_VERSION_KEY);
     setSearchedQuery(trimmed);
     setShowAllMatches(false);
 
-    // Searching returns summaries only. Selecting a match fetches the full
-    // current annotation so large JSON payloads are not loaded for every row.
     try {
       const payload = await searchAnnotations(trimmed);
       setMatches(payload.matches || []);
@@ -237,8 +354,14 @@ export default function AnnotationExplorer({
   async function loadAnnotation(annotationId) {
     setMessage("");
     setVersions(null);
+    setSelectedVersionKey(CURRENT_VERSION_KEY);
+
     try {
-      setSelected(await getAnnotation(annotationId));
+      const annotation = await getAnnotation(annotationId);
+      setSelected(annotation);
+      if ((annotation.version_count || 0) > 0) {
+        await fetchVersions(annotationId);
+      }
     } catch (error) {
       setMessage(error.message);
     }
@@ -246,12 +369,7 @@ export default function AnnotationExplorer({
 
   async function loadVersions() {
     if (!selected) return;
-    try {
-      const payload = await getAnnotationVersions(selected.id);
-      setVersions(payload.versions || []);
-    } catch (error) {
-      setMessage(error.message);
-    }
+    await fetchVersions(selected.id);
   }
 
   return (
@@ -265,8 +383,8 @@ export default function AnnotationExplorer({
         </h1>
         <p className="workbench-muted mt-3 max-w-3xl text-sm leading-6">
           Search by locus, gene name, profile, or terms present in stored
-          annotation metadata. Current annotations are shown first; older
-          versions stay hidden until requested.
+          annotation metadata. The latest version opens by default; select an
+          older version to review its saved fields and metadata.
         </p>
 
         <form
@@ -324,7 +442,8 @@ export default function AnnotationExplorer({
                   {match.canonical_name} · {match.normalized_locus}
                 </p>
                 <p className="workbench-muted mt-2 text-xs">
-                  {match.version_count} older version{match.version_count === 1 ? "" : "s"}
+                  {(match.version_count || 0) + 1} saved version
+                  {(match.version_count || 0) + 1 === 1 ? "" : "s"}
                 </p>
               </button>
             ))}
@@ -344,7 +463,10 @@ export default function AnnotationExplorer({
         <AnnotationDetail
           annotation={selected}
           versions={versions}
+          selectedVersionKey={selectedVersionKey}
+          onSelectVersion={setSelectedVersionKey}
           onLoadVersions={loadVersions}
+          isLoadingVersions={isLoadingVersions}
         />
       </div>
     </div>
