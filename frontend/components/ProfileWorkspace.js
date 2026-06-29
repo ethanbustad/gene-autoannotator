@@ -208,9 +208,6 @@ export default function ProfileWorkspace() {
   }
 
   function startEditing(profile) {
-    if (profile.read_only) {
-      return;
-    }
     setForm(profileToForm(profile));
     setEditingProfileId(profile.profile_id);
     setExpandedProfileId(profile.profile_id);
@@ -245,11 +242,16 @@ export default function ProfileWorkspace() {
 
   async function handleDelete(profileId) {
     const profile = profiles.find((item) => item.profile_id === profileId);
-    if (!profile || profile.read_only) {
+    if (!profile) {
       return;
     }
 
-    const confirmed = window.confirm(`Delete user profile ${profileId}?`);
+    const isBuiltin = profile.source === "builtin";
+    const confirmed = window.confirm(
+      isBuiltin
+        ? `Reset profile ${profileId} to its built-in defaults? Custom changes will be removed.`
+        : `Delete user profile ${profileId}?`,
+    );
     if (!confirmed) {
       return;
     }
@@ -261,7 +263,11 @@ export default function ProfileWorkspace() {
         resetForm();
       }
       await refreshProfiles();
-      setStatusMessage(`Deleted profile ${profileId}.`);
+      setStatusMessage(
+        isBuiltin
+          ? `Reset profile ${profileId} to built-in defaults.`
+          : `Deleted profile ${profileId}.`,
+      );
     } catch (error) {
       setStatusMessage(error.message);
     }
@@ -276,9 +282,9 @@ export default function ProfileWorkspace() {
             Manage reusable annotation targets
           </h1>
           <p className="workbench-muted mt-3 max-w-2xl text-sm leading-6">
-            Built-in profiles are listed for reference. User profiles can be
-            added, edited, and removed so job submissions reuse the same
-            validation patterns and literature search terms.
+            Built-in profiles ship with the application and can be edited like user
+            profiles. Changes to built-in profiles are saved as overrides; use Reset to
+            restore defaults.
           </p>
         </div>
 
@@ -482,7 +488,7 @@ export default function ProfileWorkspace() {
                           </button>
                           <div className="flex flex-wrap gap-2">
                             <span className="inline-flex items-center rounded-full border workbench-border bg-white/70 px-3 py-1 leading-none text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
-                              {profile.read_only ? "Read-only" : "User"}
+                              {profile.source === "builtin" ? "Built-in" : "User"}
                             </span>
                             <button
                               type="button"
@@ -491,24 +497,20 @@ export default function ProfileWorkspace() {
                             >
                               {isExpanded ? "Collapse" : "Expand"}
                             </button>
-                            {!profile.read_only ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => startEditing(profile)}
-                                  className="workbench-button workbench-button-secondary"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(profile.profile_id)}
-                                  className="workbench-button workbench-button-secondary workbench-red"
-                                >
-                                  Delete
-                                </button>
-                              </>
-                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => startEditing(profile)}
+                              className="workbench-button workbench-button-secondary"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(profile.profile_id)}
+                              className="workbench-button workbench-button-secondary workbench-red"
+                            >
+                              {profile.source === "builtin" ? "Reset" : "Delete"}
+                            </button>
                           </div>
                         </div>
 

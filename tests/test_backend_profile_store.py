@@ -148,10 +148,49 @@ def test_profile_store_lists_builtin_and_user_profiles():
     by_id = {profile["profile_id"]: profile for profile in profiles}
 
     assert by_id["mtb-h37rv"]["source"] == "builtin"
-    assert by_id["mtb-h37rv"]["read_only"] is True
+    assert by_id["mtb-h37rv"]["read_only"] is False
     assert by_id["user-tcruzi"]["source"] == "user"
     assert by_id["user-tcruzi"]["trusted"] is False
     assert by_id["user-tcruzi"]["read_only"] is False
+
+
+def test_profile_store_allows_builtin_update_as_override():
+    store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+
+    updated = store.update_user_profile(
+        "mtb-h37rv",
+        user_profile_payload(
+            profile_id="mtb-h37rv",
+            canonical_name="Mycobacterium tuberculosis H37Rv edited",
+            species_name="Mycobacterium tuberculosis",
+            locus_regex=r"^Rv\d{4}[Ac]?$",
+        ),
+    )
+
+    assert updated["canonical_name"] == "Mycobacterium tuberculosis H37Rv edited"
+    assert updated["source"] == "builtin"
+    assert updated["read_only"] is False
+    listed = {profile["profile_id"]: profile for profile in store.list_profiles()}
+    assert listed["mtb-h37rv"]["canonical_name"] == "Mycobacterium tuberculosis H37Rv edited"
+    assert len(listed) == len(store._builtin_profiles) + 0  # no duplicate mtb entry
+
+
+def test_profile_store_reset_builtin_deletes_override_only():
+    store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+    store.update_user_profile(
+        "mtb-h37rv",
+        user_profile_payload(
+            profile_id="mtb-h37rv",
+            canonical_name="Edited MTB",
+            species_name="Mycobacterium tuberculosis",
+            locus_regex=r"^Rv\d{4}[Ac]?$",
+        ),
+    )
+
+    assert store.delete_user_profile("mtb-h37rv") is True
+    profile = store.get_profile("mtb-h37rv")
+    assert profile["canonical_name"] == "Mycobacterium tuberculosis H37Rv"
+    assert store.delete_user_profile("mtb-h37rv") is False
 
 
 def test_profile_store_rejects_duplicate_builtin_profile_id():

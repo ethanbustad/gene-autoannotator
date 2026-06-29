@@ -61,7 +61,7 @@ test("profile workspace supports editing all reusable profile fields", async () 
   assert.match(workspace, /updateProfile\(editingProfileId,/);
   assert.match(workspace, /createProfile\(payload\)/);
   assert.match(workspace, /deleteProfile\(profileId\)/);
-  assert.match(workspace, /profile\.read_only/);
+  assert.match(workspace, /profile\.source === "builtin"/);
 });
 
 test("resetting the profile form clears stale edit status text", async () => {

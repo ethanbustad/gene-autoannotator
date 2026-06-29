@@ -140,7 +140,7 @@ def test_profile_detail_endpoint_reports_store_failures_as_unavailable(tmp_path)
     assert response.json()["detail"] == "mongo down"
 
 
-def test_profile_crud_rejects_builtin_update(tmp_path):
+def test_profile_crud_allows_builtin_update(tmp_path):
     app = create_app(
         job_store=JobStore(tmp_path / "jobs.sqlite3"),
         profile_store=BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore()),
@@ -151,13 +151,15 @@ def test_profile_crud_rejects_builtin_update(tmp_path):
         "/profiles/mtb-h37rv",
         json={
             "profile_id": "mtb-h37rv",
-            "canonical_name": "Changed",
-            "species_name": "Changed",
+            "canonical_name": "Mycobacterium tuberculosis H37Rv edited",
+            "species_name": "Mycobacterium tuberculosis",
+            "locus_regex": r"^Rv\d{4}[Ac]?$",
         },
     )
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "built-in profiles are read-only"
+    assert response.status_code == 200
+    assert response.json()["canonical_name"] == "Mycobacterium tuberculosis H37Rv edited"
+    assert response.json()["source"] == "builtin"
 
 
 def test_profile_creation_without_user_store_returns_unavailable(tmp_path):

@@ -32,10 +32,10 @@ function profileMatchesQuery(profile, query) {
 
 function profileMatchesSource(profile, sourceFilter) {
   if (sourceFilter === PROFILE_SOURCE_FILTERS.BUILTIN) {
-    return profile.source === "builtin" || profile.read_only === true;
+    return profile.source === "builtin";
   }
   if (sourceFilter === PROFILE_SOURCE_FILTERS.USER) {
-    return profile.source !== "builtin" && profile.read_only !== true;
+    return profile.source !== "builtin";
   }
   return true;
 }

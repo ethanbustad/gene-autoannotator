@@ -94,7 +94,7 @@ def _normalize_custom_fields_payload(payload, kegg_code):
     ]
 
 
-def _profile_to_document(profile, source="builtin", trusted=True, read_only=True):
+def _profile_to_document(profile, source="builtin", trusted=True, read_only=False):
     document = asdict(profile)
     for field in PROFILE_ARRAY_FIELDS:
         document[field] = list(document.get(field) or [])
@@ -187,7 +187,7 @@ def _normalize_profile_payload(payload):
         "locus_regex": locus_regex,
         "source": "user",
         "trusted": bool(payload.get("trusted", False)),
-        "read_only": False,
+        "read_only": bool(payload.get("read_only", False)),
         "created_at": now,
         "updated_at": now,
     }
@@ -201,6 +201,12 @@ def _normalize_profile_payload(payload):
     document['annotation_fields'] = list(document['custom_fields'])
     if not document["target_patterns"]:
         document["target_patterns"] = _default_target_patterns(document)
+    if payload.get("source"):
+        document["source"] = _required_text(payload, "source")
+    if payload.get("trusted") is not None:
+        document["trusted"] = bool(payload.get("trusted"))
+    if payload.get("read_only") is not None:
+        document["read_only"] = bool(payload.get("read_only"))
     for field in PROFILE_REGEX_FIELDS:
         for pattern in document[field]:
             _validate_regex(pattern, field)
@@ -358,16 +364,22 @@ class BuiltinAndUserProfileStore:
         }
 
     def list_profiles(self):
-        return [
-            *(_copy_document(profile) for profile in self._builtin_profiles.values()),
-            *self.user_store.list_profiles(),
-        ]
+        profiles_by_id = {
+            profile_id: _copy_document(profile)
+            for profile_id, profile in self._builtin_profiles.items()
+        }
+        for profile in self.user_store.list_profiles():
+            profiles_by_id[profile["profile_id"]] = _copy_document(profile)
+        return list(profiles_by_id.values())
 
     def get_profile(self, profile_id):
+        user_profile = self.user_store.get_profile(profile_id)
+        if user_profile is not None:
+            return _copy_document(user_profile)
         builtin = self._builtin_profiles.get(profile_id)
         if builtin is not None:
             return _copy_document(builtin)
-        return self.user_store.get_profile(profile_id)
+        return None
 
     def create_user_profile(self, payload):
         profile_id = _required_text(payload, "profile_id")
@@ -376,12 +388,24 @@ class BuiltinAndUserProfileStore:
         return self.user_store.create_profile(payload)
 
     def update_user_profile(self, profile_id, payload):
-        if profile_id in self._builtin_profiles:
-            raise InvalidProfileError("built-in profiles are read-only")
         _ensure_profile_id_matches(profile_id, payload)
+        if profile_id in self._builtin_profiles:
+            override_payload = {
+                **payload,
+                "profile_id": profile_id,
+                "source": "builtin",
+                "trusted": True,
+                "read_only": False,
+            }
+            existing = self.user_store.get_profile(profile_id)
+            if existing is None:
+                return self.user_store.create_profile(override_payload)
+            return self.user_store.update_profile(profile_id, override_payload)
         return self.user_store.update_profile(profile_id, payload)
 
     def delete_user_profile(self, profile_id):
         if profile_id in self._builtin_profiles:
-            raise InvalidProfileError("built-in profiles are read-only")
+            if self.user_store.get_profile(profile_id) is None:
+                return False
+            return self.user_store.delete_profile(profile_id)
         return self.user_store.delete_profile(profile_id)
