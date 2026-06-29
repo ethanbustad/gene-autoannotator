@@ -28,11 +28,20 @@ function updateFieldAtIndex(fields, index, patch) {
 
 export default function CustomFieldsEditor({
   customFields,
+  defaultFieldOrtholog,
   keggOrganismCode,
   onChange,
+  onDefaultFieldOrthologChange,
 }) {
   const orthologEnabled = canEnableOrthologAllowed(keggOrganismCode);
   const usedKeys = new Set((customFields || []).map((field) => field.key));
+
+  function updateDefaultOrtholog(key, enabled) {
+    onDefaultFieldOrthologChange({
+      ...(defaultFieldOrtholog || {}),
+      [key]: enabled,
+    });
+  }
 
   function addBlankField() {
     onChange([...(customFields || []), createEmptyCustomField()]);
@@ -72,10 +81,30 @@ export default function CustomFieldsEditor({
         {REQUIRED_DEFAULT_FIELDS.map((field) => (
           <div
             key={field.key}
-            className="rounded-xl border workbench-border bg-white/70 p-3 text-sm"
+            className="grid gap-3 rounded-xl border workbench-border bg-white/70 p-3 text-sm"
           >
-            <p className="workbench-foreground font-semibold">{field.label}</p>
-            <p className="workbench-muted mt-1 text-xs">{field.key}</p>
+            <div>
+              <p className="workbench-foreground font-semibold">{field.label}</p>
+              <p className="workbench-muted mt-1 text-xs">{field.key}</p>
+              <p className="workbench-muted mt-2 text-xs leading-5">{field.description}</p>
+            </div>
+            <label className="flex items-start gap-3 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={Boolean(defaultFieldOrtholog?.[field.key])}
+                disabled={!orthologEnabled}
+                onChange={(event) => updateDefaultOrtholog(field.key, event.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Allow ortholog fallback for this field
+                {!orthologEnabled ? (
+                  <span className="workbench-muted mt-1 block text-xs font-normal">
+                    Set a KEGG organism code above to enable ortholog fallback.
+                  </span>
+                ) : null}
+              </span>
+            </label>
           </div>
         ))}
       </div>

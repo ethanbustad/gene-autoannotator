@@ -75,6 +75,25 @@ def test_llm_schema_fields_includes_functional_category():
     assert 'drug_susc_impact' in keys
 
 
+def test_default_field_ortholog_override_applies_to_resolve():
+    profile = organisms.profile_from_mapping({
+        'profile_id': 'ortholog-defaults',
+        'canonical_name': 'Ortholog defaults',
+        'species_name': 'Test species',
+        'kegg_organism_code': 'mtu',
+        'default_field_ortholog': {
+            'function': False,
+            'functional_category': True,
+        },
+    })
+
+    fields = field_defs.resolve_effective_fields(profile)
+    by_key = {field.key: field for field in fields}
+
+    assert by_key['function'].ortholog_allowed is False
+    assert by_key['functional_category'].ortholog_allowed is True
+
+
 def test_profile_from_mapping_accepts_custom_fields():
     profile = organisms.profile_from_mapping({
         'profile_id': 'custom-org',

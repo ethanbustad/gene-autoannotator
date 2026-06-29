@@ -42,6 +42,7 @@ class OrganismProfile:
     annotation_feature_value: str | None = None
     kegg_organism_code: str | None = None
     custom_fields: tuple = ()
+    default_field_ortholog: tuple = ()
     annotation_fields: tuple = ()  # legacy alias; use custom_fields
 
 
@@ -369,6 +370,7 @@ def profile_from_mapping(payload):
     kegg_code = payload.get('kegg_organism_code')
     if kegg_code is not None:
         kegg_code = str(kegg_code).strip() or None
+    default_field_ortholog = field_defs.default_field_ortholog_from_mapping(payload)
     return OrganismProfile(
         profile_id=payload["profile_id"],
         canonical_name=payload["canonical_name"],
@@ -384,6 +386,7 @@ def profile_from_mapping(payload):
         excluded_species_patterns=tuple(payload.get("excluded_species_patterns") or ()),
         kegg_organism_code=kegg_code,
         custom_fields=custom_fields,
+        default_field_ortholog=tuple(default_field_ortholog.items()),
     )
 
 

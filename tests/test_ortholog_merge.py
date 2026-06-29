@@ -2,6 +2,7 @@ import json
 
 from autoannotation import field_defs
 from autoannotation import metadata
+from autoannotation import organisms
 from autoannotation.metadata import (
     attach_ortholog_metadata,
     build_ortholog_pass_metadata,
@@ -46,6 +47,27 @@ def test_find_fields_needing_ortholog_skips_non_ortholog_allowed_fields():
     )
 
     assert missing == ['function']
+
+
+def test_find_fields_needing_ortholog_includes_functional_category_when_enabled():
+    annotation = {'function': 'DNA replication', 'functional_category': None}
+    coverage = {
+        'function': 'supported',
+        'functional_category': 'insufficient_evidence',
+    }
+    fields = field_defs.resolve_effective_fields(
+        organisms.profile_from_mapping({
+            'profile_id': 'fc-ortholog',
+            'canonical_name': 'FC ortholog',
+            'species_name': 'Test species',
+            'kegg_organism_code': 'mtu',
+            'default_field_ortholog': {'functional_category': True},
+        })
+    )
+
+    missing = find_fields_needing_ortholog(annotation, coverage, fields)
+
+    assert missing == ['functional_category']
 
 
 def test_merge_ortholog_evidence_fills_null_direct_fields_only():

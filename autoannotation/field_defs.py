@@ -181,6 +181,43 @@ def apply_ortholog_policy(fields, kegg_organism_code):
     )
 
 
+def default_field_ortholog_from_mapping(payload):
+    raw = payload.get('default_field_ortholog') or {}
+    if not isinstance(raw, dict):
+        raise ValueError('default_field_ortholog must be an object')
+    allowed_keys = {item.key for item in REQUIRED_DEFAULT_FIELDS}
+    result = {}
+    for key, value in raw.items():
+        if key not in allowed_keys:
+            raise ValueError(f'default_field_ortholog key {key!r} is not a default field')
+        result[key] = bool(value)
+    return result
+
+
+def _default_fields_for_profile(profile):
+    override_map = {}
+    raw_settings = getattr(profile, 'default_field_ortholog', None)
+    if isinstance(raw_settings, dict):
+        override_map = raw_settings
+    elif raw_settings:
+        override_map = dict(raw_settings)
+    merged = []
+    for field_def in REQUIRED_DEFAULT_FIELDS:
+        ortholog_allowed = override_map.get(field_def.key, field_def.ortholog_allowed)
+        merged.append(
+            AnnotationFieldDef(
+                key=field_def.key,
+                label=field_def.label,
+                description=field_def.description,
+                type=field_def.type,
+                required=field_def.required,
+                inference_strategy=field_def.inference_strategy,
+                ortholog_allowed=ortholog_allowed,
+            )
+        )
+    return tuple(merged)
+
+
 def resolve_effective_fields(profile):
     custom = profile.custom_fields if hasattr(profile, 'custom_fields') else ()
     if not custom and profile.annotation_fields:
@@ -191,7 +228,7 @@ def resolve_effective_fields(profile):
             if field.key not in default_keys
         )
     validate_custom_fields(custom)
-    fields = REQUIRED_DEFAULT_FIELDS + tuple(custom)
+    fields = _default_fields_for_profile(profile) + tuple(custom)
     return apply_ortholog_policy(fields, profile.kegg_organism_code)
 
 

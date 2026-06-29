@@ -4,7 +4,9 @@ import test from "node:test";
 import {
   buildProfilePayload,
   canEnableOrthologAllowed,
+  resolveProfileFieldsForDisplay,
   sanitizeCustomFieldsForPayload,
+  sanitizeDefaultFieldOrthologForPayload,
   splitLines,
 } from "./profileStore.js";
 
@@ -27,6 +29,10 @@ test("buildProfilePayload serializes profile form fields", () => {
       targetPatterns: "Custom organism",
       offTargetPatterns: "Other organism",
       excludedSpeciesPatterns: "",
+      defaultFieldOrtholog: {
+        function: true,
+        functional_category: false,
+      },
     }),
     {
       profile_id: "custom-profile",
@@ -43,8 +49,45 @@ test("buildProfilePayload serializes profile form fields", () => {
       excluded_species_patterns: [],
       kegg_organism_code: null,
       custom_fields: [],
+      default_field_ortholog: {
+        function: false,
+        functional_category: false,
+      },
     },
   );
+});
+
+test("sanitizeDefaultFieldOrthologForPayload clears ortholog without kegg code", () => {
+  assert.deepEqual(
+    sanitizeDefaultFieldOrthologForPayload(
+      { function: true, functional_category: true },
+      "",
+    ),
+    { function: false, functional_category: false },
+  );
+});
+
+test("resolveProfileFieldsForDisplay merges defaults and custom fields", () => {
+  const fields = resolveProfileFieldsForDisplay({
+    kegg_organism_code: "mtu",
+    default_field_ortholog: { functional_category: true },
+    custom_fields: [
+      {
+        key: "virulence_factor",
+        label: "Virulence factor",
+        description: "Contribution to virulence.",
+        ortholog_allowed: true,
+      },
+    ],
+  });
+
+  assert.equal(fields.length, 3);
+  assert.equal(fields[0].key, "function");
+  assert.equal(fields[0].isDefault, true);
+  assert.equal(fields[1].key, "functional_category");
+  assert.equal(fields[1].ortholog_allowed, true);
+  assert.equal(fields[2].key, "virulence_factor");
+  assert.equal(fields[2].isDefault, false);
 });
 
 test("sanitizeCustomFieldsForPayload clears ortholog_allowed without kegg code", () => {

@@ -35,7 +35,7 @@ test("profile workspace supports editing all reusable profile fields", async () 
     workspace,
     /import \{\s*createProfile,\s*deleteProfile,\s*getProfiles,\s*updateProfile,\s*\} from "\.\.\/lib\/api";/s,
   );
-  assert.match(workspace, /import \{ buildProfilePayload, profileToForm \} from "\.\.\/lib\/profileStore";/);
+  assert.match(workspace, /import \{ buildProfilePayload, profileToForm, resolveProfileFieldsForDisplay/);
 
   for (const field of [
     "profileId",
@@ -52,6 +52,7 @@ test("profile workspace supports editing all reusable profile fields", async () 
     "excludedSpeciesPatterns",
     "keggOrganismCode",
     "customFields",
+    "defaultFieldOrtholog",
   ]) {
     assert.match(workspace, new RegExp(`\\b${field}\\b`));
   }
@@ -127,5 +128,6 @@ test("profile rows are compact and expand details one at a time", async () => {
   assert.match(workspace, /const \[expandedProfileId, setExpandedProfileId\] = useState\(""\);/);
   assert.match(workspace, /expandedProfileId === profile\.profile_id/);
   assert.match(workspace, /setExpandedProfileId\(isExpanded \? "" : profile\.profile_id\)/);
-  assert.match(workspace, /\{isExpanded \? <ProfileDetailList profile=\{profile\} \/> : null\}/);
+  assert.match(workspace, /ProfileFieldsDisplay profile=\{profile\}/);
+  assert.match(workspace, /resolveProfileFieldsForDisplay/);
 });

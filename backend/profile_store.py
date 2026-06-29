@@ -50,6 +50,7 @@ def _copy_document(document):
         copied[field] = list(copied.get(field) or [])
     copied['custom_fields'] = list(copied.get('custom_fields') or copied.get('annotation_fields') or [])
     copied['annotation_fields'] = list(copied['custom_fields'])
+    copied['default_field_ortholog'] = dict(copied.get('default_field_ortholog') or {})
     return copied
 
 
@@ -94,6 +95,33 @@ def _normalize_custom_fields_payload(payload, kegg_code):
     ]
 
 
+def _normalize_default_field_ortholog_payload(payload, kegg_code):
+    try:
+        settings = field_defs.default_field_ortholog_from_mapping(payload)
+    except ValueError as exc:
+        raise InvalidProfileError(str(exc)) from exc
+    if not kegg_code:
+        settings = {key: False for key in settings}
+    for key, enabled in settings.items():
+        if enabled and not kegg_code:
+            raise InvalidProfileError(
+                f'ortholog_allowed requires kegg_organism_code (default field {key!r})'
+            )
+    base = {field.key: field.ortholog_allowed for field in field_defs.REQUIRED_DEFAULT_FIELDS}
+    base.update(settings)
+    return base
+
+
+def _serialize_default_field_ortholog(profile):
+    base = {field.key: field.ortholog_allowed for field in field_defs.REQUIRED_DEFAULT_FIELDS}
+    raw = getattr(profile, 'default_field_ortholog', ()) or ()
+    if isinstance(raw, dict):
+        base.update({key: bool(value) for key, value in raw.items()})
+    else:
+        base.update({key: bool(value) for key, value in raw})
+    return base
+
+
 def _profile_to_document(profile, source="builtin", trusted=True, read_only=False):
     document = asdict(profile)
     for field in PROFILE_ARRAY_FIELDS:
@@ -101,6 +129,7 @@ def _profile_to_document(profile, source="builtin", trusted=True, read_only=Fals
     custom_fields = _serialize_custom_fields(profile)
     document['custom_fields'] = custom_fields
     document['annotation_fields'] = custom_fields
+    document['default_field_ortholog'] = _serialize_default_field_ortholog(profile)
     document.pop('annotation_table_path', None)
     document.pop('annotation_id_column', None)
     document.pop('annotation_name_column', None)
@@ -199,6 +228,10 @@ def _normalize_profile_payload(payload):
         document['kegg_organism_code'],
     )
     document['annotation_fields'] = list(document['custom_fields'])
+    document['default_field_ortholog'] = _normalize_default_field_ortholog_payload(
+        payload,
+        document['kegg_organism_code'],
+    )
     if not document["target_patterns"]:
         document["target_patterns"] = _default_target_patterns(document)
     if payload.get("source"):

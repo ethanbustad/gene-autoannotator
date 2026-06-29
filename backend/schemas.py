@@ -41,6 +41,7 @@ class ProfilePayload(BaseModel):
     kegg_organism_code: str | None = None
     custom_fields: list[AnnotationFieldPayload] = Field(default_factory=list)
     annotation_fields: list[AnnotationFieldPayload] = Field(default_factory=list)
+    default_field_ortholog: dict[str, bool] = Field(default_factory=dict)
 
     @field_validator('kegg_organism_code', mode='before')
     @classmethod
@@ -65,6 +66,20 @@ class ProfilePayload(BaseModel):
             AnnotationFieldPayload(**field_def.to_dict()) for field_def in normalized
         ])
         object.__setattr__(self, 'annotation_fields', self.custom_fields)
+        object.__setattr__(
+            self,
+            'default_field_ortholog',
+            field_defs.default_field_ortholog_from_mapping({
+                'default_field_ortholog': self.default_field_ortholog,
+            }),
+        )
+        if self.default_field_ortholog:
+            kegg_code = self.kegg_organism_code
+            for key, enabled in self.default_field_ortholog.items():
+                if enabled and not kegg_code:
+                    raise ValueError(
+                        f'ortholog_allowed requires kegg_organism_code (default field {key!r})'
+                    )
         return self
 
 
@@ -191,6 +206,7 @@ class ProfileDetailResponse(ProfileResponse):
     kegg_organism_code: str | None = None
     custom_fields: list[dict[str, Any]] = Field(default_factory=list)
     annotation_fields: list[dict[str, Any]] = Field(default_factory=list)
+    default_field_ortholog: dict[str, bool] = Field(default_factory=dict)
     created_at: str | None = None
     updated_at: str | None = None
 

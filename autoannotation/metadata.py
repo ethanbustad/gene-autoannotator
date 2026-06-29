@@ -302,12 +302,14 @@ def _field_value_missing(value):
 
 
 def find_fields_needing_ortholog(direct_annotation, field_coverage, profile_field_defs):
+    from . import field_defs as field_defs_module
+
     missing = []
     coverage = field_coverage or {}
     for field_def in profile_field_defs:
-        if field_def.inference_strategy != 'paper_llm':
-            continue
         if not field_def.ortholog_allowed:
+            continue
+        if not field_defs_module.include_in_llm_schema(field_def):
             continue
         value = direct_annotation.get(field_def.key)
         coverage_status = coverage.get(field_def.key)

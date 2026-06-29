@@ -99,6 +99,42 @@ export function sanitizeCustomFieldsForPayload(customFields, keggOrganismCode) {
   }));
 }
 
+export function defaultFieldOrthologFromApi(profile) {
+  const base = Object.fromEntries(
+    REQUIRED_DEFAULT_FIELDS.map((field) => [field.key, field.ortholog_allowed]),
+  );
+  return { ...base, ...(profile?.default_field_ortholog || {}) };
+}
+
+export function sanitizeDefaultFieldOrthologForPayload(
+  defaultFieldOrtholog,
+  keggOrganismCode,
+) {
+  const keggEnabled = canEnableOrthologAllowed(keggOrganismCode);
+  return Object.fromEntries(
+    REQUIRED_DEFAULT_FIELDS.map((field) => [
+      field.key,
+      keggEnabled ? Boolean(defaultFieldOrtholog?.[field.key]) : false,
+    ]),
+  );
+}
+
+export function resolveProfileFieldsForDisplay(profile) {
+  const defaultOrtholog = defaultFieldOrthologFromApi(profile);
+  const keggEnabled = canEnableOrthologAllowed(profile?.kegg_organism_code);
+  const defaults = REQUIRED_DEFAULT_FIELDS.map((field) => ({
+    ...field,
+    ortholog_allowed: keggEnabled ? Boolean(defaultOrtholog[field.key]) : false,
+    isDefault: true,
+  }));
+  const custom = profileCustomFieldsFromApi(profile).map((field) => ({
+    ...field,
+    ortholog_allowed: keggEnabled ? Boolean(field.ortholog_allowed) : false,
+    isDefault: false,
+  }));
+  return [...defaults, ...custom];
+}
+
 export function profileCustomFieldsFromApi(profile) {
   const raw = profile?.custom_fields?.length
     ? profile.custom_fields
@@ -123,6 +159,10 @@ export function buildProfilePayload(values) {
     excluded_species_patterns: splitLines(values.excludedSpeciesPatterns),
     kegg_organism_code: keggOrganismCode,
     custom_fields: sanitizeCustomFieldsForPayload(values.customFields, keggOrganismCode),
+    default_field_ortholog: sanitizeDefaultFieldOrthologForPayload(
+      values.defaultFieldOrtholog,
+      keggOrganismCode,
+    ),
   };
   return payload;
 }
@@ -143,5 +183,6 @@ export function profileToForm(profile) {
     excludedSpeciesPatterns: (profile.excluded_species_patterns || []).join("\n"),
     keggOrganismCode: profile.kegg_organism_code || "",
     customFields: profileCustomFieldsFromApi(profile),
+    defaultFieldOrtholog: defaultFieldOrthologFromApi(profile),
   };
 }

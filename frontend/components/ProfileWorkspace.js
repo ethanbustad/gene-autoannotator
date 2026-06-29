@@ -13,7 +13,7 @@ import {
   groupProfilesBySpecies,
   PROFILE_SOURCE_FILTERS,
 } from "../lib/profileFilters";
-import { buildProfilePayload, profileToForm } from "../lib/profileStore";
+import { buildProfilePayload, profileToForm, resolveProfileFieldsForDisplay, sanitizeDefaultFieldOrthologForPayload } from "../lib/profileStore";
 import CustomFieldsEditor from "./CustomFieldsEditor";
 import RegexHelper from "./RegexHelper";
 
@@ -32,6 +32,10 @@ const emptyForm = {
   excludedSpeciesPatterns: "",
   keggOrganismCode: "",
   customFields: [],
+  defaultFieldOrtholog: {
+    function: true,
+    functional_category: false,
+  },
 };
 
 const textFields = [
@@ -107,6 +111,44 @@ function listToText(values) {
   return (values || []).join("\n");
 }
 
+function ProfileFieldsDisplay({ profile }) {
+  const fields = resolveProfileFieldsForDisplay(profile);
+
+  if (fields.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 border-t workbench-border pt-4">
+      <p className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
+        Annotation fields
+      </p>
+      <ul className="mt-3 grid gap-3">
+        {fields.map((field) => (
+          <li
+            key={field.key}
+            className="rounded-xl border workbench-border bg-white/70 p-3 text-sm"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="workbench-foreground font-semibold">{field.label}</p>
+                <p className="workbench-muted mt-1 font-mono text-xs">{field.key}</p>
+              </div>
+              <span className="workbench-muted rounded-full border workbench-border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                {field.isDefault ? "Default" : "Custom"}
+              </span>
+            </div>
+            <p className="workbench-muted mt-2 text-xs leading-5">{field.description}</p>
+            {field.ortholog_allowed ? (
+              <p className="workbench-muted mt-2 text-xs">Ortholog fallback enabled</p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function ProfileDetailList({ profile }) {
   const rows = [
     ["Species", profile.species_name],
@@ -120,29 +162,22 @@ function ProfileDetailList({ profile }) {
     ["Off-target patterns", profile.off_target_patterns?.join(", ")],
     ["Excluded species", profile.excluded_species_patterns?.join(", ")],
     ["KEGG organism code", profile.kegg_organism_code],
-    [
-      "Custom fields",
-      (profile.custom_fields || profile.annotation_fields || [])
-        .map((field) => field.key)
-        .join(", ") || null,
-    ],
   ].filter(([, value]) => value);
 
-  if (rows.length === 0) {
-    return null;
-  }
-
   return (
-    <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-      {rows.map(([label, value]) => (
-        <div key={label} className="border-t workbench-border pt-2">
-          <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
-            {label}
-          </dt>
-          <dd className="mt-1 text-[#3d463f]">{value}</dd>
-        </div>
-      ))}
-    </dl>
+    <>
+      <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="border-t workbench-border pt-2">
+            <dt className="workbench-muted text-xs font-bold uppercase tracking-[0.1em]">
+              {label}
+            </dt>
+            <dd className="mt-1 text-[#3d463f]">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <ProfileFieldsDisplay profile={profile} />
+    </>
   );
 }
 
@@ -196,6 +231,10 @@ export default function ProfileWorkspace() {
           ...item,
           ortholog_allowed: false,
         }));
+        next.defaultFieldOrtholog = sanitizeDefaultFieldOrthologForPayload(
+          current.defaultFieldOrtholog,
+          "",
+        );
       }
       return next;
     });
@@ -358,8 +397,12 @@ export default function ProfileWorkspace() {
 
             <CustomFieldsEditor
               customFields={form.customFields}
+              defaultFieldOrtholog={form.defaultFieldOrtholog}
               keggOrganismCode={form.keggOrganismCode}
               onChange={(customFields) => updateForm("customFields", customFields)}
+              onDefaultFieldOrthologChange={(defaultFieldOrtholog) =>
+                updateForm("defaultFieldOrtholog", defaultFieldOrtholog)
+              }
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
