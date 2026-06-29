@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from . import field_defs
+
 # Metadata is the audit trail attached to generated annotations. Keep curator-
 # facing confidence, paper selection, and field coverage information here rather
 # than blending it into the biological fields themselves.
@@ -8,6 +10,8 @@ SELECTION_MODE_BUDGET = 'cumulative_relevance_budget'
 
 METADATA_FIELDS = ('annotation_metadata', 'annotation_notes')
 COMPARISON_IGNORE_FIELDS = frozenset(METADATA_FIELDS)
+FIELD_PROVENANCE_DIRECT = 'direct'
+FIELD_PROVENANCE_ORTHolog_DERIVED = 'ortholog_derived'
 DEFAULT_EXCLUDED_WARNINGS = frozenset({
     'excluded_species',
     'missing_target_organism',
@@ -68,21 +72,36 @@ def build_quality_flags(
     return flags
 
 
-def build_field_coverage(annotation_fields):
+def build_field_coverage(annotation_fields, profile=None):
     coverage = {}
-    biology_fields = (
-        'function',
-        'functional_category',
-        'drug_susc_impact',
-        'infection_impact',
-        'essential_in_vitro',
-        'essential_in_vivo',
-    )
-    for field in biology_fields:
+    if profile is not None:
+        field_keys = field_defs.resolve_effective_fields(profile)
+    else:
+        field_keys = tuple(
+            field_defs.AnnotationFieldDef(
+                key=key,
+                label=key,
+                description='',
+                type='string' if key not in ('functional_category',) else 'array:string',
+                required=True,
+                inference_strategy='paper_llm',
+                ortholog_allowed=False,
+            )
+            for key in (
+                'function',
+                'functional_category',
+                'drug_susc_impact',
+                'infection_impact',
+                'essential_in_vitro',
+                'essential_in_vivo',
+            )
+        )
+    for field_def in field_keys:
+        field = field_def.key
         value = annotation_fields.get(field)
         if field not in annotation_fields or value is None or value == '' or value == []:
             coverage[field] = 'insufficient_evidence'
-        elif field in ('essential_in_vitro', 'essential_in_vivo'):
+        elif field_def.type == 'boolean' or field in ('essential_in_vitro', 'essential_in_vivo'):
             coverage[field] = 'supported'
         elif isinstance(value, str) and 'disagreement' in value.lower():
             coverage[field] = 'conflicting'
@@ -274,3 +293,112 @@ def merge_annotation_output(gene_distillation_json, annotation_metadata, field_c
     if 'annotation_notes' not in parsed:
         parsed['annotation_notes'] = None
     return parsed
+
+
+def _field_value_missing(value):
+    if value is None or value == '' or value == []:
+        return True
+    return False
+
+
+def find_fields_needing_ortholog(direct_annotation, field_coverage, profile_field_defs):
+    missing = []
+    coverage = field_coverage or {}
+    for field_def in profile_field_defs:
+        if field_def.inference_strategy != 'paper_llm':
+            continue
+        if not field_def.ortholog_allowed:
+            continue
+        value = direct_annotation.get(field_def.key)
+        coverage_status = coverage.get(field_def.key)
+        if _field_value_missing(value) or coverage_status == 'insufficient_evidence':
+            missing.append(field_def.key)
+    return missing
+
+
+def merge_ortholog_evidence(
+    direct_annotation,
+    ortholog_annotation,
+    fields_to_fill,
+    ortholog_hit,
+    *,
+    target_gene_id=None,
+    target_gene_name=None,
+):
+    merged = dict(direct_annotation)
+    metadata_block = dict(merged.get('annotation_metadata') or {})
+    field_provenance = dict(metadata_block.get('field_provenance') or {})
+    review_flags = dict(metadata_block.get('review_flags') or {})
+    fields_filled = []
+
+    for field_key in fields_to_fill:
+        direct_value = merged.get(field_key)
+        if not _field_value_missing(direct_value):
+            continue
+        ortholog_value = (ortholog_annotation or {}).get(field_key)
+        if _field_value_missing(ortholog_value):
+            continue
+        merged[field_key] = ortholog_value
+        field_provenance[field_key] = FIELD_PROVENANCE_ORTHolog_DERIVED
+        review_flags[field_key] = True
+        fields_filled.append(field_key)
+
+    if fields_filled:
+        ortholog_label = (
+            f'{ortholog_hit.source_organism_code}:{ortholog_hit.source_gene_id}'
+        )
+        if ortholog_hit.source_organism_name:
+            ortholog_label = (
+                f'{ortholog_hit.source_gene_id} ({ortholog_hit.source_organism_name})'
+            )
+        target_label = target_gene_id or 'target gene'
+        if target_gene_name:
+            target_label = f'{target_label} ({target_gene_name})'
+        note = (
+            f'Fields filled from ortholog evidence ({", ".join(fields_filled)}) using '
+            f'top KEGG SSDB hit {ortholog_label} (score {ortholog_hit.score}). '
+            f'These values describe the ortholog gene, not direct experimental evidence '
+            f'for {target_label}; curator review required.'
+        )
+        existing_notes = merged.get('annotation_notes')
+        if existing_notes:
+            merged['annotation_notes'] = f'{existing_notes}\n\n{note}'
+        else:
+            merged['annotation_notes'] = note
+
+    metadata_block['field_provenance'] = field_provenance
+    metadata_block['review_flags'] = review_flags
+    merged['annotation_metadata'] = metadata_block
+    return merged, fields_filled
+
+
+def build_ortholog_pass_metadata(
+    *,
+    ran,
+    skipped_reason=None,
+    fields_requested=None,
+    fields_filled=None,
+    papers_analyzed=None,
+    pmids_analyzed=None,
+):
+    return {
+        'ran': ran,
+        'skipped_reason': skipped_reason,
+        'fields_requested': list(fields_requested or []),
+        'fields_filled': list(fields_filled or []),
+        'papers_analyzed': list(papers_analyzed or []),
+        'pmids_analyzed': list(pmids_analyzed or []),
+    }
+
+
+def attach_ortholog_metadata(annotation, ortholog_hit, ortholog_pass_metadata):
+    if annotation is None:
+        return None
+    metadata_block = dict(annotation.get('annotation_metadata') or {})
+    if ortholog_hit is not None:
+        metadata_block['ortholog_top_hit'] = ortholog_hit.to_metadata()
+    else:
+        metadata_block['ortholog_top_hit'] = None
+    metadata_block['ortholog_pass'] = ortholog_pass_metadata
+    annotation['annotation_metadata'] = metadata_block
+    return annotation

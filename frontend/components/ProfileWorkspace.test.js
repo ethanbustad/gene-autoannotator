@@ -35,7 +35,7 @@ test("profile workspace supports editing all reusable profile fields", async () 
     workspace,
     /import \{\s*createProfile,\s*deleteProfile,\s*getProfiles,\s*updateProfile,\s*\} from "\.\.\/lib\/api";/s,
   );
-  assert.match(workspace, /import \{ buildProfilePayload \} from "\.\.\/lib\/profileStore";/);
+  assert.match(workspace, /import \{ buildProfilePayload, profileToForm \} from "\.\.\/lib\/profileStore";/);
 
   for (const field of [
     "profileId",
@@ -50,6 +50,8 @@ test("profile workspace supports editing all reusable profile fields", async () 
     "targetPatterns",
     "offTargetPatterns",
     "excludedSpeciesPatterns",
+    "keggOrganismCode",
+    "customFields",
   ]) {
     assert.match(workspace, new RegExp(`\\b${field}\\b`));
   }

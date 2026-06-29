@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Any
 
+from autoannotation import field_defs
 from autoannotation import organisms
 
 
@@ -47,13 +48,64 @@ def _copy_document(document):
     copied = dict(document)
     for field in PROFILE_ARRAY_FIELDS:
         copied[field] = list(copied.get(field) or [])
+    copied['custom_fields'] = list(copied.get('custom_fields') or copied.get('annotation_fields') or [])
+    copied['annotation_fields'] = list(copied['custom_fields'])
     return copied
+
+
+def _serialize_custom_fields(profile):
+    custom = getattr(profile, 'custom_fields', ()) or ()
+    return [
+        field_def.to_dict() if hasattr(field_def, 'to_dict') else dict(field_def)
+        for field_def in custom
+    ]
+
+
+def _normalize_custom_fields_payload(payload, kegg_code):
+    raw = payload.get('custom_fields')
+    if raw is None:
+        raw = payload.get('annotation_fields') or []
+    if not isinstance(raw, list):
+        raise InvalidProfileError('custom_fields must be a list')
+    default_keys = {item.key for item in field_defs.REQUIRED_DEFAULT_FIELDS}
+    parsed = []
+    for item in raw:
+        if not isinstance(item, dict):
+            raise InvalidProfileError('each custom field must be an object')
+        field_def = field_defs.AnnotationFieldDef.from_mapping(item)
+        if field_def.key in default_keys:
+            raise InvalidProfileError(
+                f'cannot override required default field {field_def.key!r}'
+            )
+        if field_def.ortholog_allowed and not kegg_code:
+            raise InvalidProfileError(
+                f'ortholog_allowed requires kegg_organism_code (field {field_def.key!r})'
+            )
+        parsed.append(field_def)
+    field_defs.validate_custom_fields(tuple(parsed))
+    adjusted = field_defs.apply_ortholog_policy(
+        field_defs.REQUIRED_DEFAULT_FIELDS + tuple(parsed),
+        kegg_code,
+    )
+    return [
+        field_def.to_dict()
+        for field_def in adjusted
+        if field_def.key not in default_keys
+    ]
 
 
 def _profile_to_document(profile, source="builtin", trusted=True, read_only=True):
     document = asdict(profile)
     for field in PROFILE_ARRAY_FIELDS:
         document[field] = list(document.get(field) or [])
+    custom_fields = _serialize_custom_fields(profile)
+    document['custom_fields'] = custom_fields
+    document['annotation_fields'] = custom_fields
+    document.pop('annotation_table_path', None)
+    document.pop('annotation_id_column', None)
+    document.pop('annotation_name_column', None)
+    document.pop('annotation_feature_column', None)
+    document.pop('annotation_feature_value', None)
     document["source"] = source
     document["trusted"] = trusted
     document["read_only"] = read_only
@@ -141,6 +193,12 @@ def _normalize_profile_payload(payload):
     }
     for field in PROFILE_ARRAY_FIELDS:
         document[field] = _list_field(payload, field)
+    document['kegg_organism_code'] = _optional_text(payload, 'kegg_organism_code')
+    document['custom_fields'] = _normalize_custom_fields_payload(
+        payload,
+        document['kegg_organism_code'],
+    )
+    document['annotation_fields'] = list(document['custom_fields'])
     if not document["target_patterns"]:
         document["target_patterns"] = _default_target_patterns(document)
     for field in PROFILE_REGEX_FIELDS:

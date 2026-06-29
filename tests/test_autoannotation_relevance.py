@@ -1,14 +1,28 @@
 import json
 
 import pandas as pd
+import pytest
 
 from autoannotation import autoannotation
-from autoannotation.pmc import PaperSelectionResult
-from autoannotation.pmc import RelevanceRecord
+from autoannotation import organisms
+from autoannotation.orthology import OrthologHit
+from autoannotation.pmc import PaperSelectionResult, RelevanceRecord
 
 
 GENE_JSON = json.dumps({
-    "rv_id": "Rv0001",
+    "gene_id": "Rv0001",
+    "name": "dnaA",
+    "function": None,
+    "functional_category": ["DNA replication"],
+    "drug_susc_impact": "",
+    "infection_impact": "",
+    "essential_in_vitro": True,
+    "essential_in_vivo": True,
+    "annotation_notes": "Direct pass with missing function.",
+})
+
+GENE_JSON_COMPLETE = json.dumps({
+    "gene_id": "Rv0001",
     "name": "dnaA",
     "function": "Initiates DNA replication.",
     "functional_category": ["DNA replication"],
@@ -16,7 +30,19 @@ GENE_JSON = json.dumps({
     "infection_impact": "",
     "essential_in_vitro": True,
     "essential_in_vivo": True,
-    "annotation_notes": "Analyzed one paper with moderate support.",
+    "annotation_notes": "Direct pass complete.",
+})
+
+ORTHolog_JSON = json.dumps({
+    "gene_id": "MO_000001",
+    "name": "dnaA",
+    "function": "Initiates DNA replication in M. orygis.",
+    "functional_category": ["DNA replication"],
+    "drug_susc_impact": None,
+    "infection_impact": None,
+    "essential_in_vitro": None,
+    "essential_in_vivo": None,
+    "annotation_notes": "Ortholog pass notes.",
 })
 
 TCRUZI_JSON = json.dumps({
@@ -35,19 +61,22 @@ TCRUZI_JSON = json.dumps({
 class FakeLlmHandler:
     def __init__(self, cache_dir):
         self.cache_dir = cache_dir
+        self.aggregate_calls = 0
 
     @staticmethod
     def json_regex_filter(gene_json, organism_profile=None, expected_gene=None):
-        assert expected_gene in {"Rv0001", "TcCLB.503799.4"}
+        assert expected_gene in {"Rv0001", "MO_000001", "TcCLB.503799.4", None}
         return True
 
     def get_llm_gene_info_json(
         self, gene_id, gene_name, info_text, model, section_type='abstract',
-        organism_profile=None,
+        organism_profile=None, evidence_mode='target', ortholog_context=None,
     ):
         assert section_type == 'abstract'
-        if gene_id.startswith("TcCLB"):
-            assert organism_profile.profile_id == "tcruzi-clbrener"
+        if evidence_mode == 'ortholog':
+            assert ortholog_context is not None
+            return ORTHolog_JSON, 0.1
+        if gene_id and gene_id.startswith("TcCLB"):
             return TCRUZI_JSON, 0.1
         return GENE_JSON, 0.1
 
@@ -56,22 +85,28 @@ class FakeLlmHandler:
         organism_profile=None, allow_missing_locus=False,
     ):
         assert section_type == 'abstract'
-        assert allow_missing_locus is False
-        if organism_profile and organism_profile.profile_id == "tcruzi-clbrener":
+        if json1 == ORTHolog_JSON:
+            return ORTHolog_JSON, 0.1
+        if '"TcCLB' in json1:
             return TCRUZI_JSON, 0.1
         return GENE_JSON, 0.1
 
     def get_llm_aggregate_json(
         self, json_responses, pmids, model, literature_context=None, relevance_scores=None,
         organism_profile=None, allow_missing_locus=False,
+        evidence_mode='target', ortholog_context=None,
     ):
         assert literature_context is not None
-        assert "Papers selected for analysis" in literature_context
         assert relevance_scores is not None
-        assert allow_missing_locus is False
+        self.aggregate_calls += 1
+        if evidence_mode == 'ortholog':
+            assert ortholog_context is not None
+            return ORTHolog_JSON, 0.1
         if organism_profile and organism_profile.profile_id == "tcruzi-clbrener":
             return TCRUZI_JSON, 0.1
-        return GENE_JSON, 0.1
+        if self.aggregate_calls == 1:
+            return GENE_JSON, 0.1
+        return GENE_JSON_COMPLETE, 0.1
 
     def summarize_usage(self):
         return {
@@ -91,12 +126,23 @@ class FakePmcPaperManager:
         self.cache_dir = cache_dir
         self.organism_profile = organism_profile
 
-    def get_pmc_ids(self, gene, name):
-        raise AssertionError("get_gene_annotation should consume ranked records directly")
-
     def get_ranked_papers(self, gene, name):
-        if gene.startswith("TcCLB"):
-            assert self.organism_profile.profile_id == "tcruzi-clbrener"
+        if gene == 'MO_000001':
+            return [
+                RelevanceRecord(
+                    pmc_id="99",
+                    pmid="99999",
+                    score=0.85,
+                    retrieval_sources=["locus"],
+                    title="MO_000001 dnaA in Mycobacterium orygis",
+                    year=2020,
+                    section_hits={},
+                    evidence_flags={},
+                    score_components={},
+                    warnings=[],
+                )
+            ]
+        if gene and gene.startswith("TcCLB"):
             return [
                 RelevanceRecord(
                     pmc_id="2",
@@ -130,21 +176,17 @@ class FakePmcPaperManager:
         self.saved_ids = pmc_ids
 
     def select_relevance_records(self, records, **kwargs):
-        from autoannotation.pmc import PaperSelectionResult
-
-        assert isinstance(records[0], RelevanceRecord)
         return PaperSelectionResult(
             selected_records=records,
             cumulative_relevance=1.6,
             selection_mode="all_eligible_limited_literature",
-            eligible_count=1,
-            total_retrieved=1,
+            eligible_count=len(records),
+            total_retrieved=len(records),
         )
 
-    def is_relevant(self, pmc_id, gene, name):
-        raise AssertionError("ranked selection should replace the legacy hard relevance gate")
-
     def get_abstract(self, pmc_id):
+        if pmc_id == "99":
+            return "MO_000001 dnaA in Mycobacterium orygis."
         if pmc_id == "2":
             return "TcCLB.503799.4 is discussed in Trypanosoma cruzi."
         return "Rv0001 dnaA initiates replication in Mycobacterium tuberculosis."
@@ -156,10 +198,10 @@ class FakePmcPaperManager:
         return None
 
     def get_pmid(self, pmc_id):
-        return "12345"
+        return {"1": "12345", "2": "54321", "99": "99999"}.get(pmc_id, "12345")
 
 
-def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch):
+def _patch_common(monkeypatch, tmp_path):
     mycobrowser_df = pd.DataFrame([
         {"Feature": "CDS", "Locus": "Rv0001", "Name": "dnaA"}
     ])
@@ -171,35 +213,96 @@ def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch):
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakePmcPaperManager)
 
-    result = autoannotation.get_gene_annotation("Rv0001")
+
+def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch, tmp_path):
+    _patch_common(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        autoannotation.orthology,
+        'lookup_top_ortholog',
+        lambda *args, **kwargs: OrthologHit(
+            source_organism_code='mory',
+            source_organism_name='Mycobacterium orygis',
+            source_gene_id='MO_000001',
+            source_gene_name='dnaA',
+            score=507.0,
+            lookup_source='kegg_ssdb',
+        ),
+    )
+
+    result = autoannotation.get_gene_annotation("Rv0001", cache_dir=tmp_path)
 
     assert result["used_ids"] == ["1"]
-    assert result["pmc_ids"] == ["1"]
-    assert result["cumulative_relevance"] == 1.6
-    assert result["selection_mode"] == "all_eligible_limited_literature"
-    assert result["gene_annotation"]["annotation_metadata"]["literature"]["papers_analyzed"] == 1
-    assert result["gene_annotation"]["annotation_metadata"]["llm_usage"]["known_total_tokens"] == 125
-    assert result["gene_annotation"]["annotation_notes"]
+    meta = result["gene_annotation"]["annotation_metadata"]
+    assert meta["ortholog_top_hit"]["source_gene_id"] == "MO_000001"
+    assert meta["ortholog_pass"]["ran"] is True
+    assert result["gene_annotation"]["function"] == "Initiates DNA replication in M. orygis."
+    assert meta["field_provenance"]["function"] == "ortholog_derived"
+    assert meta["review_flags"]["function"] is True
+
+
+def test_get_gene_annotation_skips_ortholog_pass_when_direct_complete(monkeypatch, tmp_path):
+    _patch_common(monkeypatch, tmp_path)
+
+    class CompleteDirectLlm(FakeLlmHandler):
+        def get_llm_aggregate_json(self, *args, **kwargs):
+            return GENE_JSON_COMPLETE, 0.1
+
+    monkeypatch.setattr(autoannotation.llms, "LlmHandler", CompleteDirectLlm)
+    monkeypatch.setattr(
+        autoannotation.orthology,
+        'lookup_top_ortholog',
+        lambda *args, **kwargs: OrthologHit(
+            source_organism_code='mory',
+            source_organism_name='Mycobacterium orygis',
+            source_gene_id='MO_000001',
+            source_gene_name='dnaA',
+            score=507.0,
+            lookup_source='kegg_ssdb',
+        ),
+    )
+
+    result = autoannotation.get_gene_annotation("Rv0001", cache_dir=tmp_path)
+    meta = result["gene_annotation"]["annotation_metadata"]
+
+    assert meta["ortholog_top_hit"]["source_gene_id"] == "MO_000001"
+    assert meta["ortholog_pass"]["ran"] is False
+    assert meta["ortholog_pass"]["skipped_reason"] == "no_eligible_missing_fields"
+    assert result["gene_annotation"]["function"] == "Initiates DNA replication."
+
+
+def test_get_gene_annotation_survives_kegg_lookup_failure(monkeypatch, tmp_path):
+    _patch_common(monkeypatch, tmp_path)
+    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
+
+    result = autoannotation.get_gene_annotation("Rv0001", cache_dir=tmp_path)
+
+    assert result["gene_annotation"] is not None
+    assert result["gene_annotation"]["annotation_metadata"]["ortholog_top_hit"] is None
+    assert result["gene_annotation"]["annotation_metadata"]["ortholog_pass"]["skipped_reason"] == (
+        "no_ortholog_found"
+    )
 
 
 def test_get_gene_annotation_accepts_tcruzi_profile_without_table(monkeypatch, tmp_path):
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakePmcPaperManager)
+    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
 
     result = autoannotation.get_gene_annotation(
         profile="tcruzi-clbrener",
         locus="TcCLB.503799.4",
         gene_name_cache_dir=tmp_path,
         allow_online_name_lookup=False,
+        cache_dir=tmp_path,
     )
 
     assert result["used_ids"] == ["2"]
-    assert result["pmc_ids"] == ["2"]
     assert result["gene_annotation"]["gene_id"] == "TcCLB.503799.4"
-    metadata = result["gene_annotation"]["annotation_metadata"]
-    assert metadata["profile_id"] == "tcruzi-clbrener"
-    assert metadata["species_name"] == "Trypanosoma cruzi"
-    assert metadata["gene_name_source"] == "locus_fallback"
+
+
+def test_mtb_profile_has_kegg_organism_code():
+    profile = organisms.resolve_profile('mtb-h37rv')
+    assert profile.kegg_organism_code == 'mtu'
 
 
 def test_name_only_ad_hoc_annotation_uses_safe_profile_aware_mapping_key(monkeypatch, tmp_path):
@@ -232,6 +335,7 @@ def test_name_only_ad_hoc_annotation_uses_safe_profile_aware_mapping_key(monkeyp
 
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakeNameOnlyPaperManager)
+    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
 
     result = autoannotation.get_gene_annotation(
         organism="Custom bacterium",

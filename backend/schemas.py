@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from autoannotation import field_defs
 from autoannotation import gene_names
 
 
@@ -12,6 +13,59 @@ def _normalize_optional_string(value):
         value = value.strip()
         return value or None
     return value
+
+
+class AnnotationFieldPayload(BaseModel):
+    key: str = Field(min_length=1)
+    label: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    type: Literal['string', 'boolean', 'array:string'] = 'string'
+    required: bool = False
+    inference_strategy: Literal['paper_llm', 'go_terms', 'essentiality_db'] = 'paper_llm'
+    ortholog_allowed: bool = False
+
+
+class ProfilePayload(BaseModel):
+    profile_id: str = Field(min_length=1)
+    canonical_name: str = Field(min_length=1)
+    species_name: str = Field(min_length=1)
+    strain: str | None = None
+    synonyms: list[str] = Field(default_factory=list)
+    species_synonyms: list[str] = Field(default_factory=list)
+    strain_synonyms: list[str] = Field(default_factory=list)
+    locus_regex: str | None = None
+    search_terms: list[str] = Field(default_factory=list)
+    target_patterns: list[str] = Field(default_factory=list)
+    off_target_patterns: list[str] = Field(default_factory=list)
+    excluded_species_patterns: list[str] = Field(default_factory=list)
+    kegg_organism_code: str | None = None
+    custom_fields: list[AnnotationFieldPayload] = Field(default_factory=list)
+    annotation_fields: list[AnnotationFieldPayload] = Field(default_factory=list)
+
+    @field_validator('kegg_organism_code', mode='before')
+    @classmethod
+    def normalize_kegg_code(cls, value):
+        return _normalize_optional_string(value)
+
+    @model_validator(mode='after')
+    def normalize_custom_fields(self):
+        custom = self.custom_fields or self.annotation_fields or []
+        kegg_code = self.kegg_organism_code
+        normalized = []
+        for item in custom:
+            field_def = field_defs.AnnotationFieldDef.from_mapping(item.model_dump())
+            field_defs.validate_custom_field(field_def)
+            if field_def.ortholog_allowed and not kegg_code:
+                raise ValueError(
+                    f'ortholog_allowed requires kegg_organism_code (field {field_def.key!r})'
+                )
+            normalized.append(field_def)
+        field_defs.validate_custom_fields(tuple(normalized))
+        object.__setattr__(self, 'custom_fields', [
+            AnnotationFieldPayload(**field_def.to_dict()) for field_def in normalized
+        ])
+        object.__setattr__(self, 'annotation_fields', self.custom_fields)
+        return self
 
 
 class AnnotationJobRequest(BaseModel):
@@ -35,6 +89,8 @@ class AnnotationJobRequest(BaseModel):
     target_patterns: list[str] = Field(default_factory=list)
     off_target_patterns: list[str] = Field(default_factory=list)
     excluded_species_patterns: list[str] = Field(default_factory=list)
+    kegg_organism_code: str | None = None
+    annotation_fields: list[dict[str, object]] = Field(default_factory=list)
 
     @field_validator(
         "profile",
@@ -71,6 +127,8 @@ class ValidationRequest(BaseModel):
     target_patterns: list[str] = Field(default_factory=list)
     off_target_patterns: list[str] = Field(default_factory=list)
     excluded_species_patterns: list[str] = Field(default_factory=list)
+    kegg_organism_code: str | None = None
+    annotation_fields: list[dict[str, object]] = Field(default_factory=list)
 
     @field_validator(
         "profile",
@@ -107,21 +165,6 @@ class ProfileResponse(BaseModel):
     locus_regex: str | None
 
 
-class ProfilePayload(BaseModel):
-    profile_id: str = Field(min_length=1)
-    canonical_name: str = Field(min_length=1)
-    species_name: str = Field(min_length=1)
-    strain: str | None = None
-    synonyms: list[str] = Field(default_factory=list)
-    species_synonyms: list[str] = Field(default_factory=list)
-    strain_synonyms: list[str] = Field(default_factory=list)
-    locus_regex: str | None = None
-    search_terms: list[str] = Field(default_factory=list)
-    target_patterns: list[str] = Field(default_factory=list)
-    off_target_patterns: list[str] = Field(default_factory=list)
-    excluded_species_patterns: list[str] = Field(default_factory=list)
-
-
 class RegexFromExamplesRequest(BaseModel):
     examples: list[str] = Field(default_factory=list)
 
@@ -145,6 +188,9 @@ class ProfileDetailResponse(ProfileResponse):
     target_patterns: list[str] = Field(default_factory=list)
     off_target_patterns: list[str] = Field(default_factory=list)
     excluded_species_patterns: list[str] = Field(default_factory=list)
+    kegg_organism_code: str | None = None
+    custom_fields: list[dict[str, Any]] = Field(default_factory=list)
+    annotation_fields: list[dict[str, Any]] = Field(default_factory=list)
     created_at: str | None = None
     updated_at: str | None = None
 

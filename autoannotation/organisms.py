@@ -1,6 +1,7 @@
 import re
 from dataclasses import asdict, dataclass
 
+from . import field_defs
 from . import gene_names
 
 # Organism profiles are the boundary between general annotation logic and
@@ -39,6 +40,9 @@ class OrganismProfile:
     annotation_name_column: str | None = None
     annotation_feature_column: str | None = None
     annotation_feature_value: str | None = None
+    kegg_organism_code: str | None = None
+    custom_fields: tuple = ()
+    annotation_fields: tuple = ()  # legacy alias; use custom_fields
 
 
 @dataclass(frozen=True)
@@ -143,6 +147,8 @@ PROFILES = (
         annotation_name_column='Name',
         annotation_feature_column='Feature',
         annotation_feature_value='CDS',
+        kegg_organism_code='mtu',
+        custom_fields=field_defs.MTB_DEFAULT_CUSTOM_FIELDS,
     ),
     OrganismProfile(
         profile_id="morygis-51145",
@@ -356,6 +362,13 @@ def validate_locus(profile, locus):
 
 
 def profile_from_mapping(payload):
+    raw_custom = payload.get('custom_fields')
+    if raw_custom is None:
+        raw_custom = payload.get('annotation_fields')
+    custom_fields = field_defs.custom_fields_from_mappings(raw_custom or ())
+    kegg_code = payload.get('kegg_organism_code')
+    if kegg_code is not None:
+        kegg_code = str(kegg_code).strip() or None
     return OrganismProfile(
         profile_id=payload["profile_id"],
         canonical_name=payload["canonical_name"],
@@ -369,6 +382,8 @@ def profile_from_mapping(payload):
         target_patterns=tuple(payload.get("target_patterns") or ()),
         off_target_patterns=tuple(payload.get("off_target_patterns") or ()),
         excluded_species_patterns=tuple(payload.get("excluded_species_patterns") or ()),
+        kegg_organism_code=kegg_code,
+        custom_fields=custom_fields,
     )
 
 

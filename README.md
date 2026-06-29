@@ -120,6 +120,15 @@ python -m autoannotation.validate --profile mtb-h37rv --locus Rv0001
 python -m autoannotation.validate --organism "Trypanosoma cruzi" --strain "CL Brener" --locus TcCLB.503799.4
 ```
 
+Look up the top KEGG SSDB ortholog for a target gene (same profile/locus resolution as jobs):
+
+```bash
+python -m autoannotation.ortholog_lookup --profile mtb-h37rv --locus Rv3407
+python -m autoannotation.ortholog_lookup mtb-h37rv Rv3407
+```
+
+The profile must define `kegg_organism_code` (e.g. `mtu` for MTB H37Rv). Results are cached under `.cache/orthologs/`.
+
 Annotation targets require a profile or organism plus either a gene name or a
 locus. Supplying both improves validation and retrieval; name-only submissions
 can proceed when the name becomes the primary identifier or can be resolved to a

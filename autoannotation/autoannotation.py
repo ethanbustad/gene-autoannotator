@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+from dataclasses import dataclass
 
 import pandas as pd
 
@@ -9,10 +10,12 @@ import pandas as pd
 # resolution, paper retrieval, model prompting, and metadata construction; this
 # function keeps those contracts in one linear flow so CLI and web jobs share
 # the same behavior.
+from . import field_defs
 from . import llms
 from . import gene_names
 from . import metadata
 from . import organisms
+from . import orthology
 from . import pmc
 from . import targets
 from . import utils
@@ -22,6 +25,17 @@ from .models import MODEL_SUMMARY, MODEL_AGGREGATION, MODEL_CONSENSUS
 logging.basicConfig(format='%(asctime)s %(levelname).1s | %(message)s')
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
+
+@dataclass
+class PaperAnnotationPassResult:
+    gene_distillation: str | None
+    ranked_papers: list
+    selection: pmc.PaperSelectionResult
+    used_pmc_ids: list
+    pmids_analyzed: list
+    sections_analyzed: int
+    cumulative_relevance: float
 
 
 def _safe_mapping_component(value):
@@ -62,6 +76,166 @@ def _profile_lookup_from_config(profile_config):
         return None
 
     return lookup_profile
+
+
+def run_paper_annotation_pass(
+    gene,
+    name,
+    display_gene,
+    organism_profile,
+    *,
+    llm_handler,
+    paper_manager,
+    cache_key,
+    evidence_mode='target',
+    ortholog_context=None,
+    save_pmc_mapping=True,
+):
+    ranked_papers = paper_manager.get_ranked_papers(gene, name)
+    pmc_ids = [record.pmc_id for record in ranked_papers]
+    if save_pmc_mapping and cache_key is not None:
+        paper_manager.save_gene_pmc_ids(cache_key, pmc_ids)
+
+    if len(pmc_ids) < 3:
+        log.warning(
+            f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {display_gene}'
+        )
+
+    selection = paper_manager.select_relevance_records(
+        ranked_papers,
+        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
+        min_score=pmc.DEFAULT_MIN_SCORE,
+        max_rank=pmc.DEFAULT_MAX_RANK,
+        min_papers=pmc.DEFAULT_MIN_PAPERS,
+        max_papers=pmc.DEFAULT_MAX_PAPERS,
+    )
+    papers_to_analyze = [record.pmc_id for record in selection.selected_records]
+    cumulative_relevance = selection.cumulative_relevance
+
+    if selection.selection_mode == metadata.SELECTION_MODE_LIMITED:
+        log.warning(
+            f'Limited literature for gene {display_gene}: analyzing all '
+            f'{len(papers_to_analyze)} eligible paper{utils.s_if_plural(papers_to_analyze)} '
+            f'(fewer than minimum {pmc.DEFAULT_MIN_PAPERS})'
+        )
+
+    used = []
+    section_distillation_candidates = []
+    section_distillations = []
+    relevance_by_pmc_id = {record.pmc_id: record for record in ranked_papers}
+
+    for pmc_id in papers_to_analyze:
+        sections = []
+        relevance_record = relevance_by_pmc_id.get(pmc_id)
+        relevance_score = relevance_record.score if relevance_record is not None else 0.0
+        log.info(
+            f'Starting {evidence_mode} inference for gene {display_gene} with paper PMC{pmc_id} '
+            f'(relevance score {relevance_score:.3f})'
+        )
+        used.append(pmc_id)
+
+        abstract = paper_manager.get_abstract(pmc_id)
+        if abstract is not None:
+            sections.append(('abstract', abstract))
+        results = paper_manager.get_results(pmc_id)
+        if results is not None:
+            sections.append(('results', results))
+        discussion = paper_manager.get_discussion(pmc_id)
+        if discussion is not None and discussion != results:
+            sections.append(('discussion', discussion))
+
+        for label, section in sections:
+            section_distillation_candidates_cur = []
+            llm_gene = gene
+            llm_name = name or display_gene
+            for model in MODEL_SUMMARY:
+                section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
+                    llm_gene, llm_name, section, model, section_type=label,
+                    organism_profile=organism_profile,
+                    evidence_mode=evidence_mode,
+                    ortholog_context=ortholog_context,
+                )
+                section_distillation_candidates_cur.append(section_distillation_candidate)
+                section_distillation_candidates.append((
+                    f'PMC{pmc_id}', label, model, llm_gene, llm_name,
+                    section_distillation_candidate, duration_sec,
+                ))
+            section_distillation, duration_sec = llm_handler.get_llm_consensus_json(
+                section_distillation_candidates_cur[0], section_distillation_candidates_cur[1],
+                section_distillation_candidates_cur[2], model=MODEL_CONSENSUS,
+                section_type=label, organism_profile=organism_profile,
+                allow_missing_locus=gene is None,
+            )
+            section_distillations.append((
+                f'PMC{pmc_id}', label, MODEL_CONSENSUS, llm_gene, llm_name,
+                section_distillation, duration_sec,
+            ))
+
+    section_distillation_df = pd.DataFrame(
+        section_distillations,
+        columns=['PmcId', 'SectionType', 'Model', 'Gene', 'GeneName', 'Response', 'LlmDur'],
+    )
+    if len(section_distillation_df) > 0:
+        section_distillation_df.insert(
+            1, 'PMID', section_distillation_df['PmcId'].map(paper_manager.get_pmid),
+        )
+
+    section_distillation_filtered_df = section_distillation_df.loc[
+        section_distillation_df['Response'].map(
+            lambda response: llm_handler.json_regex_filter(
+                response,
+                organism_profile=organism_profile,
+                expected_gene=gene,
+            )
+        ),
+        :
+    ] if len(section_distillation_df) > 0 else section_distillation_df
+
+    pmids_analyzed = []
+    if len(section_distillation_filtered_df) > 0:
+        pmids_analyzed = [
+            str(pmid) for pmid in section_distillation_filtered_df['PMID'].dropna().unique()
+        ]
+
+    literature_context = metadata.build_literature_context_for_notes(
+        ranked_records=ranked_papers,
+        selected_records=selection.selected_records,
+        selection_mode=selection.selection_mode,
+        eligible_count=selection.eligible_count,
+        cumulative_relevance=cumulative_relevance,
+        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
+        min_papers=pmc.DEFAULT_MIN_PAPERS,
+    )
+
+    gene_distillation = None
+    if len(section_distillation_filtered_df) >= 1:
+        def _relevance_for_pmc_label(pmc_label):
+            pmc_id = str(pmc_label).removeprefix('PMC')
+            record = relevance_by_pmc_id.get(pmc_id)
+            return record.score if record is not None else None
+
+        relevance_scores = section_distillation_filtered_df['PmcId'].map(_relevance_for_pmc_label)
+        gene_distillation, _duration_sec = llm_handler.get_llm_aggregate_json(
+            section_distillation_filtered_df['Response'],
+            section_distillation_filtered_df['PMID'],
+            model=MODEL_AGGREGATION,
+            literature_context=literature_context,
+            relevance_scores=relevance_scores.tolist(),
+            organism_profile=organism_profile,
+            allow_missing_locus=gene is None,
+            evidence_mode=evidence_mode,
+            ortholog_context=ortholog_context,
+        )
+
+    return PaperAnnotationPassResult(
+        gene_distillation=gene_distillation,
+        ranked_papers=ranked_papers,
+        selection=selection,
+        used_pmc_ids=used,
+        pmids_analyzed=pmids_analyzed,
+        sections_analyzed=len(section_distillation_filtered_df),
+        cumulative_relevance=cumulative_relevance,
+    )
 
 
 def get_gene_annotation(
@@ -127,191 +301,52 @@ def get_gene_annotation(
         f'Starting annotation process for {profile_context.canonical_name} gene {display_gene}'
     )
     start = time.time()
+
+    ortholog_hit = None
+    kegg_code = profile_context.kegg_organism_code
+    if kegg_code and gene:
+        ortholog_hit = orthology.lookup_top_ortholog(kegg_code, gene, cache_dir=cache_dir)
+        if ortholog_hit is not None:
+            log.info(
+                'Top ortholog for %s:%s is %s:%s (score %s)',
+                kegg_code, gene,
+                ortholog_hit.source_organism_code,
+                ortholog_hit.source_gene_id,
+                ortholog_hit.score,
+            )
+    elif gene and not kegg_code:
+        log.warning(
+            'Profile %s has no kegg_organism_code; skipping ortholog lookup',
+            profile_context.profile_id,
+        )
+
     llm_handler = llms.LlmHandler(cache_dir)
     paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=profile_context)
 
-    ranked_papers = paper_manager.get_ranked_papers(gene, name)
-    pmc_ids = [record.pmc_id for record in ranked_papers]
-    paper_manager.save_gene_pmc_ids(_pmc_mapping_cache_key(profile_context, target), pmc_ids)
-    section_distillation_candidates = []
-    section_distillations = []
-
-    if len(pmc_ids) < 3:
-        log.warning(
-            f'Found only {len(pmc_ids)} paper{utils.s_if_plural(pmc_ids)} for gene {display_gene}'
-        )
-
-    # Selection happens before any LLM calls because each analyzed section is
-    # expensive: three model summaries, one consensus call, then final
-    # aggregation. Keep ranking changes in pmc/metadata so this orchestration
-    # remains about pipeline order rather than relevance policy.
-    selection = paper_manager.select_relevance_records(
-        ranked_papers,
-        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
-        min_score=pmc.DEFAULT_MIN_SCORE,
-        max_rank=pmc.DEFAULT_MAX_RANK,
-        min_papers=pmc.DEFAULT_MIN_PAPERS,
-        max_papers=pmc.DEFAULT_MAX_PAPERS,
+    direct_pass = run_paper_annotation_pass(
+        gene,
+        name,
+        display_gene,
+        profile_context,
+        llm_handler=llm_handler,
+        paper_manager=paper_manager,
+        cache_key=_pmc_mapping_cache_key(profile_context, target),
+        evidence_mode='target',
     )
-    papers_to_analyze = [record.pmc_id for record in selection.selected_records]
-    cumulative_relevance = selection.cumulative_relevance
-
-    if selection.selection_mode == metadata.SELECTION_MODE_LIMITED:
-        log.warning(
-            f'Limited literature for gene {display_gene}: analyzing all '
-            f'{len(papers_to_analyze)} eligible paper{utils.s_if_plural(papers_to_analyze)} '
-            f'(fewer than minimum {pmc.DEFAULT_MIN_PAPERS})'
-        )
-
-    used = []
-    relevance_by_pmc_id = {
-        record.pmc_id: record
-        for record in ranked_papers
-    }
-
-    for pmc_id in papers_to_analyze:
-        sections = []
-
-        # The annotator currently distills only abstract, results, and
-        # discussion. Methods are cached by the paper parser, but left out of
-        # annotation because they usually describe experimental setup rather
-        # than gene-level biological claims.
-        relevance_record = relevance_by_pmc_id.get(pmc_id)
-        relevance_score = relevance_record.score if relevance_record is not None else 0.0
-        log.info(
-            f'Starting inference process for gene {display_gene} with paper PMC{pmc_id} '
-            f'(relevance score {relevance_score:.3f})'
-        )
-        used.append(pmc_id)
-
-        abstract = paper_manager.get_abstract(pmc_id)
-        if abstract is not None:
-            sections.append(('abstract', abstract))
-        results = paper_manager.get_results(pmc_id)
-        if results is not None:
-            sections.append(('results', results))
-        discussion = paper_manager.get_discussion(pmc_id)
-        if discussion is not None and discussion != results:
-            sections.append(('discussion', discussion))
-
-        log.debug(
-            f'Obtained {len(sections)} relevant section{utils.s_if_plural(sections)} for ' + \
-                f'paper PMC{pmc_id}'
-        )
-
-        for label, section in sections:
-            log.debug(f'Starting processing for PMC{pmc_id} {label}')
-            section_distillation_candidates_cur = []
-            llm_gene = gene
-            llm_name = name or display_gene
-            # Consensus assumes exactly three independent candidates. Model
-            # configuration enforces that cardinality, so callers should change
-            # the consensus interface before changing the number of summaries.
-            for model in (MODEL_SUMMARY): #for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
-                section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
-                    llm_gene, llm_name, section, model, section_type=label,
-                    organism_profile=profile_context,
-                )
-                section_distillation_candidates_cur.append(section_distillation_candidate)
-                section_distillation_candidates.append((
-                    f'PMC{pmc_id}', label, model, llm_gene, llm_name, section_distillation_candidate,
-                    duration_sec
-                ))
-            section_distillation, duration_sec = llm_handler.get_llm_consensus_json(
-                section_distillation_candidates_cur[0], section_distillation_candidates_cur[1],
-                section_distillation_candidates_cur[2], model=MODEL_CONSENSUS,
-                section_type=label, organism_profile=profile_context,
-                allow_missing_locus=gene is None,
-            )
-            section_distillations.append((
-                f'PMC{pmc_id}', label, MODEL_CONSENSUS, llm_gene, llm_name,
-                section_distillation, duration_sec
-            ))
-
-    section_distillation_candidate_df = pd.DataFrame(
-        section_distillation_candidates,
-        columns=['PmcId', 'SectionType', 'Model', 'Gene', 'GeneName', 'Response', 'LlmDur'],
-    )
-
-    section_distillation_df = pd.DataFrame(
-        section_distillations,
-        columns=['PmcId', 'SectionType', 'Model', 'Gene', 'GeneName', 'Response', 'LlmDur'],
-    )
-    log.debug(' '.join((
-        'Finished paper distillation by LLM with',
-        str(len(section_distillation_candidate_df)),
-        'total summaries generated for',
-        str(len(section_distillation_df)),
-        f'total paper section{utils.s_if_plural(section_distillation_df)} for gene',
-        display_gene
-    )))
-    # The dataframes are temporary bookkeeping for prompt construction,
-    # filtering, and metadata. They are not part of a persisted schema.
-    section_distillation_df.insert(
-        1, 'PMID', section_distillation_df['PmcId'].map(paper_manager.get_pmid)
-    )
-
-    # This filter is a structural sanity check only: parseable JSON and profile-
-    # appropriate gene identity. It does not verify biological correctness.
-    section_distillation_filtered_df = section_distillation_df.loc[
-        section_distillation_df['Response'].map(
-            lambda response: llm_handler.json_regex_filter(
-                response,
-                organism_profile=profile_context,
-                expected_gene=gene,
-            )
-        ),
-        :
-    ]
-    log.debug(
-        f'Filtered down to {len(section_distillation_filtered_df)} valid ' +\
-            f'section{utils.s_if_plural(section_distillation_filtered_df)} for gene {display_gene}'
-    )
-
-    pmids_analyzed = []
-    if len(section_distillation_filtered_df) > 0:
-        pmids_analyzed = [
-            str(pmid) for pmid in section_distillation_filtered_df['PMID'].dropna().unique()
-        ]
-
-    literature_context = metadata.build_literature_context_for_notes(
-        ranked_records=ranked_papers,
-        selected_records=selection.selected_records,
-        selection_mode=selection.selection_mode,
-        eligible_count=selection.eligible_count,
-        cumulative_relevance=cumulative_relevance,
-        target_relevance=pmc.DEFAULT_TARGET_RELEVANCE,
-        min_papers=pmc.DEFAULT_MIN_PAPERS,
-    )
-
-    if len(section_distillation_filtered_df) >= 1:
-        def _relevance_for_pmc_label(pmc_label):
-            pmc_id = str(pmc_label).removeprefix('PMC')
-            record = relevance_by_pmc_id.get(pmc_id)
-            return record.score if record is not None else None
-
-        # Relevance scores and literature context are passed into the aggregate
-        # prompt so final notes can expose confidence and selection limitations
-        # instead of presenting every generated field as equally supported.
-        relevance_scores = section_distillation_filtered_df['PmcId'].map(_relevance_for_pmc_label)
-        gene_distillation, duration_sec = llm_handler.get_llm_aggregate_json(
-            section_distillation_filtered_df['Response'],
-            section_distillation_filtered_df['PMID'],
-            model=MODEL_AGGREGATION,
-            literature_context=literature_context,
-            relevance_scores=relevance_scores.tolist(),
-            organism_profile=profile_context,
-            allow_missing_locus=gene is None,
-        )
-    else:
-        gene_distillation = None
 
     duration = time.time() - start
     log.info(
-        f'Finished annotation process for gene {display_gene} in {utils.seconds_to_str(duration)}'
+        f'Finished direct annotation for gene {display_gene} in {utils.seconds_to_str(duration)}'
     )
 
     llm_usage = llm_handler.summarize_usage()
+    gene_distillation = direct_pass.gene_distillation
+    ranked_papers = direct_pass.ranked_papers
+    selection = direct_pass.selection
+    used = direct_pass.used_pmc_ids
+    pmids_analyzed = direct_pass.pmids_analyzed
+    cumulative_relevance = direct_pass.cumulative_relevance
+    pmc_ids = [record.pmc_id for record in ranked_papers]
 
     annotation_metadata = metadata.build_annotation_metadata(
         gene=gene,
@@ -320,7 +355,7 @@ def get_gene_annotation(
         selected_records=selection.selected_records,
         analyzed_pmc_ids=used,
         pmids_analyzed=pmids_analyzed,
-        sections_analyzed=len(section_distillation_filtered_df),
+        sections_analyzed=direct_pass.sections_analyzed,
         selection_mode=selection.selection_mode,
         eligible_count=selection.eligible_count,
         cumulative_relevance=cumulative_relevance,
@@ -348,13 +383,131 @@ def get_gene_annotation(
     )
 
     merged_annotation = None
+    field_coverage = None
     if gene_distillation is not None:
-        field_coverage = metadata.build_field_coverage(json.loads(gene_distillation))
+        field_coverage = metadata.build_field_coverage(
+            json.loads(gene_distillation),
+            profile=profile_context,
+        )
         merged_annotation = metadata.merge_annotation_output(
             gene_distillation,
             annotation_metadata,
             field_coverage=field_coverage,
         )
+
+    profile_field_defs = field_defs.resolve_annotation_field_defs(profile_context)
+    fields_needing_ortholog = []
+    if merged_annotation is not None:
+        fields_needing_ortholog = metadata.find_fields_needing_ortholog(
+            merged_annotation,
+            field_coverage,
+            profile_field_defs,
+        )
+
+    ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+        ran=False,
+        skipped_reason='not_evaluated',
+        fields_requested=fields_needing_ortholog,
+    )
+
+    if not fields_needing_ortholog:
+        ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+            ran=False,
+            skipped_reason='no_eligible_missing_fields',
+            fields_requested=[],
+        )
+    elif ortholog_hit is None:
+        ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+            ran=False,
+            skipped_reason='no_ortholog_found',
+            fields_requested=fields_needing_ortholog,
+        )
+    else:
+        ortholog_gene = ortholog_hit.source_gene_id
+        ortholog_name = orthology.resolve_ortholog_gene_name(
+            ortholog_hit,
+            gene_name_cache_dir,
+            allow_online_lookup=allow_online_name_lookup,
+        )
+        ortholog_profile = orthology.profile_for_kegg_organism(ortholog_hit.source_organism_code)
+        ortholog_display = ortholog_gene
+        ortholog_context = {
+            'target_gene_id': gene,
+            'target_gene_name': name or display_gene,
+            'ortholog_gene_id': ortholog_gene,
+            'ortholog_gene_name': ortholog_name,
+        }
+        log.info(
+            'Running ortholog paper pass for %s using %s:%s',
+            display_gene,
+            ortholog_hit.source_organism_code,
+            ortholog_gene,
+        )
+        ortholog_paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=ortholog_profile)
+        ortholog_pass = run_paper_annotation_pass(
+            ortholog_gene,
+            ortholog_name,
+            ortholog_display,
+            ortholog_profile,
+            llm_handler=llm_handler,
+            paper_manager=ortholog_paper_manager,
+            cache_key=None,
+            evidence_mode='ortholog',
+            ortholog_context=ortholog_context,
+            save_pmc_mapping=False,
+        )
+        if ortholog_pass.gene_distillation is None:
+            ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+                ran=True,
+                skipped_reason='no_ortholog_papers',
+                fields_requested=fields_needing_ortholog,
+                papers_analyzed=[],
+                pmids_analyzed=[],
+            )
+        else:
+            ortholog_parsed = json.loads(ortholog_pass.gene_distillation)
+            merged_annotation, fields_filled = metadata.merge_ortholog_evidence(
+                merged_annotation,
+                ortholog_parsed,
+                fields_needing_ortholog,
+                ortholog_hit,
+                target_gene_id=gene,
+                target_gene_name=name or display_gene,
+            )
+            if fields_filled:
+                field_coverage = metadata.build_field_coverage(
+                    merged_annotation,
+                    profile=profile_context,
+                )
+                merged_annotation['annotation_metadata']['field_coverage'] = field_coverage
+            ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+                ran=True,
+                skipped_reason=None if fields_filled else 'ortholog_fields_still_null',
+                fields_requested=fields_needing_ortholog,
+                fields_filled=fields_filled,
+                papers_analyzed=[f'PMC{pmc_id}' for pmc_id in ortholog_pass.used_pmc_ids],
+                pmids_analyzed=ortholog_pass.pmids_analyzed,
+            )
+            llm_usage = llm_handler.summarize_usage()
+            merged_annotation['annotation_metadata']['llm_usage'] = llm_usage
+            annotation_metadata['llm_usage'] = llm_usage
+
+    if merged_annotation is not None:
+        merged_annotation = metadata.attach_ortholog_metadata(
+            merged_annotation,
+            ortholog_hit,
+            ortholog_pass_metadata,
+        )
+    elif gene_distillation is None:
+        annotation_metadata['ortholog_top_hit'] = (
+            ortholog_hit.to_metadata() if ortholog_hit is not None else None
+        )
+        annotation_metadata['ortholog_pass'] = ortholog_pass_metadata
+
+    duration = time.time() - start
+    log.info(
+        f'Finished annotation process for gene {display_gene} in {utils.seconds_to_str(duration)}'
+    )
 
     return {
         "gene_distillation": gene_distillation,

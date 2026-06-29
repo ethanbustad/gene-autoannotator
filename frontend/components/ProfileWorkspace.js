@@ -13,7 +13,8 @@ import {
   groupProfilesBySpecies,
   PROFILE_SOURCE_FILTERS,
 } from "../lib/profileFilters";
-import { buildProfilePayload } from "../lib/profileStore";
+import { buildProfilePayload, profileToForm } from "../lib/profileStore";
+import CustomFieldsEditor from "./CustomFieldsEditor";
 import RegexHelper from "./RegexHelper";
 
 const emptyForm = {
@@ -29,6 +30,8 @@ const emptyForm = {
   targetPatterns: "",
   offTargetPatterns: "",
   excludedSpeciesPatterns: "",
+  keggOrganismCode: "",
+  customFields: [],
 };
 
 const textFields = [
@@ -104,23 +107,6 @@ function listToText(values) {
   return (values || []).join("\n");
 }
 
-function profileToForm(profile) {
-  return {
-    profileId: profile.profile_id || "",
-    canonicalName: profile.canonical_name || "",
-    speciesName: profile.species_name || "",
-    strain: profile.strain || "",
-    synonyms: listToText(profile.synonyms),
-    speciesSynonyms: listToText(profile.species_synonyms),
-    strainSynonyms: listToText(profile.strain_synonyms),
-    locusRegex: profile.locus_regex || "",
-    searchTerms: listToText(profile.search_terms),
-    targetPatterns: listToText(profile.target_patterns),
-    offTargetPatterns: listToText(profile.off_target_patterns),
-    excludedSpeciesPatterns: listToText(profile.excluded_species_patterns),
-  };
-}
-
 function ProfileDetailList({ profile }) {
   const rows = [
     ["Species", profile.species_name],
@@ -133,6 +119,13 @@ function ProfileDetailList({ profile }) {
     ["Target patterns", profile.target_patterns?.join(", ")],
     ["Off-target patterns", profile.off_target_patterns?.join(", ")],
     ["Excluded species", profile.excluded_species_patterns?.join(", ")],
+    ["KEGG organism code", profile.kegg_organism_code],
+    [
+      "Custom fields",
+      (profile.custom_fields || profile.annotation_fields || [])
+        .map((field) => field.key)
+        .join(", ") || null,
+    ],
   ].filter(([, value]) => value);
 
   if (rows.length === 0) {
@@ -196,7 +189,16 @@ export default function ProfileWorkspace() {
   }, []);
 
   function updateForm(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => {
+      const next = { ...current, [field]: value };
+      if (field === "keggOrganismCode" && !String(value || "").trim()) {
+        next.customFields = (current.customFields || []).map((item) => ({
+          ...item,
+          ortholog_allowed: false,
+        }));
+      }
+      return next;
+    });
   }
 
   function resetForm() {
@@ -333,6 +335,26 @@ export default function ProfileWorkspace() {
             </div>
 
             <RegexHelper onApply={(regex) => updateForm("locusRegex", regex)} />
+
+            <label className="grid gap-2 text-sm font-medium">
+              KEGG organism code (optional)
+              <input
+                value={form.keggOrganismCode}
+                onChange={(event) => updateForm("keggOrganismCode", event.target.value)}
+                className="workbench-input"
+                placeholder="e.g. mtu, msm, tcr"
+              />
+              <span className="workbench-muted text-xs font-normal leading-5">
+                Required for ortholog lookup. Annotation jobs work without it; ortholog
+                fallback and per-field ortholog allowance stay disabled until a code is set.
+              </span>
+            </label>
+
+            <CustomFieldsEditor
+              customFields={form.customFields}
+              keggOrganismCode={form.keggOrganismCode}
+              onChange={(customFields) => updateForm("customFields", customFields)}
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               {listFields.map((field) => (

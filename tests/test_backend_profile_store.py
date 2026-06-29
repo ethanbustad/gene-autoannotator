@@ -251,3 +251,42 @@ def test_profile_store_updates_and_deletes_user_profile():
     assert updated["canonical_name"] == "Trypanosoma cruzi edited"
     assert store.delete_user_profile("user-tcruzi") is True
     assert store.get_profile("user-tcruzi") is None
+
+
+def test_profile_store_persists_custom_fields_and_kegg_code():
+    store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+    created = store.create_user_profile({
+        **user_profile_payload(profile_id="user-custom-fields"),
+        "kegg_organism_code": "msm",
+        "custom_fields": [{
+            "key": "virulence_factor",
+            "label": "Virulence factor",
+            "description": "Contribution to virulence.",
+            "type": "string",
+            "required": False,
+            "inference_strategy": "paper_llm",
+            "ortholog_allowed": True,
+        }],
+    })
+
+    assert created["kegg_organism_code"] == "msm"
+    assert created["custom_fields"][0]["key"] == "virulence_factor"
+    assert created["custom_fields"][0]["ortholog_allowed"] is True
+
+
+def test_profile_store_rejects_ortholog_allowed_without_kegg_code():
+    store = BuiltinAndUserProfileStore(user_store=InMemoryUserProfileStore())
+
+    with pytest.raises(InvalidProfileError, match="ortholog_allowed requires kegg_organism_code"):
+        store.create_user_profile({
+            **user_profile_payload(profile_id="user-no-kegg"),
+            "custom_fields": [{
+                "key": "virulence_factor",
+                "label": "Virulence factor",
+                "description": "Contribution to virulence.",
+                "type": "string",
+                "required": False,
+                "inference_strategy": "paper_llm",
+                "ortholog_allowed": True,
+            }],
+        })

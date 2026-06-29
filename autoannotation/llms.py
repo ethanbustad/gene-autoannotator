@@ -6,6 +6,7 @@ import re
 
 import ollama
 
+from . import field_defs
 from . import organisms
 from . import utils
 
@@ -82,13 +83,31 @@ def normalize_annotation_fields(parsed, *, require_biology_keys=False, organism_
         and normalized['gene_id']
     ):
         normalized['rv_id'] = normalized['gene_id']
-    for field in BIOLOGY_FIELDS:
+
+    if organism_profile is not None:
+        biology_field_defs = field_defs.resolve_effective_fields(organism_profile)
+    else:
+        biology_field_defs = tuple(
+            field_defs.AnnotationFieldDef(
+                key=key,
+                label=key,
+                description='',
+                type='string' if key != 'functional_category' else 'array:string',
+                required=True,
+                inference_strategy='paper_llm',
+                ortholog_allowed=False,
+            )
+            for key in BIOLOGY_FIELDS
+        )
+
+    for field_def in biology_field_defs:
+        field = field_def.key
         if field not in parsed and not require_biology_keys:
             continue
         value = parsed.get(field)
         if is_unknown_value(value):
             normalized[field] = None
-        elif field == 'functional_category' and isinstance(value, list):
+        elif field_def.type == 'array:string' and isinstance(value, list):
             categories = [item for item in value if item and str(item).strip()]
             normalized[field] = categories if categories else None
         else:
@@ -186,6 +205,19 @@ def _identity_properties(organism_profile=None, *, allow_missing_locus=False):
     }
 
 
+def _biology_properties_from_profile(organism_profile=None):
+    if organism_profile is None:
+        return _biology_properties('the organism')
+    properties = {}
+    for field_def in field_defs.llm_schema_fields(organism_profile):
+        properties[field_def.key] = field_defs.field_def_to_schema_property(
+            field_def,
+            species_name=organism_profile.species_name,
+            canonical_name=organism_profile.canonical_name,
+        )
+    return properties
+
+
 def build_json_schema(
     organism_profile=None,
     *,
@@ -196,15 +228,20 @@ def build_json_schema(
     # Ollama's structured output support is used as the first guardrail. The
     # schema is intentionally small because factual support still comes from
     # prompts, section selection, and later curator review.
-    organism_label = (
-        organism_profile.species_name if organism_profile is not None else 'the organism'
-    )
     required = ['gene_id', 'name']
+    llm_fields = (
+        field_defs.llm_schema_fields(organism_profile)
+        if organism_profile is not None
+        else ()
+    )
     if require_biology:
-        required += list(BIOLOGY_FIELDS)
+        if llm_fields:
+            required += [field_def.key for field_def in llm_fields]
+        else:
+            required += list(BIOLOGY_FIELDS)
     properties = {
         **_identity_properties(organism_profile, allow_missing_locus=allow_missing_locus),
-        **_biology_properties(organism_label),
+        **_biology_properties_from_profile(organism_profile),
     }
     if aggregate:
         properties['annotation_notes'] = _nullable_string(
@@ -241,15 +278,62 @@ Rules:
   direct experimental evidence (e.g., deletion, transposon, CRISPRi). Otherwise use null.
 - Prefer null over weak or speculative statements.
 
-Fields: function, functional_category, drug_susc_impact, infection_impact, essential_in_vitro,
-essential_in_vivo.
+Fields:
+{6}
 
 Excerpt:
 {2}
 '''
 
 
-def build_section_prompt(gene, name, text, *, section_type, organism_profile=None):
+prompt1_ortholog_tmpl = '''
+Using ONLY the supplied excerpt, return a JSON object for {5} gene {0}
+(named {1}).
+
+This is an ORTHOLOG inference pass. The excerpt describes the ortholog (source) gene only.
+Do NOT state claims as proven for the target gene {6} (named {7}).
+Extract candidate values that might transfer to the target gene if supported by orthology,
+but output facts about the ortholog gene in the biology fields.
+
+Section type: {3}
+{4}
+
+Rules:
+- Always set gene_id and name exactly as supplied above (the ortholog identifiers).
+- Include every biology field key listed below. Use JSON null for any field this excerpt does
+  NOT explicitly support. Do not guess, infer from gene class, or use general organism knowledge.
+- Do not use empty strings for unknown fields; use null.
+- For essential_in_vitro and essential_in_vivo, use true or false only when this excerpt reports
+  direct experimental evidence (e.g., deletion, transposon, CRISPRi). Otherwise use null.
+- Prefer null over weak or speculative statements.
+- Do not attribute ortholog experimental results to the target gene.
+
+Fields:
+{8}
+
+Excerpt:
+{2}
+'''
+
+
+def _section_fields_block(organism_profile):
+    if organism_profile is None:
+        return (
+            'function, functional_category, drug_susc_impact, infection_impact, '
+            'essential_in_vitro, essential_in_vivo'
+        )
+    llm_fields = field_defs.llm_schema_fields(organism_profile)
+    return field_defs.format_fields_for_prompt(
+        llm_fields,
+        species_name=organism_profile.species_name,
+        canonical_name=organism_profile.canonical_name,
+    )
+
+
+def build_section_prompt(
+    gene, name, text, *, section_type, organism_profile=None,
+    evidence_mode='target', ortholog_context=None,
+):
     organism_label = (
         organism_profile.canonical_name
         if organism_profile is not None
@@ -263,6 +347,21 @@ def build_section_prompt(gene, name, text, *, section_type, organism_profile=Non
             '\n- No locus identifier was supplied or resolved. Do not invent a locus '
             'identifier; set gene_id to null.'
         )
+    fields_block = _section_fields_block(organism_profile)
+    if evidence_mode == 'ortholog':
+        target_gene = (ortholog_context or {}).get('target_gene_id') or 'the target gene'
+        target_name = (ortholog_context or {}).get('target_gene_name') or target_gene
+        return prompt1_ortholog_tmpl.format(
+            gene_label,
+            name_label,
+            text,
+            section_type,
+            SECTION_HINTS.get(section_type, ''),
+            organism_label,
+            target_gene,
+            target_name,
+            fields_block,
+        ) + missing_locus_rule
     return prompt1_tmpl.format(
         gene_label,
         name_label,
@@ -270,6 +369,7 @@ def build_section_prompt(gene, name, text, *, section_type, organism_profile=Non
         section_type,
         SECTION_HINTS.get(section_type, ''),
         organism_label,
+        fields_block,
     ) + missing_locus_rule
 
 
@@ -312,6 +412,26 @@ Aggregate into one final annotation:
 Fill annotation_notes using the literature-selection context when provided. State how many papers
 were analyzed, literature strength, which annotation fields remain unknown (null) due to
 insufficient evidence, limitations, and conflicts. Do not invent paper counts or PMIDs.
+
+Supplied section objects:
+'''
+
+prompt3_ortholog_prefix = '''
+The following JSON objects describe the same ORTHOLOG (source) gene from different paper sections.
+This is an ortholog inference pass for a different target gene. Each object uses null for fields
+that section did not support. Objects are labeled with PMID and literature relevance score.
+
+Aggregate into one ortholog annotation with candidate values for possible transfer:
+- For each field, synthesize only from non-null contributions about the ORTHOLOG gene.
+- Do NOT state that experimental results apply to the target gene.
+- If no object supports a field, output null for that field (not empty string).
+- If objects conflict, output null for that field and describe the conflict in annotation_notes.
+- For booleans, require consistent experimental support for the ortholog; do not infer without evidence.
+- Cite PMIDs inline for supported prose fields, e.g. "detail (PMID 12345)".
+
+Fill annotation_notes explaining this is ortholog-scoped evidence from {0} (target: {1}),
+how many ortholog papers were analyzed, literature strength, unknown fields, and that curator
+review is required before transferring values to the target gene.
 
 Supplied section objects:
 '''
@@ -461,6 +581,7 @@ class LlmHandler:
         self, json_responses, pmids, model='gemma3:12b',
         json_schema=None, retry=True, literature_context=None,
         relevance_scores=None, organism_profile=None, allow_missing_locus=False,
+        evidence_mode='target', ortholog_context=None,
     ):
         json_responses = list(json_responses)
         pmids = list(pmids)
@@ -468,7 +589,13 @@ class LlmHandler:
             organism_profile, require_biology=True, aggregate=True,
             allow_missing_locus=allow_missing_locus,
         )
-        prompt = prompt3_prefix
+        if evidence_mode == 'ortholog':
+            context = ortholog_context or {}
+            ortholog_label = context.get('ortholog_gene_id') or 'the ortholog gene'
+            target_label = context.get('target_gene_id') or 'the target gene'
+            prompt = prompt3_ortholog_prefix.format(ortholog_label, target_label)
+        else:
+            prompt = prompt3_prefix
         if literature_context:
             prompt += f'\n\n{literature_context}\n'
         if relevance_scores is None:
@@ -539,6 +666,7 @@ class LlmHandler:
                     retry=False, literature_context=literature_context,
                     relevance_scores=relevance_scores, organism_profile=organism_profile,
                     allow_missing_locus=allow_missing_locus,
+                    evidence_mode=evidence_mode, ortholog_context=ortholog_context,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
@@ -616,6 +744,7 @@ class LlmHandler:
     def get_llm_gene_info_json(
         self, gene_id, gene_name, info_text, model, json_schema=None,
         retry=True, section_type='unknown', organism_profile=None,
+        evidence_mode='target', ortholog_context=None,
     ):
         organism_profile = organism_profile or organisms.resolve_profile('mtb-h37rv')
         json_schema = json_schema or build_json_schema(
@@ -628,6 +757,8 @@ class LlmHandler:
             info_text,
             section_type=section_type,
             organism_profile=organism_profile,
+            evidence_mode=evidence_mode,
+            ortholog_context=ortholog_context,
         )
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
