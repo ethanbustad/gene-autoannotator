@@ -981,3 +981,143 @@ def test_batch_schemas_import():
     )
 
     assert BatchEntryInput(input="Rv0001").input == "Rv0001"
+
+
+def _batch_app(tmp_path, **kwargs):
+    return create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_jobs_inline=False,
+        start_worker=False,
+        **kwargs,
+    )
+
+
+def _patch_mtb_dnaa_lookup(monkeypatch, *, locus="Rv0202"):
+    from autoannotation import gene_names
+
+    def fake_lookup(profile, gene_name):
+        if gene_name == "dnaA":
+            return gene_names.GeneLocusLookupResult(
+                locus=locus,
+                source="annotation_table",
+                confidence="profile_table",
+            )
+        return None
+
+    monkeypatch.setattr(gene_names, "lookup_locus_from_annotation_table", fake_lookup)
+
+
+def test_batches_validate_mtb_mixed_list(tmp_path, monkeypatch):
+    _patch_mtb_dnaa_lookup(monkeypatch)
+    client = TestClient(_batch_app(tmp_path))
+
+    response = client.post(
+        "/batches/validate",
+        json={
+            "profile": "mtb-h37rv",
+            "entries": [
+                {"input": "Rv0001"},
+                {"input": "dnaA"},
+                {"input": "not-a-real-gene"},
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["summary"] == {
+        "total": 3,
+        "ready": 2,
+        "ambiguous": 0,
+        "invalid": 1,
+        "duplicate_skipped": 0,
+    }
+    by_input = {entry["input"]: entry for entry in payload["entries"]}
+    assert by_input["Rv0001"]["status"] == "ready"
+    assert by_input["Rv0001"]["resolved_locus"] == "Rv0001"
+    assert by_input["dnaA"]["status"] == "ready"
+    assert by_input["dnaA"]["resolved_locus"] == "Rv0202"
+    assert by_input["dnaA"]["match_method"] == "annotation_table"
+    assert by_input["not-a-real-gene"]["status"] == "invalid"
+
+
+def test_batches_create_queues_ready_jobs_only(tmp_path, monkeypatch):
+    _patch_mtb_dnaa_lookup(monkeypatch, locus="Rv0001")
+    client = TestClient(_batch_app(tmp_path))
+
+    response = client.post(
+        "/batches",
+        json={
+            "profile": "mtb-h37rv",
+            "entries": [
+                {"input": "Rv0001"},
+                {"input": "dnaA"},
+                {"input": "not-a-real-gene"},
+            ],
+            "allow_online_name_lookup": False,
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert len(payload["job_ids"]) == 1
+    assert payload["summary"]["ready"] == 1
+    assert payload["summary"]["duplicate_skipped"] == 1
+    assert payload["summary"]["invalid"] == 1
+    assert len(payload["skipped"]) == 2
+
+    jobs_response = client.get("/jobs", params={"batch_id": payload["batch_id"]})
+    assert jobs_response.status_code == 200
+    assert len(jobs_response.json()["jobs"]) == 1
+    assert jobs_response.json()["jobs"][0]["request"]["locus"] == "Rv0001"
+
+    batch_response = client.get(f"/batches/{payload['batch_id']}")
+    assert batch_response.status_code == 200
+    batch_payload = batch_response.json()
+    assert batch_payload["summary"]["ready"] == 1
+    assert batch_payload["queue"]["queued"] == 1
+
+
+def test_batches_rejects_empty(tmp_path):
+    client = TestClient(_batch_app(tmp_path), raise_server_exceptions=False)
+
+    create_response = client.post(
+        "/batches",
+        json={
+            "profile": "mtb-h37rv",
+            "entries": [{"input": "not-a-real-gene"}],
+            "allow_online_name_lookup": False,
+        },
+    )
+    assert create_response.status_code == 422
+    assert create_response.json()["detail"] == "No ready entries to queue."
+
+    parse_response = client.post(
+        "/batches/validate",
+        json={
+            "profile": "mtb-h37rv",
+            "raw_text": "\n\n# comment only\n",
+            "entries": [{"input": "Rv0001"}],
+        },
+    )
+    assert parse_response.status_code == 200
+
+
+def test_batches_rejects_over_max_size(tmp_path, monkeypatch):
+    monkeypatch.setattr("backend.api.MAX_BATCH_SIZE", 2)
+    client = TestClient(_batch_app(tmp_path), raise_server_exceptions=False)
+
+    response = client.post(
+        "/batches/validate",
+        json={
+            "profile": "mtb-h37rv",
+            "entries": [
+                {"input": "Rv0001"},
+                {"input": "Rv0002"},
+                {"input": "Rv0003"},
+            ],
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Batch exceeds maximum size of 2."

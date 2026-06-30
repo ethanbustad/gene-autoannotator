@@ -6,9 +6,11 @@ from pathlib import Path
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from autoannotation import organisms, targets
+from autoannotation import batch_parse, batch_resolution, organisms, targets
+from autoannotation.batch_parse import BatchParseError
 
 from .annotation_store import AnnotationStoreUnavailable, annotation_store_from_env
+from .batch_store import BatchStore
 from .job_store import JobStore
 from .profile_store import (
     BuiltinAndUserProfileStore,
@@ -24,6 +26,12 @@ from .schemas import (
     AnnotationJobRequest,
     AnnotationSearchResponse,
     AnnotationVersionsResponse,
+    BatchCreateRequest,
+    BatchCreateResponse,
+    BatchDetailResponse,
+    BatchEntryInput,
+    BatchValidateRequest,
+    BatchValidateResponse,
     JobCreateResponse,
     JobsListResponse,
     JobRecordResponse,
@@ -48,6 +56,7 @@ if load_dotenv is not None:
 
 
 DEFAULT_DB_PATH = Path("backend/jobs.sqlite3")
+MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "2000"))
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -80,6 +89,7 @@ PROFILE_CONFIG_FIELDS = (
 def create_app(
     *,
     job_store=None,
+    batch_store=None,
     annotation_store=None,
     profile_store=None,
     run_job=run_annotation_job,
@@ -87,6 +97,7 @@ def create_app(
     start_worker=True,
 ):
     store = job_store or JobStore(DEFAULT_DB_PATH)
+    batches = batch_store or BatchStore(store.db_path)
     annotations = (
         annotation_store
         if annotation_store is not None
@@ -262,6 +273,88 @@ def create_app(
         public_job["request"] = public_request
         return public_job
 
+    def _entries_from_request(request):
+        if request.entries:
+            return list(request.entries)
+        if request.raw_text:
+            parsed = batch_parse.parse_batch_text(request.raw_text)
+            return [BatchEntryInput(**item) for item in parsed]
+        raise BatchParseError("No genes found.")
+
+    def _resolve_batch_profile(request):
+        if request.profile:
+            profile_payload = _get_profile_for_target(request.profile)
+            if profile_payload is None:
+                raise HTTPException(status_code=404, detail="Profile not found")
+            return organisms.profile_from_mapping(profile_payload)
+        return targets.build_ad_hoc_profile(
+            request.organism,
+            request.strain,
+            locus_regex=request.locus_regex,
+            search_terms=request.search_terms,
+            target_patterns=request.target_patterns,
+            off_target_patterns=request.off_target_patterns,
+            excluded_species_patterns=request.excluded_species_patterns,
+        )
+
+    def _preview_batch(request):
+        entry_inputs = _entries_from_request(request)
+        if len(entry_inputs) > MAX_BATCH_SIZE:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Batch exceeds maximum size of {MAX_BATCH_SIZE}.",
+            )
+        profile = _resolve_batch_profile(request)
+        entries = []
+        for line_number, entry_input in enumerate(entry_inputs, start=1):
+            raw_input = entry_input.input or entry_input.locus or entry_input.name or ""
+            entries.append(
+                batch_resolution.resolve_batch_entry(
+                    profile,
+                    line=line_number,
+                    raw_input=raw_input,
+                    submitted_locus=entry_input.locus,
+                    submitted_name=entry_input.name,
+                    allow_online_name_lookup=request.allow_online_name_lookup,
+                    selected_locus=entry_input.selected_locus,
+                )
+            )
+        entries = batch_resolution.apply_deduplication(
+            entries,
+            profile_id=profile.profile_id,
+        )
+        summary = batch_resolution.summarize_entries(entries)
+        return entries, summary
+
+    def _batch_options_from_request(request):
+        return request.model_dump(exclude={"entries", "raw_text"})
+
+    def _batch_queue_summary(batch_id):
+        counts = {"queued": 0, "running": 0, "completed": 0, "failed": 0}
+        for job in store.list_jobs_by_batch(batch_id):
+            counts[job["status"]] = counts.get(job["status"], 0) + 1
+        return counts
+
+    def _job_request_for_batch_entry(request, entry):
+        return AnnotationJobRequest(
+            profile=request.profile,
+            organism=request.organism,
+            strain=request.strain,
+            locus=entry["resolved_locus"],
+            name=entry["resolved_name"],
+            cache_dir=request.cache_dir,
+            output_dir=request.output_dir,
+            gene_name_cache=request.gene_name_cache,
+            allow_online_name_lookup=request.allow_online_name_lookup,
+            refresh_gene_name_cache=request.refresh_gene_name_cache,
+            cache_supplied_name=request.cache_supplied_name,
+            locus_regex=request.locus_regex,
+            search_terms=request.search_terms,
+            target_patterns=request.target_patterns,
+            off_target_patterns=request.off_target_patterns,
+            excluded_species_patterns=request.excluded_species_patterns,
+        )
+
     @app.get("/health")
     def health():
         try:
@@ -367,6 +460,80 @@ def create_app(
         except regex_gen.RegexGenerationError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+    @app.post("/batches/validate", response_model=BatchValidateResponse)
+    def validate_batch(request: BatchValidateRequest):
+        try:
+            entries, summary = _preview_batch(request)
+        except BatchParseError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        return {"summary": summary, "entries": entries}
+
+    @app.post(
+        "/batches",
+        response_model=BatchCreateResponse,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_batch(request: BatchCreateRequest, background_tasks: BackgroundTasks):
+        try:
+            entries, summary = _preview_batch(request)
+        except BatchParseError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        ready_entries = [entry for entry in entries if entry["status"] == "ready"]
+        if not ready_entries:
+            raise HTTPException(status_code=422, detail="No ready entries to queue.")
+
+        skipped = [entry for entry in entries if entry["status"] != "ready"]
+        batch = batches.create_batch(
+            profile=request.profile,
+            organism=request.organism,
+            strain=request.strain,
+            options=_batch_options_from_request(request),
+            input_summary=summary,
+        )
+
+        job_ids = []
+        for entry in ready_entries:
+            job_request = _job_request_for_batch_entry(request, entry)
+            target = _resolve_target_for_request(job_request)
+            invalid_target_detail = _invalid_target_detail(target)
+            if invalid_target_detail is not None:
+                continue
+            stored_request = _stored_request_for_target(job_request, target)
+            job = store.create_job(stored_request, batch_id=batch["id"])
+            job_ids.append(job["id"])
+
+        if not job_ids:
+            raise HTTPException(status_code=422, detail="No ready entries to queue.")
+
+        if run_jobs_inline:
+            drain_queue()
+        elif start_worker:
+            background_tasks.add_task(drain_queue)
+
+        return {
+            "batch_id": batch["id"],
+            "job_ids": job_ids,
+            "skipped": skipped,
+            "summary": summary,
+        }
+
+    @app.get("/batches/{batch_id}", response_model=BatchDetailResponse)
+    def get_batch(batch_id: str):
+        batch = batches.get_batch(batch_id)
+        if batch is None:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        return {
+            "id": batch["id"],
+            "status": batch["status"],
+            "profile": batch["profile"],
+            "organism": batch["organism"],
+            "strain": batch["strain"],
+            "created_at": batch["created_at"],
+            "summary": batch["input_summary"],
+            "queue": _batch_queue_summary(batch_id),
+        }
+
     @app.post(
         "/jobs",
         response_model=JobCreateResponse,
@@ -385,12 +552,15 @@ def create_app(
         return {"job_id": job["id"], "status": job["status"]}
 
     @app.get("/jobs", response_model=JobsListResponse)
-    def list_jobs(order: str = "newest"):
+    def list_jobs(order: str = "newest", batch_id: str | None = None):
         normalized_order = order if order in {"newest", "queue"} else "newest"
         return {
             "jobs": [
                 _public_job_record(job)
-                for job in store.list_jobs(order=normalized_order)
+                for job in store.list_jobs(
+                    order=normalized_order,
+                    batch_id=batch_id,
+                )
             ],
             "queue": store.queue_summary(),
         }
