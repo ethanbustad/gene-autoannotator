@@ -110,3 +110,72 @@ but name-only and locus-only submissions are accepted.
 - `GET /annotations/search?query=...`: searches current generated annotations through FastAPI; the Next.js UI uses its own direct MongoDB read route.
 - `GET /annotations/{annotation_id}`: returns the current stored annotation through FastAPI; the Next.js UI uses its own direct MongoDB read route.
 - `GET /annotations/{annotation_id}/versions`: returns older stored versions through FastAPI; the Next.js UI uses its own direct MongoDB read route.
+
+## Batch Job Submission
+
+Batch endpoints queue many per-gene annotation jobs under a shared batch record.
+They use the same profile/organism options and target resolution as single-job
+`POST /jobs`, but accept a list of genes instead of one `name`/`locus` pair.
+
+### Batch endpoints
+
+- `POST /batches/validate`: parses and resolves entries; returns a per-row
+  preview (`ready`, `ambiguous`, `invalid`, `duplicate_skipped`) and summary
+  counts. No database writes.
+- `POST /batches`: creates a batch record and child jobs for `ready` entries
+  only; returns `batch_id`, `job_ids`, `skipped` rows, and summary counts.
+  Ambiguous or invalid rows are reported but not queued. Returns 422 if no rows
+  are ready.
+- `GET /batches/{batch_id}`: returns batch metadata, input summary, and
+  aggregate queue counts (queued, running, completed, failed).
+- `GET /jobs?batch_id={batch_id}`: lists child jobs for a batch (same response
+  shape as `GET /jobs`).
+
+Batch requests require `profile` or `organism` (same rules as single-job
+submissions). Send parsed entries in `entries` and/or paste/upload content in
+`raw_text`.
+
+### Accepted input formats
+
+Batch input is plain structured text only — not Excel or other binary formats.
+
+**Accepted file extensions:** `.txt`, `.csv`, `.tsv`  
+**Not accepted:** `.xlsx`, `.xls`
+
+If a user has an Excel gene list, they should copy one column into the
+textarea or save as CSV (one column, or two columns `locus,name`).
+
+**Format A — one identifier per line (primary).** Each line is one locus or gene
+name; resolution decides which. Blank lines and `#` comments are ignored;
+surrounding quotes are stripped.
+
+```
+Rv0001
+dnaA
+rpoB
+```
+
+**Format B — delimited single-column list.** Same identifiers as Format A,
+but tokens may also be separated by comma, semicolon, or tab on one or more
+lines:
+
+```
+Rv0001, Rv0002, dnaA
+```
+
+**Format C — two-column locus + name (optional, strict).** Exactly two columns;
+three or more columns reject the entire file. Column 1 is locus (optional),
+column 2 is gene name (optional); at least one must be non-empty per row. The
+first row is treated as a header only if every cell matches known header tokens
+(`locus`, `gene`, `name`, `id`, case-insensitive).
+
+```
+locus,name
+Rv0001,dnaA
+Rv0002,
+,dnaA
+```
+
+After parsing, a single token (`Rv0001` or `dnaA`) goes through hybrid
+resolution; an explicit `locus,name` pair is treated like a single-job submission
+with both identifiers supplied.
