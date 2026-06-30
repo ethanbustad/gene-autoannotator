@@ -49,6 +49,7 @@ class JobStore:
                 "INTEGER NOT NULL DEFAULT 0",
             )
             self._ensure_column(connection, "annotation_error", "TEXT")
+            self._ensure_column(connection, "batch_id", "TEXT")
 
     def _ensure_column(self, connection, column_name, column_type):
         columns = {
@@ -60,17 +61,17 @@ class JobStore:
                 f"ALTER TABLE annotation_jobs ADD COLUMN {column_name} {column_type}"
             )
 
-    def create_job(self, request: dict[str, Any]):
+    def create_job(self, request: dict[str, Any], batch_id=None):
         job_id = str(uuid.uuid4())
         created_at = _now_iso()
         with self._connect() as connection:
             connection.execute(
                 """
                 INSERT INTO annotation_jobs (
-                    id, status, current_step, request_json, created_at
-                ) VALUES (?, ?, ?, ?, ?)
+                    id, status, current_step, request_json, batch_id, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (job_id, "queued", "queued", json.dumps(request), created_at),
+                (job_id, "queued", "queued", json.dumps(request), batch_id, created_at),
             )
         return self.get_job(job_id)
 
@@ -222,7 +223,7 @@ class JobStore:
             connection.commit()
         return self.get_job(queued["id"])
 
-    def list_jobs(self, order="newest", limit=100):
+    def list_jobs(self, order="newest", limit=100, batch_id=None):
         if order == "queue":
             order_clause = """
                 CASE status
@@ -237,19 +238,42 @@ class JobStore:
         else:
             order_clause = "created_at DESC"
 
+        where_clause = ""
+        params: list[Any] = []
+        if batch_id is not None:
+            where_clause = "WHERE batch_id = ?"
+            params.append(batch_id)
+        params.append(limit)
+
         with self._connect() as connection:
             connection.row_factory = sqlite3.Row
             rows = connection.execute(
                 f"""
                 SELECT *
                 FROM annotation_jobs
+                {where_clause}
                 ORDER BY {order_clause}
                 LIMIT ?
                 """,
-                (limit,),
+                params,
             ).fetchall()
 
         return self._add_queue_positions([self._row_to_job(row) for row in rows])
+
+    def list_jobs_by_batch(self, batch_id, limit=5000):
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM annotation_jobs
+                WHERE batch_id = ?
+                ORDER BY created_at ASC
+                LIMIT ?
+                """,
+                (batch_id, limit),
+            ).fetchall()
+        return [self._row_to_job(row) for row in rows]
 
     def queue_summary(self):
         with self._connect() as connection:
@@ -279,6 +303,7 @@ class JobStore:
             "id": row["id"],
             "status": row["status"],
             "current_step": row["current_step"],
+            "batch_id": row["batch_id"],
             "request": json.loads(row["request_json"]),
             "result": result,
             "error": row["error"],
