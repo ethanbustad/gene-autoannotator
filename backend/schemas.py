@@ -169,6 +169,77 @@ class ValidationRequest(BaseModel):
         return self
 
 
+class BatchEntryInput(BaseModel):
+    input: str | None = None
+    locus: str | None = None
+    name: str | None = None
+    selected_locus: str | None = None
+
+    @field_validator("input", "locus", "name", "selected_locus", mode="before")
+    @classmethod
+    def normalize_batch_strings(cls, value):
+        return _normalize_optional_string(value)
+
+    @model_validator(mode="after")
+    def validate_shape(self):
+        if not self.input and not self.locus and not self.name:
+            raise ValueError("input, locus, or name is required")
+        return self
+
+
+class BatchJobOptions(BaseModel):
+    profile: str | None = None
+    organism: str | None = None
+    strain: str | None = None
+    cache_dir: str = "./.cache"
+    output_dir: str = "gen_json"
+    gene_name_cache: str = gene_names.DEFAULT_GENE_NAME_CACHE_DIR
+    allow_online_name_lookup: bool = True
+    refresh_gene_name_cache: bool = False
+    cache_supplied_name: bool = False
+    locus_regex: str | None = None
+    search_terms: list[str] = Field(default_factory=list)
+    target_patterns: list[str] = Field(default_factory=list)
+    off_target_patterns: list[str] = Field(default_factory=list)
+    excluded_species_patterns: list[str] = Field(default_factory=list)
+
+    @field_validator(
+        "profile",
+        "organism",
+        "strain",
+        "locus_regex",
+        mode="before",
+    )
+    @classmethod
+    def normalize_optional_strings(cls, value):
+        return _normalize_optional_string(value)
+
+    @model_validator(mode="after")
+    def validate_profile_shape(self):
+        if self.profile and self.organism:
+            raise ValueError("use either profile or organism, not both")
+        if not self.profile and not self.organism:
+            raise ValueError("profile or organism is required")
+        return self
+
+
+class BatchValidateRequest(BatchJobOptions):
+    entries: list[BatchEntryInput] = Field(min_length=1)
+    raw_text: str | None = None
+
+
+class BatchCreateRequest(BatchValidateRequest):
+    pass
+
+
+class BatchPreviewSummary(BaseModel):
+    total: int
+    ready: int
+    ambiguous: int
+    invalid: int
+    duplicate_skipped: int
+
+
 class ProfileResponse(BaseModel):
     profile_id: str
     canonical_name: str
@@ -235,6 +306,32 @@ class TargetPreflightResponse(BaseModel):
     warnings: list[TargetWarning] = Field(default_factory=list)
 
 
+class BatchEntryPreview(BaseModel):
+    line: int
+    input: str
+    submitted_locus: str | None = None
+    submitted_name: str | None = None
+    resolved_locus: str | None = None
+    resolved_name: str | None = None
+    primary_identifier: str | None = None
+    match_method: str | None = None
+    status: Literal["ready", "ambiguous", "invalid", "duplicate_skipped"]
+    warnings: list[TargetWarning] = Field(default_factory=list)
+    candidates: list[str] = Field(default_factory=list)
+
+
+class BatchValidateResponse(BaseModel):
+    summary: BatchPreviewSummary
+    entries: list[BatchEntryPreview]
+
+
+class BatchCreateResponse(BaseModel):
+    batch_id: str
+    job_ids: list[str]
+    skipped: list[BatchEntryPreview]
+    summary: BatchPreviewSummary
+
+
 class JobCreateResponse(BaseModel):
     job_id: str
     status: str
@@ -264,6 +361,17 @@ class QueueSummaryResponse(BaseModel):
     running: int
     completed: int
     failed: int
+
+
+class BatchDetailResponse(BaseModel):
+    id: str
+    status: str
+    profile: str | None = None
+    organism: str | None = None
+    strain: str | None = None
+    created_at: str
+    summary: BatchPreviewSummary
+    queue: QueueSummaryResponse
 
 
 class JobsListResponse(BaseModel):

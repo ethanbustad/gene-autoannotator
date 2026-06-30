@@ -966,3 +966,18 @@ def test_regex_from_description_endpoint_requires_description(tmp_path):
     response = client.post("/regex/from-description", json={"description": "   "})
 
     assert response.status_code == 422
+
+
+def test_batch_schemas_import():
+    from backend.schemas import (
+        BatchCreateRequest,
+        BatchCreateResponse,
+        BatchDetailResponse,
+        BatchEntryInput,
+        BatchEntryPreview,
+        BatchPreviewSummary,
+        BatchValidateRequest,
+        BatchValidateResponse,
+    )
+
+    assert BatchEntryInput(input="Rv0001").input == "Rv0001"
