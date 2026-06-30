@@ -2,10 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildBatchPayload,
   buildJobPayload,
   buildJobPrefillHref,
   formatElapsedSeconds,
   formatJobElapsed,
+  parseGeneFileName,
+  parseGeneListText,
+  readGeneFile,
 } from "./form.js";
 
 test("buildJobPayload omits empty optional fields and maps option names", () => {
@@ -139,4 +143,53 @@ test("formatJobElapsed stops counting when a job finishes", () => {
     }, Date.parse("2026-05-27T11:00:00.000Z")),
     "3m 1s",
   );
+});
+
+test("parseGeneListText splits newlines and ignores comments", () => {
+  assert.deepEqual(parseGeneListText("Rv0001\n# skip\nRv0002"), [
+    { input: "Rv0001" },
+    { input: "Rv0002" },
+  ]);
+});
+
+test("parseGeneListText parses two-column csv", () => {
+  assert.deepEqual(parseGeneListText("locus,name\nRv0001,dnaA"), [
+    { locus: "Rv0001", name: "dnaA" },
+  ]);
+});
+
+test("parseGeneFileName rejects excel", () => {
+  assert.throws(
+    () => parseGeneFileName("genes.xlsx"),
+    /txt, \.csv, or \.tsv/,
+  );
+});
+
+test("buildBatchPayload maps entries and options", () => {
+  assert.deepEqual(
+    buildBatchPayload(
+      {
+        profile: "mtb-h37rv",
+        allowOnlineNameLookup: false,
+        refreshGeneNameCache: false,
+        cacheSuppliedName: false,
+      },
+      [{ input: "Rv0001" }],
+    ),
+    {
+      profile: "mtb-h37rv",
+      entries: [{ input: "Rv0001" }],
+      allow_online_name_lookup: false,
+      refresh_gene_name_cache: false,
+      cache_supplied_name: false,
+    },
+  );
+});
+
+test("readGeneFile parses allowed text files", async () => {
+  const file = new File(["Rv0001\nRv0002"], "genes.txt", { type: "text/plain" });
+  assert.deepEqual(await readGeneFile(file), [
+    { input: "Rv0001" },
+    { input: "Rv0002" },
+  ]);
 });
