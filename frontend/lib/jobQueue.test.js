@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getHiddenJobCount, getVisibleJobs, shouldShowRunningSpinner } from "./jobQueue.js";
+import {
+  filterJobsByBatch,
+  getHiddenJobCount,
+  getVisibleJobs,
+  shouldShowRunningSpinner,
+} from "./jobQueue.js";
 
 const jobs = [
   { id: "running", status: "running" },
@@ -35,4 +40,21 @@ test("shouldShowRunningSpinner is true only for running jobs", () => {
   assert.equal(shouldShowRunningSpinner({ status: "completed" }), false);
   assert.equal(shouldShowRunningSpinner({ status: "failed" }), false);
   assert.equal(shouldShowRunningSpinner(null), false);
+});
+
+test("filterJobsByBatch returns all jobs when batchId is missing", () => {
+  assert.deepEqual(filterJobsByBatch(jobs, null), jobs);
+  assert.deepEqual(filterJobsByBatch(jobs, ""), jobs);
+});
+
+test("filterJobsByBatch returns only jobs matching batch_id", () => {
+  const batchJobs = [
+    { id: "a", batch_id: "batch-1", status: "queued" },
+    { id: "b", batch_id: "batch-2", status: "running" },
+    { id: "c", batch_id: "batch-1", status: "completed" },
+  ];
+  assert.deepEqual(
+    filterJobsByBatch(batchJobs, "batch-1").map((job) => job.id),
+    ["a", "c"],
+  );
 });

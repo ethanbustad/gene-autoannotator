@@ -10,6 +10,7 @@ import {
   clearFinishedJobHistory,
   createJob,
   getAnnotationHealth,
+  getBatch,
   getHealth,
   getProfiles,
   listJobs,
@@ -19,7 +20,12 @@ import {
   buildJobPayload,
   formatJobElapsed,
 } from "../lib/form";
-import { getHiddenJobCount, getVisibleJobs, shouldShowRunningSpinner } from "../lib/jobQueue";
+import {
+  filterJobsByBatch,
+  getHiddenJobCount,
+  getVisibleJobs,
+  shouldShowRunningSpinner,
+} from "../lib/jobQueue";
 
 const stepLabels = {
   queued: "Waiting in queue",
@@ -54,6 +60,75 @@ function progressPercent(job) {
   if (job.current_step === "saving_result") return 85;
   if (job.status === "running") return 55;
   return 12;
+}
+
+function summarizeJobStatuses(jobs) {
+  const counts = { queued: 0, running: 0, completed: 0, failed: 0 };
+  for (const job of jobs) {
+    if (Object.hasOwn(counts, job.status)) {
+      counts[job.status] += 1;
+    }
+  }
+  return counts;
+}
+
+function BatchSummaryCard({ batchId, batchDetail, queueCounts, batchFilterActive, onShowBatchOnly, onShowAllJobs }) {
+  const profileLabel =
+    batchDetail?.profile ||
+    batchDetail?.organism ||
+    batchDetail?.strain ||
+    "Batch annotation run";
+
+  return (
+    <div className="workbench-muted-bg rounded-2xl border workbench-border p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="workbench-kicker">Active batch</p>
+          <p className="workbench-foreground mt-1 text-lg font-bold tracking-[-0.02em]">{batchId}</p>
+          <p className="workbench-muted mt-1 text-sm">{profileLabel}</p>
+        </div>
+        <span className="rounded-full border workbench-border bg-white/60 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#3f4b43]">
+          {batchDetail?.status || "submitted"}
+        </span>
+      </div>
+
+      <p className="workbench-muted mt-4 text-sm">
+        {queueCounts.running || 0} running · {queueCounts.queued || 0} queued ·{" "}
+        {queueCounts.completed || 0} completed · {queueCounts.failed || 0} failed
+      </p>
+
+      <div
+        className="mt-4 inline-flex rounded-xl border workbench-border p-1"
+        role="group"
+        aria-label="Batch queue filter"
+      >
+        <button
+          type="button"
+          onClick={onShowBatchOnly}
+          aria-pressed={batchFilterActive}
+          className={`min-h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
+            batchFilterActive
+              ? "workbench-button-primary"
+              : "workbench-button-secondary border-0 bg-transparent shadow-none"
+          }`}
+        >
+          Show batch only
+        </button>
+        <button
+          type="button"
+          onClick={onShowAllJobs}
+          aria-pressed={!batchFilterActive}
+          className={`min-h-9 rounded-lg px-3 text-sm font-bold transition-colors ${
+            !batchFilterActive
+              ? "workbench-button-primary"
+              : "workbench-button-secondary border-0 bg-transparent shadow-none"
+          }`}
+        >
+          Show all jobs
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function HealthBadge({ label, status, detail }) {
@@ -196,6 +271,8 @@ export default function JobWorkspace() {
   const [statusMessage, setStatusMessage] = useState("");
   const [submitMode, setSubmitMode] = useState("single");
   const [activeBatchId, setActiveBatchId] = useState(null);
+  const [batchFilterActive, setBatchFilterActive] = useState(false);
+  const [batchDetail, setBatchDetail] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     profile: searchParams.get("profile") || "mtb-h37rv",
@@ -215,8 +292,19 @@ export default function JobWorkspace() {
 
   const apiAvailable = health?.status === "ok";
   const canSubmit = health !== null && apiAvailable && !isSubmitting;
-  const hiddenJobCount = getHiddenJobCount(jobs);
-  const visibleJobs = getVisibleJobs(jobs, showAllJobs);
+  const queueJobs =
+    activeBatchId && batchFilterActive ? filterJobsByBatch(jobs, activeBatchId) : jobs;
+  const batchQueueCounts = useMemo(() => {
+    if (batchDetail?.queue) {
+      return batchDetail.queue;
+    }
+    if (activeBatchId) {
+      return summarizeJobStatuses(filterJobsByBatch(jobs, activeBatchId));
+    }
+    return { queued: 0, running: 0, completed: 0, failed: 0 };
+  }, [activeBatchId, batchDetail, jobs]);
+  const hiddenJobCount = getHiddenJobCount(queueJobs);
+  const visibleJobs = getVisibleJobs(queueJobs, showAllJobs);
 
   async function refreshHealth() {
     try {
@@ -250,6 +338,16 @@ export default function JobWorkspace() {
         setStatusMessage(error.message);
       }
     }
+
+    if (activeBatchId) {
+      try {
+        setBatchDetail(await getBatch(activeBatchId));
+      } catch {
+        setBatchDetail(null);
+      }
+    } else {
+      setBatchDetail(null);
+    }
   }
 
   useEffect(() => {
@@ -274,7 +372,7 @@ export default function JobWorkspace() {
       window.clearInterval(jobsTimer);
       window.clearInterval(healthTimer);
     };
-  }, []);
+  }, [activeBatchId]);
 
   const selectedProfile = useMemo(
     () => profiles.find((profile) => profile.profile_id === form.profile),
@@ -606,6 +704,7 @@ export default function JobWorkspace() {
                 setStatusMessage={setStatusMessage}
                 onBatchSubmitted={(batchId, result) => {
                   setActiveBatchId(batchId);
+                  setBatchFilterActive(true);
                   const jobCount = result.job_ids?.length ?? 0;
                   setStatusMessage(
                     `Queued batch ${batchId} with ${jobCount} annotation${jobCount === 1 ? "" : "s"}.`,
@@ -654,12 +753,27 @@ export default function JobWorkspace() {
             </div>
           </div>
 
+          {activeBatchId ? (
+            <div className="mt-6">
+              <BatchSummaryCard
+                batchId={activeBatchId}
+                batchDetail={batchDetail}
+                queueCounts={batchQueueCounts}
+                batchFilterActive={batchFilterActive}
+                onShowBatchOnly={() => setBatchFilterActive(true)}
+                onShowAllJobs={() => setBatchFilterActive(false)}
+              />
+            </div>
+          ) : null}
+
           <div className="mt-6 grid gap-4">
-            {jobs.length > 0 ? (
+            {queueJobs.length > 0 ? (
               visibleJobs.map((job) => <JobTile key={job.id} job={job} />)
             ) : (
               <div className="workbench-muted rounded-2xl border border-dashed workbench-border p-8 text-center">
-                No jobs have been submitted yet.
+                {activeBatchId && batchFilterActive
+                  ? "No jobs in this batch yet."
+                  : "No jobs have been submitted yet."}
               </div>
             )}
           </div>

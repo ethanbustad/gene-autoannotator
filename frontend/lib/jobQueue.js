@@ -15,3 +15,11 @@ export function getHiddenJobCount(jobs) {
 export function shouldShowRunningSpinner(job) {
   return job?.status === "running";
 }
+
+export function filterJobsByBatch(jobs, batchId) {
+  const normalizedJobs = Array.isArray(jobs) ? jobs : [];
+  if (!batchId) {
+    return normalizedJobs;
+  }
+  return normalizedJobs.filter((job) => job.batch_id === batchId);
+}
