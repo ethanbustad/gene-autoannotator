@@ -55,6 +55,33 @@ test("getGeneratedFieldRows returns the required fields in order with fallbacks"
   assert.equal(getGeneratedFieldRows(annotation)[5].value, "False");
 });
 
+test("getGeneratedFieldRows marks ortholog-derived fields from field_provenance", () => {
+  const withOrtholog = {
+    result: {
+      annotation: {
+        function: "Octanoyltransferase activity in M. orygis.",
+        functional_category: ["cell wall"],
+        drug_susc_impact: null,
+        infection_impact: null,
+        essential_in_vitro: null,
+        essential_in_vivo: null,
+        annotation_metadata: {
+          field_provenance: {
+            function: "ortholog_derived",
+          },
+        },
+      },
+    },
+  };
+
+  const rows = getGeneratedFieldRows(withOrtholog);
+  const functionRow = rows.find((row) => row.key === "function");
+  const categoryRow = rows.find((row) => row.key === "functional_category");
+
+  assert.equal(functionRow.orthologDerived, true);
+  assert.equal(categoryRow.orthologDerived, false);
+});
+
 test("getMetadataRows extracts requested metadata fields", () => {
   const rows = getMetadataRows(annotation);
 

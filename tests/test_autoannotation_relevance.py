@@ -64,8 +64,8 @@ class FakeLlmHandler:
         self.aggregate_calls = 0
 
     @staticmethod
-    def json_regex_filter(gene_json, organism_profile=None, expected_gene=None):
-        assert expected_gene in {"Rv0001", "MO_000001", "TcCLB.503799.4", None}
+    def json_regex_filter(gene_json, organism_profile=None, expected_gene=None, relaxed_name=False):
+        assert expected_gene in {"Rv0001", "MO_000001", "TcCLB.503799.4", "Rv2007c", None}
         return True
 
     def get_llm_gene_info_json(
@@ -268,6 +268,35 @@ def test_get_gene_annotation_skips_ortholog_pass_when_direct_complete(monkeypatc
     assert meta["ortholog_pass"]["ran"] is False
     assert meta["ortholog_pass"]["skipped_reason"] == "no_eligible_missing_fields"
     assert result["gene_annotation"]["function"] == "Initiates DNA replication."
+
+
+def test_get_gene_annotation_skips_unsupported_ortholog_organism(monkeypatch, tmp_path):
+    _patch_common(monkeypatch, tmp_path)
+
+    class NullDirectLlm(FakeLlmHandler):
+        def get_llm_aggregate_json(self, *args, **kwargs):
+            return GENE_JSON, 0.1
+
+    monkeypatch.setattr(autoannotation.llms, "LlmHandler", NullDirectLlm)
+    monkeypatch.setattr(
+        autoannotation.orthology,
+        'lookup_top_ortholog',
+        lambda *args, **kwargs: OrthologHit(
+            source_organism_code='pspi',
+            source_organism_name=None,
+            source_gene_id='PS2015_1409',
+            source_gene_name='Ferredoxin, 4Fe-4S',
+            score=108.0,
+            lookup_source='kegg_ssdb',
+        ),
+    )
+
+    result = autoannotation.get_gene_annotation("Rv2007c", cache_dir=tmp_path)
+    meta = result["gene_annotation"]["annotation_metadata"]
+
+    assert meta["ortholog_top_hit"]["source_organism_code"] == "pspi"
+    assert meta["ortholog_pass"]["ran"] is False
+    assert meta["ortholog_pass"]["skipped_reason"] == "unsupported_ortholog_organism"
 
 
 def test_get_gene_annotation_survives_kegg_lookup_failure(monkeypatch, tmp_path):

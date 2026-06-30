@@ -128,6 +128,29 @@ def test_json_regex_filter_rejects_mismatching_expected_gene_without_locus_regex
     )
 
 
+def test_json_regex_filter_relaxed_name_accepts_descriptive_ortholog_names():
+    from autoannotation import orthology
+
+    profile = orthology.profile_for_kegg_organism('mory')
+    section_json = json.dumps({
+        'gene_id': 'MO_002536',
+        'name': 'diglucosylglycerate octanoyltransferase',
+        'function': 'Octanoyltransferase activity.',
+    })
+
+    assert not llms.LlmHandler.json_regex_filter(
+        section_json,
+        organism_profile=profile,
+        expected_gene='MO_002536',
+    )
+    assert llms.LlmHandler.json_regex_filter(
+        section_json,
+        organism_profile=profile,
+        expected_gene='MO_002536',
+        relaxed_name=True,
+    )
+
+
 def test_section_prompt_uses_profile_organism_instead_of_mtb():
     captured = {}
     handler = llms.LlmHandler(cache_dir='./.cache')

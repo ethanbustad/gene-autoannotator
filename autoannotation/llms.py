@@ -442,7 +442,7 @@ class LlmHandler:
     def json_regex_filter(
         gene_json, rv_ptrn='[Rr]v[0-9]{4}[ABc]?',
         name_ptrn='([a-z]{3}[a-zA-Z0-9.]*)|([PE_GRS]{2,7}[0-9A]{1,3})',
-        organism_profile=None, expected_gene=None,
+        organism_profile=None, expected_gene=None, relaxed_name=False,
     ):
         # This is only a shape/profile filter for model outputs. It rejects
         # wrong-locus or malformed JSON before aggregation but does not check
@@ -470,7 +470,11 @@ class LlmHandler:
                     return False
                 if has_locus_regex and not re.fullmatch(locus_ptrn, gene_id):
                     return False
-            if not re.fullmatch(name_ptrn, gene_info.get('name', '')):
+            name = gene_info.get('name', '')
+            if relaxed_name:
+                if not isinstance(name, str) or not name.strip():
+                    return False
+            elif not re.fullmatch(name_ptrn, name):
                 return False
             return True
         except (json.JSONDecodeError, TypeError):

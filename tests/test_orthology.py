@@ -88,3 +88,69 @@ def test_profile_for_kegg_organism_builds_ad_hoc_for_msm():
 
     assert profile.profile_id == 'kegg-msm'
     assert profile.excluded_species_patterns == ()
+
+
+def test_supports_ortholog_literature_pass():
+    mory = OrthologHit(
+        source_organism_code='mory',
+        source_organism_name='Mycobacterium orygis',
+        source_gene_id='MO_000001',
+        source_gene_name='dnaA',
+        score=500.0,
+        lookup_source='kegg_ssdb',
+    )
+    pspi = OrthologHit(
+        source_organism_code='pspi',
+        source_organism_name=None,
+        source_gene_id='PS2015_1409',
+        source_gene_name='Ferredoxin, 4Fe-4S',
+        score=108.0,
+        lookup_source='kegg_ssdb',
+    )
+
+    assert orthology.supports_ortholog_literature_pass(mory) is True
+    assert orthology.supports_ortholog_literature_pass(pspi) is False
+    assert orthology.supports_ortholog_literature_pass(None) is False
+
+
+def test_resolve_ortholog_gene_name_prefers_target_symbol_over_kegg_description(tmp_path):
+    hit = OrthologHit(
+        source_organism_code='mory',
+        source_organism_name='Mycobacterium orygis',
+        source_gene_id='MO_002536',
+        source_gene_name='diglucosylglycerate octanoyltransferase',
+        score=247.0,
+        lookup_source='kegg_ssdb',
+    )
+
+    assert orthology.resolve_ortholog_gene_name(
+        hit,
+        tmp_path,
+        target_gene_name='octT',
+    ) == 'octT'
+
+
+def test_resolve_ortholog_gene_name_falls_back_to_locus_without_symbol(tmp_path):
+    hit = OrthologHit(
+        source_organism_code='mory',
+        source_organism_name='Mycobacterium orygis',
+        source_gene_id='MO_002536',
+        source_gene_name='diglucosylglycerate octanoyltransferase',
+        score=247.0,
+        lookup_source='kegg_ssdb',
+    )
+
+    assert orthology.resolve_ortholog_gene_name(hit, tmp_path) == 'MO_002536'
+
+
+def test_resolve_ortholog_gene_name_keeps_short_kegg_name(tmp_path):
+    hit = OrthologHit(
+        source_organism_code='mory',
+        source_organism_name='Mycobacterium orygis',
+        source_gene_id='MO_000001',
+        source_gene_name='dnaA',
+        score=507.0,
+        lookup_source='kegg_ssdb',
+    )
+
+    assert orthology.resolve_ortholog_gene_name(hit, tmp_path) == 'dnaA'

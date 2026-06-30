@@ -264,10 +264,43 @@ def profile_for_kegg_organism(kegg_code):
     )
 
 
-def resolve_ortholog_gene_name(hit, cache_dir, *, allow_online_lookup=False):
-    if hit.source_gene_name and hit.source_gene_name != hit.source_gene_id:
-        return hit.source_gene_name
+def supports_ortholog_literature_pass(hit):
+    """Whether the ortholog organism has enough profile metadata for a paper pass."""
+    if hit is None:
+        return False
+    code = hit.source_organism_code.lower()
+    if code in KEGG_ORGANISM_PROFILE_HINTS:
+        return True
+    for profile in organisms.PROFILES:
+        if profile.kegg_organism_code and profile.kegg_organism_code.lower() == code:
+            return True
+    return False
 
+
+_GENE_SYMBOL_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,11}$')
+
+
+def _is_descriptive_kegg_name(name):
+    if not name:
+        return False
+    if ' ' in name or ',' in name:
+        return True
+    return len(name) > 20
+
+
+def _looks_like_gene_symbol(name):
+    if not name or not isinstance(name, str):
+        return False
+    return bool(_GENE_SYMBOL_PATTERN.fullmatch(name.strip()))
+
+
+def resolve_ortholog_gene_name(
+    hit,
+    cache_dir,
+    *,
+    allow_online_lookup=False,
+    target_gene_name=None,
+):
     profile = profile_for_kegg_organism(hit.source_organism_code)
     if profile.annotation_table_path:
         lookup = gene_names.resolve_gene_name(
@@ -277,5 +310,14 @@ def resolve_ortholog_gene_name(hit, cache_dir, *, allow_online_lookup=False):
             allow_online_lookup=allow_online_lookup,
         )
         if lookup.gene_name and lookup.gene_name != hit.source_gene_id:
-            return lookup.gene_name
-    return hit.source_gene_name or hit.source_gene_id
+            if not _is_descriptive_kegg_name(lookup.gene_name):
+                return lookup.gene_name
+
+    kegg_name = hit.source_gene_name
+    if kegg_name and kegg_name != hit.source_gene_id and not _is_descriptive_kegg_name(kegg_name):
+        return kegg_name
+
+    if _looks_like_gene_symbol(target_gene_name):
+        return target_gene_name.strip()
+
+    return hit.source_gene_id

@@ -186,6 +186,7 @@ def run_paper_annotation_pass(
                 response,
                 organism_profile=organism_profile,
                 expected_gene=gene,
+                relaxed_name=(evidence_mode == 'ortholog'),
             )
         ),
         :
@@ -422,12 +423,24 @@ def get_gene_annotation(
             skipped_reason='no_ortholog_found',
             fields_requested=fields_needing_ortholog,
         )
+    elif not orthology.supports_ortholog_literature_pass(ortholog_hit):
+        log.info(
+            'Skipping ortholog paper pass for %s: unsupported ortholog organism %s',
+            display_gene,
+            ortholog_hit.source_organism_code,
+        )
+        ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+            ran=False,
+            skipped_reason='unsupported_ortholog_organism',
+            fields_requested=fields_needing_ortholog,
+        )
     else:
         ortholog_gene = ortholog_hit.source_gene_id
         ortholog_name = orthology.resolve_ortholog_gene_name(
             ortholog_hit,
             gene_name_cache_dir,
             allow_online_lookup=allow_online_name_lookup,
+            target_gene_name=name,
         )
         ortholog_profile = orthology.profile_for_kegg_organism(ortholog_hit.source_organism_code)
         ortholog_display = ortholog_gene
@@ -438,10 +451,11 @@ def get_gene_annotation(
             'ortholog_gene_name': ortholog_name,
         }
         log.info(
-            'Running ortholog paper pass for %s using %s:%s',
+            'Running ortholog paper pass for %s using %s:%s (search name %r)',
             display_gene,
             ortholog_hit.source_organism_code,
             ortholog_gene,
+            ortholog_name,
         )
         ortholog_paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=ortholog_profile)
         ortholog_pass = run_paper_annotation_pass(

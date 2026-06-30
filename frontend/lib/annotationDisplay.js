@@ -7,6 +7,8 @@ export const GENERATED_FIELD_ORDER = [
   ["essential_in_vivo", "Essential in vivo"],
 ];
 
+export const FIELD_PROVENANCE_ORTHolog_DERIVED = "ortholog_derived";
+
 // UI field order is fixed for review readability even though raw JSON preserves
 // the full annotation. Helpers expect the backend shape:
 // annotation.result.annotation.<generated fields and annotation_metadata>.
@@ -75,12 +77,18 @@ export function formatAnnotationValue(value) {
   return text || "No supported data";
 }
 
+export function getFieldProvenance(annotation) {
+  return getMetadata(annotation).field_provenance || {};
+}
+
 export function getGeneratedFieldRows(annotation) {
   const payload = getAnnotationPayload(annotation);
+  const fieldProvenance = getFieldProvenance(annotation);
   return GENERATED_FIELD_ORDER.map(([key, label]) => ({
     key,
     label,
     value: formatAnnotationValue(payload[key]),
+    orthologDerived: fieldProvenance[key] === FIELD_PROVENANCE_ORTHolog_DERIVED,
   }));
 }
 
