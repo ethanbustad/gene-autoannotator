@@ -2,14 +2,17 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 
 import {
+  createBatch,
   createProfile,
   deleteProfile,
   generateRegexFromDescription,
   generateRegexFromExamples,
   getAnnotationApiBaseUrl,
   getApiBaseUrl,
+  getBatch,
   getProfile,
   updateProfile,
+  validateBatch,
   validateJob,
 } from "./api.js";
 
@@ -98,6 +101,33 @@ test("regex helpers post to the generation endpoints", async () => {
         "POST",
         JSON.stringify({ description: "Rv then 4 digits" }),
       ],
+    ],
+  );
+});
+
+test("batch helpers call encoded batch endpoints", async () => {
+  process.env.BACKEND_API_BASE_URL = "http://backend.test";
+  const calls = [];
+  mockFetch((url, options) => {
+    calls.push({ url, options });
+    return { batch_id: "batch/2026-001" };
+  });
+
+  const payload = {
+    profile: "mtb-h37rv",
+    targets: [{ locus: "Rv0001", name: "dnaA" }],
+  };
+
+  await validateBatch(payload);
+  await createBatch(payload);
+  await getBatch("batch/2026-001");
+
+  assert.deepEqual(
+    calls.map((call) => [call.url, call.options.method, call.options.body]),
+    [
+      ["http://backend.test/batches/validate", "POST", JSON.stringify(payload)],
+      ["http://backend.test/batches", "POST", JSON.stringify(payload)],
+      ["http://backend.test/batches/batch%2F2026-001", undefined, undefined],
     ],
   );
 });

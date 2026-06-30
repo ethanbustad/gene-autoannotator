@@ -147,6 +147,24 @@ export async function clearFinishedJobHistory() {
   });
 }
 
+export async function validateBatch(payload) {
+  return apiFetch("/batches/validate", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createBatch(payload) {
+  return apiFetch("/batches", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function getBatch(batchId) {
+  return apiFetch(`/batches/${encodeURIComponent(batchId)}`);
+}
+
 export async function searchAnnotations(query) {
   return annotationApiFetch(`/search?query=${encodeURIComponent(query)}`);
 }
