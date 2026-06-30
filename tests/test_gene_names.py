@@ -123,6 +123,61 @@ def test_annotation_table_lookup_returns_gene_name(monkeypatch):
     assert result.source == "annotation_table"
 
 
+def test_annotation_table_lookup_locus_from_exact_gene_name(monkeypatch):
+    profile = organisms.resolve_profile("mtb-h37rv")
+    table = pd.DataFrame([
+        {"Feature": "CDS", "Locus": "Rv0001", "Name": "dnaA"},
+        {"Feature": "CDS", "Locus": "Rv0002", "Name": "dnaN"},
+    ])
+    monkeypatch.setattr(gene_names.pd, "read_csv", lambda *args, **kwargs: table)
+
+    result = gene_names.lookup_locus_from_annotation_table(profile, "dnaA")
+
+    assert result is not None
+    assert result.locus == "Rv0001"
+    assert result.source == "annotation_table"
+    assert result.confidence == "profile_table"
+
+
+def test_annotation_table_lookup_locus_case_insensitive_unique(monkeypatch):
+    profile = organisms.resolve_profile("mtb-h37rv")
+    table = pd.DataFrame([
+        {"Feature": "CDS", "Locus": "Rv0001", "Name": "dnaA"},
+    ])
+    monkeypatch.setattr(gene_names.pd, "read_csv", lambda *args, **kwargs: table)
+
+    result = gene_names.lookup_locus_from_annotation_table(profile, "DNAA")
+
+    assert result.locus == "Rv0001"
+
+
+def test_annotation_table_lookup_locus_ambiguous(monkeypatch):
+    profile = organisms.resolve_profile("mtb-h37rv")
+    table = pd.DataFrame([
+        {"Feature": "CDS", "Locus": "Rv0001", "Name": "dup"},
+        {"Feature": "CDS", "Locus": "Rv0002", "Name": "dup"},
+    ])
+    monkeypatch.setattr(gene_names.pd, "read_csv", lambda *args, **kwargs: table)
+
+    result = gene_names.lookup_locus_from_annotation_table(profile, "dup")
+
+    assert result.locus is None
+    assert set(result.candidates) == {"Rv0001", "Rv0002"}
+    assert "ambiguous_locus" in result.warnings
+
+
+def test_annotation_table_lookup_locus_by_locus_column_case_insensitive(monkeypatch):
+    profile = organisms.resolve_profile("mtb-h37rv")
+    table = pd.DataFrame([
+        {"Feature": "CDS", "Locus": "Rv0001", "Name": "dnaA"},
+    ])
+    monkeypatch.setattr(gene_names.pd, "read_csv", lambda *args, **kwargs: table)
+
+    result = gene_names.lookup_locus_from_annotation_table(profile, "rv0001")
+
+    assert result.locus == "Rv0001"
+
+
 class FakeSource:
     def __init__(self, result):
         self.result = result

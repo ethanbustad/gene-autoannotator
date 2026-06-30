@@ -177,7 +177,7 @@ def cache_supplied_gene_name(
     return record
 
 
-def lookup_annotation_table_gene_name(profile, locus):
+def _load_annotation_table(profile):
     if not profile.annotation_table_path:
         return None
     try:
@@ -190,6 +190,14 @@ def lookup_annotation_table_gene_name(profile, locus):
             table[profile.annotation_feature_column].eq(profile.annotation_feature_value),
             :,
         ]
+    return table
+
+
+def lookup_annotation_table_gene_name(profile, locus):
+    table = _load_annotation_table(profile)
+    if table is None:
+        return None
+
     table = table.set_index(profile.annotation_id_column, drop=True)
     if locus not in table.index:
         return None
@@ -202,6 +210,57 @@ def lookup_annotation_table_gene_name(profile, locus):
         source_detail=profile.annotation_table_path,
         confidence='profile_table',
     )
+
+
+def _annotation_table_locus_result(profile, locus):
+    return GeneLocusLookupResult(
+        locus=locus,
+        source='annotation_table',
+        source_detail=profile.annotation_table_path,
+        confidence='profile_table',
+    )
+
+
+def lookup_locus_from_annotation_table(profile, gene_name):
+    table = _load_annotation_table(profile)
+    if table is None:
+        return None
+
+    id_col = profile.annotation_id_column
+    name_col = profile.annotation_name_column
+    name_series = table[name_col]
+    name_mask = (
+        name_series.notna()
+        & name_series.astype(str).str.casefold().eq(gene_name.casefold())
+    )
+    name_matches = table.loc[name_mask, id_col]
+    if len(name_matches) == 1:
+        return _annotation_table_locus_result(profile, name_matches.iloc[0])
+    if len(name_matches) > 1:
+        return GeneLocusLookupResult(
+            locus=None,
+            source='annotation_table',
+            source_detail=profile.annotation_table_path,
+            confidence='profile_table',
+            candidates=sorted(name_matches.astype(str).tolist()),
+            warnings=['ambiguous_locus'],
+        )
+
+    locus_mask = table[id_col].astype(str).str.casefold().eq(gene_name.casefold())
+    locus_matches = table.loc[locus_mask, id_col]
+    if len(locus_matches) == 1:
+        return _annotation_table_locus_result(profile, locus_matches.iloc[0])
+    if len(locus_matches) > 1:
+        return GeneLocusLookupResult(
+            locus=None,
+            source='annotation_table',
+            source_detail=profile.annotation_table_path,
+            confidence='profile_table',
+            candidates=sorted(locus_matches.astype(str).tolist()),
+            warnings=['ambiguous_locus'],
+        )
+
+    return None
 
 
 class NcbiGeneSource:
