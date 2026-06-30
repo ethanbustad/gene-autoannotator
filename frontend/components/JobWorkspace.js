@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
+import BatchJobForm from "./BatchJobForm";
 import {
   clearFinishedJobHistory,
   createJob,
@@ -193,6 +194,8 @@ export default function JobWorkspace() {
   const [showAllJobs, setShowAllJobs] = useState(false);
   const [queue, setQueue] = useState({ queued: 0, running: 0, completed: 0, failed: 0 });
   const [statusMessage, setStatusMessage] = useState("");
+  const [submitMode, setSubmitMode] = useState("single");
+  const [activeBatchId, setActiveBatchId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form, setForm] = useState({
     profile: searchParams.get("profile") || "mtb-h37rv",
@@ -399,6 +402,38 @@ export default function JobWorkspace() {
             Jobs are queued and executed sequentially; a real annotation can take hours.
           </p>
 
+          <div
+            className="mt-6 inline-flex rounded-xl border workbench-border p-1"
+            role="group"
+            aria-label="Submission mode"
+          >
+            <button
+              type="button"
+              onClick={() => setSubmitMode("single")}
+              aria-pressed={submitMode === "single"}
+              className={`min-h-10 rounded-lg px-4 text-sm font-bold transition-colors ${
+                submitMode === "single"
+                  ? "workbench-button-primary"
+                  : "workbench-button-secondary border-0 bg-transparent shadow-none"
+              }`}
+            >
+              Single gene
+            </button>
+            <button
+              type="button"
+              onClick={() => setSubmitMode("batch")}
+              aria-pressed={submitMode === "batch"}
+              className={`min-h-10 rounded-lg px-4 text-sm font-bold transition-colors ${
+                submitMode === "batch"
+                  ? "workbench-button-primary"
+                  : "workbench-button-secondary border-0 bg-transparent shadow-none"
+              }`}
+            >
+              Batch
+            </button>
+          </div>
+
+          {submitMode === "single" ? (
           <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
             <label className="grid gap-2 text-sm font-medium">
               Profile
@@ -559,6 +594,33 @@ export default function JobWorkspace() {
               {isSubmitting ? "Submitting..." : "Queue annotation job"}
             </button>
           </form>
+          ) : (
+            <div className="mt-6 grid gap-4">
+              <BatchJobForm
+                form={form}
+                updateForm={updateForm}
+                profiles={profiles}
+                selectedProfile={selectedProfile}
+                isCustomProfile={isCustomProfile}
+                canSubmit={canSubmit}
+                setStatusMessage={setStatusMessage}
+                onBatchSubmitted={(batchId, result) => {
+                  setActiveBatchId(batchId);
+                  const jobCount = result.job_ids?.length ?? 0;
+                  setStatusMessage(
+                    `Queued batch ${batchId} with ${jobCount} annotation${jobCount === 1 ? "" : "s"}.`,
+                  );
+                  refreshJobs();
+                }}
+              />
+
+              {statusMessage ? (
+                <p className="workbench-amber-bg rounded-xl border workbench-border p-4 text-sm text-[#5f4b2e]">
+                  {statusMessage}
+                </p>
+              ) : null}
+            </div>
+          )}
         </section>
 
         <section className="workbench-card p-6">
