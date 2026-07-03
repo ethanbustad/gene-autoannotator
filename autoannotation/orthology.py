@@ -13,6 +13,7 @@ from . import organisms
 log = logging.getLogger(__name__)
 
 KEGG_SSDB_BEST_URL = 'https://www.kegg.jp/ssdb-bin/ssdb_best?org_gene={org_gene}'
+MIN_ORTHOLOG_IDENTITY = 0.30
 SSDB_ENTRY_PATTERN = re.compile(
     r'<A HREF="/entry/([a-z]{3,4}:[^"]+)"[^>]*>\1</A>\s+([^<]*?)\s*'
     r'<A HREF="/entry/K\d+"[^>]*>K\d+</a>\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)',
@@ -285,6 +286,20 @@ def supports_ortholog_literature_pass(hit):
         if profile.kegg_organism_code and profile.kegg_organism_code.lower() == code:
             return True
     return False
+
+
+def select_best_profiled_ortholog(hits, *, min_identity=MIN_ORTHOLOG_IDENTITY):
+    """Pick the highest-SW-score hit that has a saved profile/hint and clears the
+    identity floor. Returns None when no hit qualifies."""
+    qualifying = [
+        hit for hit in hits
+        if supports_ortholog_literature_pass(hit)
+        and hit.identity is not None
+        and hit.identity >= min_identity
+    ]
+    if not qualifying:
+        return None
+    return max(qualifying, key=lambda hit: (hit.score if hit.score is not None else 0.0))
 
 
 _GENE_SYMBOL_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,11}$')

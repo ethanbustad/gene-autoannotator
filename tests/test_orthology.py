@@ -135,6 +135,51 @@ def test_supports_ortholog_literature_pass():
     assert orthology.supports_ortholog_literature_pass(None) is False
 
 
+def test_select_best_profiled_ortholog_prefers_profiled_over_top_score():
+    from autoannotation import orthology
+
+    unprofiled_top = orthology.OrthologHit(
+        source_organism_code="pspi", source_organism_name=None,
+        source_gene_id="PSPPH_1", source_gene_name=None,
+        score=3000.0, identity=0.90, lookup_source="kegg_ssdb",
+    )
+    profiled = orthology.OrthologHit(
+        source_organism_code="mory", source_organism_name="Mycobacterium orygis",
+        source_gene_id="MO_000001", source_gene_name="dnaA",
+        score=2600.0, identity=0.62, lookup_source="kegg_ssdb",
+    )
+    chosen = orthology.select_best_profiled_ortholog([unprofiled_top, profiled])
+    assert chosen.source_organism_code == "mory"
+
+
+def test_select_best_profiled_ortholog_rejects_below_identity_floor():
+    from autoannotation import orthology
+
+    weak = orthology.OrthologHit(
+        source_organism_code="mory", source_organism_name="Mycobacterium orygis",
+        source_gene_id="MO_000001", source_gene_name="dnaA",
+        score=2600.0, identity=0.10, lookup_source="kegg_ssdb",
+    )
+    assert orthology.select_best_profiled_ortholog([weak]) is None
+
+
+def test_select_best_profiled_ortholog_ranks_profiled_by_score():
+    from autoannotation import orthology
+
+    lower = orthology.OrthologHit(
+        source_organism_code="mory", source_organism_name=None,
+        source_gene_id="MO_1", source_gene_name=None,
+        score=2000.0, identity=0.60, lookup_source="kegg_ssdb",
+    )
+    higher = orthology.OrthologHit(
+        source_organism_code="msm", source_organism_name=None,
+        source_gene_id="MSMEG_1", source_gene_name=None,
+        score=2500.0, identity=0.55, lookup_source="kegg_ssdb",
+    )
+    chosen = orthology.select_best_profiled_ortholog([lower, higher])
+    assert chosen.source_organism_code == "msm"
+
+
 def test_resolve_ortholog_gene_name_prefers_target_symbol_over_kegg_description(tmp_path):
     hit = OrthologHit(
         source_organism_code='mory',
