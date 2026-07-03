@@ -250,3 +250,90 @@ def test_resolve_ortholog_gene_name_keeps_short_kegg_name(tmp_path):
     )
 
     assert orthology.resolve_ortholog_gene_name(hit, tmp_path) == 'dnaA'
+
+
+def test_fetch_ssdb_hits_reads_legacy_single_dict_cache(tmp_path):
+    legacy = OrthologHit(
+        source_organism_code='mory',
+        source_organism_name='Mycobacterium orygis',
+        source_gene_id='MO_000001',
+        source_gene_name='dnaA',
+        score=2615.0,
+        identity=0.98,
+        lookup_source='kegg_ssdb',
+    ).to_metadata()
+    cache_file = Path(orthology._cache_path(str(tmp_path), 'mtu', 'Rv0001'))
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    cache_file.write_text(json.dumps(legacy), encoding='utf-8')
+
+    def fetch_html(_url):
+        raise AssertionError('should not refetch when a cache file exists')
+
+    hits = orthology._fetch_ssdb_hits('mtu', 'Rv0001', cache_dir=str(tmp_path), fetch_html=fetch_html)
+
+    assert len(hits) == 1
+    assert isinstance(hits[0], OrthologHit)
+    assert hits[0].source_gene_id == 'MO_000001'
+    assert hits[0].identity == 0.98
+
+    top = lookup_top_ortholog('mtu', 'Rv0001', cache_dir=str(tmp_path), fetch_html=fetch_html)
+    assert top.source_gene_id == 'MO_000001'
+
+
+def test_fetch_ssdb_hits_reads_null_cache_without_fetch(tmp_path):
+    cache_file = Path(orthology._cache_path(str(tmp_path), 'mtu', 'Rv0001'))
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    cache_file.write_text('null', encoding='utf-8')
+
+    def fetch_html(_url):
+        raise AssertionError('should not refetch when cache is null')
+
+    assert orthology._fetch_ssdb_hits(
+        'mtu', 'Rv0001', cache_dir=str(tmp_path), fetch_html=fetch_html
+    ) == []
+    assert lookup_top_ortholog(
+        'mtu', 'Rv0001', cache_dir=str(tmp_path), fetch_html=fetch_html
+    ) is None
+
+
+def test_fetch_ssdb_hits_refetches_on_corrupt_cache(tmp_path):
+    cache_file = Path(orthology._cache_path(str(tmp_path), 'mtu', 'Rv0001'))
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    cache_file.write_text('{not valid json', encoding='utf-8')
+
+    html = _load_fixture('mtu_rv0001.html')
+    calls = {'count': 0}
+
+    def fetch_html(_url):
+        calls['count'] += 1
+        return html
+
+    hits = orthology._fetch_ssdb_hits('mtu', 'Rv0001', cache_dir=str(tmp_path), fetch_html=fetch_html)
+
+    assert calls['count'] == 1
+    assert hits
+    assert hits[0].source_organism_code == 'mory'
+
+
+def test_build_manual_ortholog_hit_falls_back_to_profile_id():
+    from autoannotation import organisms
+
+    profile = organisms.OrganismProfile(
+        profile_id='CustomOrg',
+        canonical_name='Custom organism',
+        species_name='Custom organism',
+        strain=None,
+        synonyms=(),
+        species_synonyms=(),
+        strain_synonyms=(),
+        locus_regex=r'^.+$',
+        search_terms=(),
+        kegg_organism_code=None,
+    )
+    hit = orthology.build_manual_ortholog_hit(profile, 'LOCUS1', name='geneX')
+
+    assert hit.source_organism_code == 'customorg'
+    assert hit.source_gene_id == 'LOCUS1'
+    assert hit.source_gene_name == 'geneX'
+    assert hit.lookup_source == 'manual'
+    assert hit.identity is None
