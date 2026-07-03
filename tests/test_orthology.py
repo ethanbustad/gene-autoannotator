@@ -22,7 +22,7 @@ def test_parse_ssdb_best_skips_self_hit_and_returns_top_ortholog():
     assert hit is not None
     assert hit.source_organism_code == 'mory'
     assert hit.source_gene_id == 'MO_000001'
-    assert hit.score == 507.0
+    assert hit.score == 2615.0
     assert hit.lookup_source == 'kegg_ssdb'
 
 
@@ -30,6 +30,28 @@ def test_parse_ssdb_best_returns_none_when_only_self_hit():
     html = '<html><A HREF="/entry/mtu:Rv9999">mtu:Rv9999</A></html>'
 
     assert parse_ssdb_best_response(html, 'mtu') is None
+
+
+def test_parse_ssdb_hits_returns_all_non_self_with_identity():
+    from autoannotation import orthology
+
+    html = (
+        '<A HREF="/entry/mtu:Rv0001">mtu:Rv0001</A> (507 a.a.) '
+        '<A HREF="/entry/K02313">K02313</a>     507     2615     1.000      507\n'
+        '<A HREF="/entry/mory:MO_000001">mory:MO_000001</A> initiator '
+        '<A HREF="/entry/K02313">K02313</a>     507     2615     0.980      507\n'
+        '<A HREF="/entry/msm:MSMEG_6947">msm:MSMEG_6947</A> initiator '
+        '<A HREF="/entry/K02313">K02313</a>     504     2400     0.805      508\n'
+    )
+    hits = orthology.parse_ssdb_hits(html, "mtu")
+
+    assert [h.source_organism_code for h in hits] == ["mory", "msm"]
+    assert hits[0].source_gene_id == "MO_000001"
+    assert hits[0].identity == 0.980
+    assert hits[1].identity == 0.805
+    # score is the SW-similarity column, not gene length
+    assert hits[0].score == 2615.0
+    assert hits[1].score == 2400.0
 
 
 def test_lookup_top_ortholog_uses_cache(tmp_path):

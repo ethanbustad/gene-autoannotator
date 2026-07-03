@@ -125,6 +125,7 @@ class OrthologHit:
     source_gene_name: str | None
     score: float | None
     lookup_source: str
+    identity: float | None = None
     raw_response: str | None = None
 
     def to_metadata(self):
@@ -134,6 +135,7 @@ class OrthologHit:
             'source_gene_id': self.source_gene_id,
             'source_gene_name': self.source_gene_name,
             'score': self.score,
+            'identity': self.identity,
             'lookup_source': self.lookup_source,
         }
 
@@ -149,25 +151,33 @@ class OrthologPassResult:
     fields_requested: list[str] | None = None
 
 
-def parse_ssdb_best_response(html, query_organism_code):
-    """Parse KEGG SSDB best-hit HTML and return the top non-self hit."""
+def parse_ssdb_hits(html, query_organism_code):
+    """Parse KEGG SSDB best-hit HTML into all non-self hits, best score first."""
     query_code = query_organism_code.lower()
+    hits = []
     for match in SSDB_ENTRY_PATTERN.finditer(html):
-        org_gene, description, score_str, _aln_len, _identity, _query_len = match.groups()
+        org_gene, description, _length, sw_score, identity, _overlap = match.groups()
         org_code, gene_id = org_gene.split(':', 1)
         if org_code.lower() == query_code:
             continue
         description = ' '.join(description.split())
-        return OrthologHit(
+        hits.append(OrthologHit(
             source_organism_code=org_code.lower(),
             source_organism_name=KEGG_ORGANISM_NAMES.get(org_code.lower()),
             source_gene_id=gene_id,
             source_gene_name=description or None,
-            score=float(score_str),
+            score=float(sw_score),
+            identity=float(identity),
             lookup_source='kegg_ssdb',
             raw_response=None,
-        )
-    return None
+        ))
+    return hits
+
+
+def parse_ssdb_best_response(html, query_organism_code):
+    """Backward-compatible: return the first non-self hit (table order)."""
+    hits = parse_ssdb_hits(html, query_organism_code)
+    return hits[0] if hits else None
 
 
 def _cache_path(cache_dir, kegg_organism_code, gene_locus):
