@@ -187,9 +187,10 @@ def _cache_path(cache_dir, kegg_organism_code, gene_locus):
     return os.path.join(cache_dir, 'orthologs', f'{digest}.json')
 
 
-def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *, fetch_html=None):
+def _fetch_ssdb_hits(kegg_organism_code, gene_locus, cache_dir='./.cache', *, fetch_html=None):
+    """Return all non-self SSDB hits for a gene, using a cached JSON list."""
     if not kegg_organism_code or not gene_locus:
-        return None
+        return []
 
     cache_file = _cache_path(cache_dir, kegg_organism_code, gene_locus)
     if os.path.isfile(cache_file):
@@ -197,16 +198,10 @@ def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *,
             with open(cache_file, 'r', encoding='utf-8') as handle:
                 cached = json.load(handle)
             if cached is None:
-                return None
-            hit = OrthologHit(**{**cached, 'raw_response': None})
-            log.debug(
-                'Using cached ortholog hit %s:%s for %s:%s',
-                hit.source_organism_code,
-                hit.source_gene_id,
-                kegg_organism_code,
-                gene_locus,
-            )
-            return hit
+                return []
+            if isinstance(cached, dict):  # legacy single-hit cache
+                cached = [cached]
+            return [OrthologHit(**{**item, 'raw_response': None}) for item in cached]
         except (json.JSONDecodeError, TypeError, KeyError):
             log.warning('Invalid ortholog cache at %s; refetching', cache_file)
 
@@ -221,16 +216,40 @@ def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *,
             html = response.text
     except Exception as exc:
         log.warning('KEGG SSDB lookup failed for %s: %s', org_gene, exc)
-        return None
+        return []
 
-    hit = parse_ssdb_best_response(html, kegg_organism_code)
+    hits = parse_ssdb_hits(html, kegg_organism_code)
     os.makedirs(os.path.dirname(cache_file), exist_ok=True)
     with open(cache_file, 'w', encoding='utf-8') as handle:
-        if hit is None:
-            json.dump(None, handle)
-        else:
-            json.dump(hit.to_metadata(), handle, indent=2)
-    return hit
+        json.dump([hit.to_metadata() for hit in hits], handle, indent=2)
+    return hits
+
+
+def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *, fetch_html=None):
+    hits = _fetch_ssdb_hits(kegg_organism_code, gene_locus, cache_dir, fetch_html=fetch_html)
+    return hits[0] if hits else None
+
+
+def lookup_best_profiled_ortholog(
+    kegg_organism_code, gene_locus, cache_dir='./.cache', *,
+    fetch_html=None, min_identity=MIN_ORTHOLOG_IDENTITY,
+):
+    hits = _fetch_ssdb_hits(kegg_organism_code, gene_locus, cache_dir, fetch_html=fetch_html)
+    return select_best_profiled_ortholog(hits, min_identity=min_identity)
+
+
+def build_manual_ortholog_hit(profile, locus, name=None):
+    code = (profile.kegg_organism_code or profile.profile_id).lower()
+    return OrthologHit(
+        source_organism_code=code,
+        source_organism_name=profile.canonical_name,
+        source_gene_id=locus,
+        source_gene_name=name,
+        score=None,
+        identity=None,
+        lookup_source='manual',
+        raw_response=None,
+    )
 
 
 def profile_for_kegg_organism(kegg_code):

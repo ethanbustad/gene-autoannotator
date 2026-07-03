@@ -69,6 +69,35 @@ def test_lookup_top_ortholog_uses_cache(tmp_path):
     assert calls['count'] == 1
 
 
+def test_lookup_best_profiled_ortholog_uses_selection(tmp_path):
+    from autoannotation import orthology
+
+    html = (
+        '<A HREF="/entry/mtu:Rv0001">mtu:Rv0001</A> (507 a.a.) '
+        '<A HREF="/entry/K02313">K02313</a>     507     2615     1.000      507\n'
+        '<A HREF="/entry/pspi:PSP_1">pspi:PSP_1</A> initiator '
+        '<A HREF="/entry/K02313">K02313</a>     600     3000     0.900      600\n'
+        '<A HREF="/entry/mory:MO_000001">mory:MO_000001</A> initiator '
+        '<A HREF="/entry/K02313">K02313</a>     507     2600     0.620      507\n'
+    )
+    hit = orthology.lookup_best_profiled_ortholog(
+        "mtu", "Rv0001", cache_dir=str(tmp_path), fetch_html=lambda url: html,
+    )
+    assert hit.source_organism_code == "mory"
+
+
+def test_build_manual_ortholog_hit_uses_profile_code():
+    from autoannotation import orthology, organisms
+
+    profile = organisms.resolve_profile("mtb-h37rv")
+    hit = orthology.build_manual_ortholog_hit(profile, "Rv9999", name="testA")
+    assert hit.lookup_source == "manual"
+    assert hit.source_gene_id == "Rv9999"
+    assert hit.source_gene_name == "testA"
+    assert hit.source_organism_code == "mtu"
+    assert hit.identity is None
+
+
 def test_lookup_top_ortholog_returns_none_without_kegg_code(tmp_path):
     assert lookup_top_ortholog(None, 'Rv0001', cache_dir=tmp_path) is None
     assert lookup_top_ortholog('mtu', None, cache_dir=tmp_path) is None
