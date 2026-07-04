@@ -266,6 +266,20 @@ def create_app(
             return
         raise HTTPException(status_code=422, detail=detail)
 
+    def _reject_unresolvable_ortholog_override(override):
+        # Mirror the resolution the annotation pipeline uses for a manual
+        # override (autoannotation._decide_ortholog_action -> resolve_profile)
+        # so the API rejects up front instead of failing mid-run.
+        if override is None:
+            return
+        try:
+            organisms.resolve_profile(override.profile_id)
+        except organisms.UnknownOrganismError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Unknown ortholog override profile: {override.profile_id}",
+            ) from exc
+
     def _public_job_record(job):
         public_job = dict(job)
         public_request = dict(public_job.get("request") or {})
@@ -541,6 +555,7 @@ def create_app(
         status_code=status.HTTP_201_CREATED,
     )
     def create_job(request: AnnotationJobRequest, background_tasks: BackgroundTasks):
+        _reject_unresolvable_ortholog_override(request.ortholog_override)
         target = _resolve_target_for_request(request)
         _reject_invalid_target(target)
         stored_request = _stored_request_for_target(request, target)

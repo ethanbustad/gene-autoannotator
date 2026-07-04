@@ -631,6 +631,52 @@ def test_job_submission_rejects_conflicting_profile_and_organism(tmp_path):
     assert response.status_code == 422
 
 
+def test_job_submission_rejects_unresolvable_ortholog_override_profile(tmp_path):
+    app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
+    client = TestClient(app)
+
+    response = client.post(
+        "/jobs",
+        json={
+            "profile": "mtb-h37rv",
+            "locus": "Rv0001",
+            "allow_ortholog_fallback": True,
+            "ortholog_override": {
+                "profile_id": "not-a-real-profile",
+                "locus": "X_0001",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_job_submission_accepts_resolvable_ortholog_override_profile(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/jobs",
+        json={
+            "profile": "mtb-h37rv",
+            "locus": "Rv0001",
+            "allow_ortholog_fallback": True,
+            "ortholog_override": {
+                "profile_id": "mtb-h37rv",
+                "locus": "Rv9999",
+                "name": "x",
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "queued"
+
+
 def test_jobs_endpoint_lists_submitted_jobs_in_queue_order(tmp_path):
     app = create_app(
         job_store=JobStore(tmp_path / "jobs.sqlite3"),
