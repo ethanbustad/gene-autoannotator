@@ -90,6 +90,7 @@ def run_paper_annotation_pass(
     evidence_mode='target',
     ortholog_context=None,
     save_pmc_mapping=True,
+    field_defs_profile=None,
 ):
     ranked_papers = paper_manager.get_ranked_papers(gene, name)
     pmc_ids = [record.pmc_id for record in ranked_papers]
@@ -154,6 +155,7 @@ def run_paper_annotation_pass(
                     organism_profile=organism_profile,
                     evidence_mode=evidence_mode,
                     ortholog_context=ortholog_context,
+                    field_defs_profile=field_defs_profile,
                 )
                 section_distillation_candidates_cur.append(section_distillation_candidate)
                 section_distillation_candidates.append((
@@ -165,6 +167,7 @@ def run_paper_annotation_pass(
                 section_distillation_candidates_cur[2], model=MODEL_CONSENSUS,
                 section_type=label, organism_profile=organism_profile,
                 allow_missing_locus=gene is None,
+                field_defs_profile=field_defs_profile,
             )
             section_distillations.append((
                 f'PMC{pmc_id}', label, MODEL_CONSENSUS, llm_gene, llm_name,
@@ -226,6 +229,7 @@ def run_paper_annotation_pass(
             allow_missing_locus=gene is None,
             evidence_mode=evidence_mode,
             ortholog_context=ortholog_context,
+            field_defs_profile=field_defs_profile,
         )
 
     return PaperAnnotationPassResult(
@@ -239,11 +243,48 @@ def run_paper_annotation_pass(
     )
 
 
+@dataclass
+class OrthologDecision:
+    hit: orthology.OrthologHit | None
+    skipped_reason: str | None
+
+
+def _decide_ortholog_action(
+    *, allow_ortholog_fallback, ortholog_override, cumulative_relevance,
+    kegg_code, gene, cache_dir,
+):
+    """Decide whether/how to run the ortholog fallback. May perform a cache/network
+    SSDB lookup on the automatic path."""
+    if not allow_ortholog_fallback:
+        return OrthologDecision(hit=None, skipped_reason='fallback_disabled_for_job')
+
+    if ortholog_override:
+        override_profile = organisms.resolve_profile(ortholog_override['profile_id'])
+        hit = orthology.build_manual_ortholog_hit(
+            override_profile,
+            ortholog_override['locus'],
+            name=ortholog_override.get('name'),
+        )
+        return OrthologDecision(hit=hit, skipped_reason=None)
+
+    if cumulative_relevance >= pmc.DEFAULT_TARGET_RELEVANCE:
+        return OrthologDecision(hit=None, skipped_reason='target_relevance_sufficient')
+
+    if not (kegg_code and gene):
+        return OrthologDecision(hit=None, skipped_reason='no_ortholog_found')
+
+    hit = orthology.lookup_best_profiled_ortholog(kegg_code, gene, cache_dir=cache_dir)
+    if hit is None:
+        return OrthologDecision(hit=None, skipped_reason='no_profiled_ortholog')
+    return OrthologDecision(hit=hit, skipped_reason=None)
+
+
 def get_gene_annotation(
     gene=None, cache_dir='./.cache', profile=None, profile_config=None, organism=None, strain=None,
     locus=None, name=None, gene_name_cache_dir=gene_names.DEFAULT_GENE_NAME_CACHE_DIR,
     allow_online_name_lookup=True, refresh_gene_name_cache=False,
     cache_supplied_name=False,
+    allow_ortholog_fallback=False, ortholog_override=None,
 ):
     if locus is None and gene is not None:
         locus = gene
@@ -302,24 +343,6 @@ def get_gene_annotation(
         f'Starting annotation process for {profile_context.canonical_name} gene {display_gene}'
     )
     start = time.time()
-
-    ortholog_hit = None
-    kegg_code = profile_context.kegg_organism_code
-    if kegg_code and gene:
-        ortholog_hit = orthology.lookup_top_ortholog(kegg_code, gene, cache_dir=cache_dir)
-        if ortholog_hit is not None:
-            log.info(
-                'Top ortholog for %s:%s is %s:%s (score %s)',
-                kegg_code, gene,
-                ortholog_hit.source_organism_code,
-                ortholog_hit.source_gene_id,
-                ortholog_hit.score,
-            )
-    elif gene and not kegg_code:
-        log.warning(
-            'Profile %s has no kegg_organism_code; skipping ortholog lookup',
-            profile_context.profile_id,
-        )
 
     llm_handler = llms.LlmHandler(cache_dir)
     paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=profile_context)
@@ -397,44 +420,33 @@ def get_gene_annotation(
         )
 
     profile_field_defs = field_defs.resolve_annotation_field_defs(profile_context)
-    fields_needing_ortholog = []
+    eligible_fields = []
     if merged_annotation is not None:
-        fields_needing_ortholog = metadata.find_fields_needing_ortholog(
-            merged_annotation,
-            field_coverage,
-            profile_field_defs,
-        )
+        eligible_fields = metadata.fields_eligible_for_ortholog(profile_field_defs)
 
+    decision = _decide_ortholog_action(
+        allow_ortholog_fallback=allow_ortholog_fallback,
+        ortholog_override=ortholog_override,
+        cumulative_relevance=cumulative_relevance,
+        kegg_code=profile_context.kegg_organism_code,
+        gene=gene,
+        cache_dir=cache_dir,
+    )
+    ortholog_hit = decision.hit
     ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
         ran=False,
-        skipped_reason='not_evaluated',
-        fields_requested=fields_needing_ortholog,
+        skipped_reason=decision.skipped_reason,
+        fields_requested=eligible_fields,
     )
 
-    if not fields_needing_ortholog:
-        ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
-            ran=False,
-            skipped_reason='no_eligible_missing_fields',
-            fields_requested=[],
-        )
-    elif ortholog_hit is None:
-        ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
-            ran=False,
-            skipped_reason='no_ortholog_found',
-            fields_requested=fields_needing_ortholog,
-        )
-    elif not orthology.supports_ortholog_literature_pass(ortholog_hit):
-        log.info(
-            'Skipping ortholog paper pass for %s: unsupported ortholog organism %s',
-            display_gene,
-            ortholog_hit.source_organism_code,
-        )
-        ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
-            ran=False,
-            skipped_reason='unsupported_ortholog_organism',
-            fields_requested=fields_needing_ortholog,
-        )
-    else:
+    if merged_annotation is None or not eligible_fields:
+        if ortholog_hit is not None:
+            ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
+                ran=False,
+                skipped_reason='no_eligible_fields',
+                fields_requested=[],
+            )
+    elif ortholog_hit is not None:
         ortholog_gene = ortholog_hit.source_gene_id
         ortholog_name = orthology.resolve_ortholog_gene_name(
             ortholog_hit,
@@ -443,7 +455,6 @@ def get_gene_annotation(
             target_gene_name=name,
         )
         ortholog_profile = orthology.profile_for_kegg_organism(ortholog_hit.source_organism_code)
-        ortholog_display = ortholog_gene
         ortholog_context = {
             'target_gene_id': gene,
             'target_gene_name': name or display_gene,
@@ -452,16 +463,13 @@ def get_gene_annotation(
         }
         log.info(
             'Running ortholog paper pass for %s using %s:%s (search name %r)',
-            display_gene,
-            ortholog_hit.source_organism_code,
-            ortholog_gene,
-            ortholog_name,
+            display_gene, ortholog_hit.source_organism_code, ortholog_gene, ortholog_name,
         )
         ortholog_paper_manager = pmc.PmcPaperManager(cache_dir, organism_profile=ortholog_profile)
         ortholog_pass = run_paper_annotation_pass(
             ortholog_gene,
             ortholog_name,
-            ortholog_display,
+            ortholog_gene,
             ortholog_profile,
             llm_handler=llm_handler,
             paper_manager=ortholog_paper_manager,
@@ -469,35 +477,33 @@ def get_gene_annotation(
             evidence_mode='ortholog',
             ortholog_context=ortholog_context,
             save_pmc_mapping=False,
+            field_defs_profile=profile_context,
         )
         if ortholog_pass.gene_distillation is None:
             ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
                 ran=True,
                 skipped_reason='no_ortholog_papers',
-                fields_requested=fields_needing_ortholog,
-                papers_analyzed=[],
-                pmids_analyzed=[],
+                fields_requested=eligible_fields,
             )
         else:
             ortholog_parsed = json.loads(ortholog_pass.gene_distillation)
-            merged_annotation, fields_filled = metadata.merge_ortholog_evidence(
+            merged_annotation, fields_filled = metadata.merge_ortholog_annotation(
                 merged_annotation,
                 ortholog_parsed,
-                fields_needing_ortholog,
+                eligible_fields,
                 ortholog_hit,
                 target_gene_id=gene,
                 target_gene_name=name or display_gene,
             )
             if fields_filled:
                 field_coverage = metadata.build_field_coverage(
-                    merged_annotation,
-                    profile=profile_context,
+                    merged_annotation, profile=profile_context,
                 )
                 merged_annotation['annotation_metadata']['field_coverage'] = field_coverage
             ortholog_pass_metadata = metadata.build_ortholog_pass_metadata(
                 ran=True,
                 skipped_reason=None if fields_filled else 'ortholog_fields_still_null',
-                fields_requested=fields_needing_ortholog,
+                fields_requested=eligible_fields,
                 fields_filled=fields_filled,
                 papers_analyzed=[f'PMC{pmc_id}' for pmc_id in ortholog_pass.used_pmc_ids],
                 pmids_analyzed=ortholog_pass.pmids_analyzed,

@@ -109,3 +109,42 @@ test("getMetadataRows extracts requested metadata fields", () => {
 test("getPmcIdsAnalyzed returns analyzed PMC IDs", () => {
   assert.deepEqual(getPmcIdsAnalyzed(annotation), ["123", "456"]);
 });
+
+test("getGeneratedFieldRows surfaces ortholog block when both values present", () => {
+  const withBoth = {
+    result: {
+      annotation: {
+        function: "target function",
+        annotation_metadata: {
+          field_provenance: { function: "target_plus_ortholog" },
+          ortholog_fields: {
+            function: {
+              value: "ortholog function",
+              source_organism: "Mycobacterium orygis",
+              source_gene_id: "MO_000001",
+              source_gene_name: "octT",
+              identity: 0.62,
+            },
+          },
+        },
+      },
+    },
+  };
+
+  const rows = getGeneratedFieldRows(withBoth);
+  const functionRow = rows.find((row) => row.key === "function");
+  assert.equal(functionRow.value, "target function");
+  assert.equal(functionRow.orthologDerived, true);
+  assert.equal(functionRow.orthologBlock.value, "ortholog function");
+  assert.ok(functionRow.orthologBlock.sourceLabel.includes("MO_000001"));
+  assert.ok(functionRow.orthologBlock.sourceLabel.includes("62%"));
+});
+
+test("getGeneratedFieldRows leaves orthologBlock null without ortholog_fields", () => {
+  const targetOnly = {
+    result: { annotation: { function: "target only", annotation_metadata: {} } },
+  };
+  const row = getGeneratedFieldRows(targetOnly).find((r) => r.key === "function");
+  assert.equal(row.orthologBlock, null);
+  assert.equal(row.orthologDerived, false);
+});

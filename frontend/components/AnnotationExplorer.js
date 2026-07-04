@@ -79,6 +79,16 @@ function AnnotationContent({ annotation }) {
               <dd className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#3d463f]">
                 {row.value}
               </dd>
+              {row.orthologBlock ? (
+                <div className="mt-3 rounded-lg border border-[#d4c4a0] bg-white/60 p-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#8a7340]">
+                    From ortholog: {row.orthologBlock.sourceLabel}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-[#3d463f]">
+                    {row.orthologBlock.value}
+                  </p>
+                </div>
+              ) : null}
             </div>
           ))}
         </dl>

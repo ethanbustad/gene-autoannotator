@@ -17,6 +17,8 @@ def main(
     no_online_name_lookup=False,
     refresh_gene_name_cache=False,
     cache_supplied_name=False,
+    allow_ortholog_fallback=False,
+    ortholog_override=None,
 ):
     if profile and organism:
         raise ValueError('use either profile or organism, not both')
@@ -33,6 +35,8 @@ def main(
         allow_online_name_lookup=not no_online_name_lookup,
         refresh_gene_name_cache=refresh_gene_name_cache,
         cache_supplied_name=cache_supplied_name,
+        allow_ortholog_fallback=allow_ortholog_fallback,
+        ortholog_override=ortholog_override,
     )
 
     if result is None:

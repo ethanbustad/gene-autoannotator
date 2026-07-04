@@ -631,6 +631,52 @@ def test_job_submission_rejects_conflicting_profile_and_organism(tmp_path):
     assert response.status_code == 422
 
 
+def test_job_submission_rejects_unresolvable_ortholog_override_profile(tmp_path):
+    app = create_app(job_store=JobStore(tmp_path / "jobs.sqlite3"))
+    client = TestClient(app)
+
+    response = client.post(
+        "/jobs",
+        json={
+            "profile": "mtb-h37rv",
+            "locus": "Rv0001",
+            "allow_ortholog_fallback": True,
+            "ortholog_override": {
+                "profile_id": "not-a-real-profile",
+                "locus": "X_0001",
+            },
+        },
+    )
+
+    assert response.status_code == 422
+
+
+def test_job_submission_accepts_resolvable_ortholog_override_profile(tmp_path):
+    app = create_app(
+        job_store=JobStore(tmp_path / "jobs.sqlite3"),
+        run_jobs_inline=False,
+        start_worker=False,
+    )
+    client = TestClient(app)
+
+    response = client.post(
+        "/jobs",
+        json={
+            "profile": "mtb-h37rv",
+            "locus": "Rv0001",
+            "allow_ortholog_fallback": True,
+            "ortholog_override": {
+                "profile_id": "mtb-h37rv",
+                "locus": "Rv9999",
+                "name": "x",
+            },
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["status"] == "queued"
+
+
 def test_jobs_endpoint_lists_submitted_jobs_in_queue_order(tmp_path):
     app = create_app(
         job_store=JobStore(tmp_path / "jobs.sqlite3"),
@@ -1078,6 +1124,45 @@ def test_batches_create_queues_ready_jobs_only(tmp_path, monkeypatch):
     assert batch_payload["queue"]["queued"] == 1
 
 
+def test_batch_entry_request_inherits_fallback_flag():
+    from backend.schemas import BatchCreateRequest
+
+    request = BatchCreateRequest(
+        profile="mtb-h37rv",
+        entries=[{"input": "Rv0001"}],
+        allow_ortholog_fallback=True,
+    )
+    assert request.allow_ortholog_fallback is True
+
+
+def test_create_batch_propagates_fallback_flag(tmp_path, monkeypatch):
+    _patch_mtb_dnaa_lookup(monkeypatch, locus="Rv0001")
+    client = TestClient(_batch_app(tmp_path))
+
+    response = client.post(
+        "/batches",
+        json={
+            "profile": "mtb-h37rv",
+            "entries": [{"input": "Rv0001"}],
+            "allow_online_name_lookup": False,
+            "allow_ortholog_fallback": True,
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["job_ids"]
+
+    jobs_response = client.get("/jobs", params={"batch_id": payload["batch_id"]})
+    assert jobs_response.status_code == 200
+    jobs = jobs_response.json()["jobs"]
+    assert jobs
+    assert all(
+        job["request"]["allow_ortholog_fallback"] is True for job in jobs
+    )
+    assert all(job["request"].get("ortholog_override") is None for job in jobs)
+
+
 def test_batches_rejects_empty(tmp_path):
     client = TestClient(_batch_app(tmp_path), raise_server_exceptions=False)
 
@@ -1121,3 +1206,36 @@ def test_batches_rejects_over_max_size(tmp_path, monkeypatch):
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Batch exceeds maximum size of 2."
+
+
+def test_job_request_rejects_override_without_flag():
+    import pytest
+    from pydantic import ValidationError
+    from backend.schemas import AnnotationJobRequest
+
+    with pytest.raises(ValidationError):
+        AnnotationJobRequest(
+            profile="mtb-h37rv", locus="Rv0001",
+            allow_ortholog_fallback=False,
+            ortholog_override={"profile_id": "mtb-h37rv", "locus": "Rv9999"},
+        )
+
+
+def test_job_request_accepts_flag_and_override():
+    from backend.schemas import AnnotationJobRequest
+
+    request = AnnotationJobRequest(
+        profile="mtb-h37rv", locus="Rv0001",
+        allow_ortholog_fallback=True,
+        ortholog_override={"profile_id": "mtb-h37rv", "locus": "Rv9999", "name": "x"},
+    )
+    assert request.allow_ortholog_fallback is True
+    assert request.ortholog_override.locus == "Rv9999"
+
+
+def test_job_request_flag_defaults_false():
+    from backend.schemas import AnnotationJobRequest
+
+    request = AnnotationJobRequest(profile="mtb-h37rv", locus="Rv0001")
+    assert request.allow_ortholog_fallback is False
+    assert request.ortholog_override is None

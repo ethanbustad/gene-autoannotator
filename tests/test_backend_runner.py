@@ -40,6 +40,8 @@ def test_runner_calls_existing_cli_main():
         "no_online_name_lookup": True,
         "refresh_gene_name_cache": False,
         "cache_supplied_name": True,
+        "allow_ortholog_fallback": False,
+        "ortholog_override": None,
     }
     assert result["annotation"]["gene_id"] == "TcCLB.503799.4"
     assert result["output_path"].endswith("gen_TcCLB.503799.4.json")
@@ -93,3 +95,24 @@ def test_runner_passes_profile_config_to_cli_main():
 
     assert captured["profile"] == "custom-profile"
     assert captured["profile_config"] == profile_config
+
+
+def test_runner_forwards_ortholog_fields():
+    from backend.runner import run_annotation_job
+    from backend.schemas import AnnotationJobRequest
+
+    captured = {}
+
+    def fake_main(**kwargs):
+        captured.update(kwargs)
+        return {"ok": True}
+
+    request = AnnotationJobRequest(
+        profile="mtb-h37rv", locus="Rv0001",
+        allow_ortholog_fallback=True,
+        ortholog_override={"profile_id": "mtb-h37rv", "locus": "Rv9999", "name": "x"},
+    )
+    run_annotation_job(request, annotation_main=fake_main)
+
+    assert captured["allow_ortholog_fallback"] is True
+    assert captured["ortholog_override"] == {"profile_id": "mtb-h37rv", "locus": "Rv9999", "name": "x"}

@@ -71,6 +71,7 @@ class FakeLlmHandler:
     def get_llm_gene_info_json(
         self, gene_id, gene_name, info_text, model, section_type='abstract',
         organism_profile=None, evidence_mode='target', ortholog_context=None,
+        field_defs_profile=None,
     ):
         assert section_type == 'abstract'
         if evidence_mode == 'ortholog':
@@ -83,6 +84,7 @@ class FakeLlmHandler:
     def get_llm_consensus_json(
         self, json1, json2, json3, model, section_type='abstract',
         organism_profile=None, allow_missing_locus=False,
+        field_defs_profile=None,
     ):
         assert section_type == 'abstract'
         if json1 == ORTHolog_JSON:
@@ -94,7 +96,7 @@ class FakeLlmHandler:
     def get_llm_aggregate_json(
         self, json_responses, pmids, model, literature_context=None, relevance_scores=None,
         organism_profile=None, allow_missing_locus=False,
-        evidence_mode='target', ortholog_context=None,
+        evidence_mode='target', ortholog_context=None, field_defs_profile=None,
     ):
         assert literature_context is not None
         assert relevance_scores is not None
@@ -218,18 +220,21 @@ def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch, tmp_
     _patch_common(monkeypatch, tmp_path)
     monkeypatch.setattr(
         autoannotation.orthology,
-        'lookup_top_ortholog',
+        'lookup_best_profiled_ortholog',
         lambda *args, **kwargs: OrthologHit(
             source_organism_code='mory',
             source_organism_name='Mycobacterium orygis',
             source_gene_id='MO_000001',
             source_gene_name='dnaA',
             score=507.0,
+            identity=0.82,
             lookup_source='kegg_ssdb',
         ),
     )
 
-    result = autoannotation.get_gene_annotation("Rv0001", cache_dir=tmp_path)
+    result = autoannotation.get_gene_annotation(
+        "Rv0001", cache_dir=tmp_path, allow_ortholog_fallback=True,
+    )
 
     assert result["used_ids"] == ["1"]
     meta = result["gene_annotation"]["annotation_metadata"]
@@ -240,82 +245,89 @@ def test_get_gene_annotation_consumes_ranked_relevance_records(monkeypatch, tmp_
     assert meta["review_flags"]["function"] is True
 
 
-def test_get_gene_annotation_skips_ortholog_pass_when_direct_complete(monkeypatch, tmp_path):
+def test_get_gene_annotation_skips_ortholog_when_fallback_disabled(monkeypatch, tmp_path):
     _patch_common(monkeypatch, tmp_path)
 
-    class CompleteDirectLlm(FakeLlmHandler):
-        def get_llm_aggregate_json(self, *args, **kwargs):
-            return GENE_JSON_COMPLETE, 0.1
+    called = {"lookup": False}
 
-    monkeypatch.setattr(autoannotation.llms, "LlmHandler", CompleteDirectLlm)
-    monkeypatch.setattr(
-        autoannotation.orthology,
-        'lookup_top_ortholog',
-        lambda *args, **kwargs: OrthologHit(
+    def fake_lookup(*args, **kwargs):
+        called["lookup"] = True
+        return OrthologHit(
             source_organism_code='mory',
             source_organism_name='Mycobacterium orygis',
             source_gene_id='MO_000001',
             source_gene_name='dnaA',
             score=507.0,
+            identity=0.82,
             lookup_source='kegg_ssdb',
-        ),
-    )
+        )
+
+    monkeypatch.setattr(autoannotation.orthology, 'lookup_best_profiled_ortholog', fake_lookup)
 
     result = autoannotation.get_gene_annotation("Rv0001", cache_dir=tmp_path)
     meta = result["gene_annotation"]["annotation_metadata"]
 
-    assert meta["ortholog_top_hit"]["source_gene_id"] == "MO_000001"
+    assert called["lookup"] is False
+    assert meta["ortholog_top_hit"] is None
     assert meta["ortholog_pass"]["ran"] is False
-    assert meta["ortholog_pass"]["skipped_reason"] == "no_eligible_missing_fields"
-    assert result["gene_annotation"]["function"] == "Initiates DNA replication."
+    assert meta["ortholog_pass"]["skipped_reason"] == "fallback_disabled_for_job"
+    assert result["gene_annotation"]["function"] is None
 
 
-def test_get_gene_annotation_skips_unsupported_ortholog_organism(monkeypatch, tmp_path):
+def test_get_gene_annotation_skips_ortholog_when_relevance_sufficient(monkeypatch, tmp_path):
     _patch_common(monkeypatch, tmp_path)
 
-    class NullDirectLlm(FakeLlmHandler):
-        def get_llm_aggregate_json(self, *args, **kwargs):
-            return GENE_JSON, 0.1
+    class HighRelevancePaperManager(FakePmcPaperManager):
+        def select_relevance_records(self, records, **kwargs):
+            return PaperSelectionResult(
+                selected_records=records,
+                cumulative_relevance=9.5,
+                selection_mode="target_relevance_reached",
+                eligible_count=len(records),
+                total_retrieved=len(records),
+            )
 
-    monkeypatch.setattr(autoannotation.llms, "LlmHandler", NullDirectLlm)
-    monkeypatch.setattr(
-        autoannotation.orthology,
-        'lookup_top_ortholog',
-        lambda *args, **kwargs: OrthologHit(
-            source_organism_code='pspi',
-            source_organism_name=None,
-            source_gene_id='PS2015_1409',
-            source_gene_name='Ferredoxin, 4Fe-4S',
-            score=108.0,
-            lookup_source='kegg_ssdb',
-        ),
+    monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", HighRelevancePaperManager)
+
+    called = {"lookup": False}
+
+    def fake_lookup(*args, **kwargs):
+        called["lookup"] = True
+        return object()
+
+    monkeypatch.setattr(autoannotation.orthology, 'lookup_best_profiled_ortholog', fake_lookup)
+
+    result = autoannotation.get_gene_annotation(
+        "Rv0001", cache_dir=tmp_path, allow_ortholog_fallback=True,
     )
-
-    result = autoannotation.get_gene_annotation("Rv2007c", cache_dir=tmp_path)
     meta = result["gene_annotation"]["annotation_metadata"]
 
-    assert meta["ortholog_top_hit"]["source_organism_code"] == "pspi"
+    assert called["lookup"] is False
+    assert meta["ortholog_top_hit"] is None
     assert meta["ortholog_pass"]["ran"] is False
-    assert meta["ortholog_pass"]["skipped_reason"] == "unsupported_ortholog_organism"
+    assert meta["ortholog_pass"]["skipped_reason"] == "target_relevance_sufficient"
 
 
 def test_get_gene_annotation_survives_kegg_lookup_failure(monkeypatch, tmp_path):
     _patch_common(monkeypatch, tmp_path)
-    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        autoannotation.orthology, 'lookup_best_profiled_ortholog', lambda *args, **kwargs: None
+    )
 
-    result = autoannotation.get_gene_annotation("Rv0001", cache_dir=tmp_path)
+    result = autoannotation.get_gene_annotation(
+        "Rv0001", cache_dir=tmp_path, allow_ortholog_fallback=True,
+    )
 
     assert result["gene_annotation"] is not None
     assert result["gene_annotation"]["annotation_metadata"]["ortholog_top_hit"] is None
     assert result["gene_annotation"]["annotation_metadata"]["ortholog_pass"]["skipped_reason"] == (
-        "no_ortholog_found"
+        "no_profiled_ortholog"
     )
 
 
 def test_get_gene_annotation_accepts_tcruzi_profile_without_table(monkeypatch, tmp_path):
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakePmcPaperManager)
-    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
 
     result = autoannotation.get_gene_annotation(
         profile="tcruzi-clbrener",
@@ -364,7 +376,6 @@ def test_name_only_ad_hoc_annotation_uses_safe_profile_aware_mapping_key(monkeyp
 
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakeNameOnlyPaperManager)
-    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
 
     result = autoannotation.get_gene_annotation(
         organism="Custom bacterium",
@@ -380,3 +391,80 @@ def test_name_only_ad_hoc_annotation_uses_safe_profile_aware_mapping_key(monkeyp
     assert ".." not in captured["saved_gene"]
     assert captured["profile_id"] in captured["saved_gene"]
     assert result["annotation_metadata"]["gene"] is None
+
+
+def test_ortholog_skipped_when_fallback_disabled(monkeypatch):
+    from autoannotation import autoannotation as aa
+
+    called = {"lookup": False}
+
+    def fake_lookup(*args, **kwargs):
+        called["lookup"] = True
+        return None
+
+    monkeypatch.setattr(aa.orthology, "lookup_best_profiled_ortholog", fake_lookup)
+    reason = aa._decide_ortholog_action(
+        allow_ortholog_fallback=False,
+        ortholog_override=None,
+        cumulative_relevance=0.0,
+        kegg_code="mtu",
+        gene="Rv0001",
+        cache_dir="./.cache",
+    )
+    assert reason.hit is None
+    assert reason.skipped_reason == "fallback_disabled_for_job"
+    assert called["lookup"] is False
+
+
+def test_ortholog_skipped_when_relevance_sufficient(monkeypatch):
+    from autoannotation import autoannotation as aa
+
+    monkeypatch.setattr(
+        aa.orthology, "lookup_best_profiled_ortholog", lambda *a, **k: object()
+    )
+    reason = aa._decide_ortholog_action(
+        allow_ortholog_fallback=True,
+        ortholog_override=None,
+        cumulative_relevance=aa.pmc.DEFAULT_TARGET_RELEVANCE + 1,
+        kegg_code="mtu",
+        gene="Rv0001",
+        cache_dir="./.cache",
+    )
+    assert reason.hit is None
+    assert reason.skipped_reason == "target_relevance_sufficient"
+
+
+def test_ortholog_manual_override_bypasses_relevance(monkeypatch):
+    from autoannotation import autoannotation as aa
+
+    sentinel = object()
+    monkeypatch.setattr(aa.orthology, "build_manual_ortholog_hit", lambda *a, **k: sentinel)
+    override = {"profile_id": "mtb-h37rv", "locus": "Rv9999", "name": "x"}
+    reason = aa._decide_ortholog_action(
+        allow_ortholog_fallback=True,
+        ortholog_override=override,
+        cumulative_relevance=aa.pmc.DEFAULT_TARGET_RELEVANCE + 100,
+        kegg_code="mtu",
+        gene="Rv0001",
+        cache_dir="./.cache",
+    )
+    assert reason.hit is sentinel
+    assert reason.skipped_reason is None
+
+
+def test_ortholog_manual_override_resolves_non_mtb_profile():
+    from autoannotation import autoannotation as aa
+
+    override = {"profile_id": "tcruzi-clbrener", "locus": "TcCLB.1", "name": "geneA"}
+    decision = aa._decide_ortholog_action(
+        allow_ortholog_fallback=True,
+        ortholog_override=override,
+        cumulative_relevance=aa.pmc.DEFAULT_TARGET_RELEVANCE + 100,
+        kegg_code="mtu",
+        gene="Rv0001",
+        cache_dir="./.cache",
+    )
+    assert decision.hit.lookup_source == "manual"
+    assert decision.hit.source_gene_id == "TcCLB.1"
+    search_profile = aa.orthology.profile_for_kegg_organism(decision.hit.source_organism_code)
+    assert "Trypanosoma cruzi" in search_profile.species_name

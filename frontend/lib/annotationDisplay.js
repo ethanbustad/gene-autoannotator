@@ -8,6 +8,7 @@ export const GENERATED_FIELD_ORDER = [
 ];
 
 export const FIELD_PROVENANCE_ORTHolog_DERIVED = "ortholog_derived";
+export const FIELD_PROVENANCE_TARGET_PLUS_ORTHOLOG = "target_plus_ortholog";
 
 // UI field order is fixed for review readability even though raw JSON preserves
 // the full annotation. Helpers expect the backend shape:
@@ -81,15 +82,54 @@ export function getFieldProvenance(annotation) {
   return getMetadata(annotation).field_provenance || {};
 }
 
+export function getOrthologFields(annotation) {
+  return getMetadata(annotation).ortholog_fields || {};
+}
+
+export function formatOrthologSourceLabel(block) {
+  if (!block) {
+    return "";
+  }
+
+  const parts = [];
+  if (block.source_gene_id) {
+    const name = block.source_gene_name ? ` (${block.source_gene_name})` : "";
+    parts.push(`${block.source_gene_id}${name}`);
+  } else if (block.source_gene_name) {
+    parts.push(String(block.source_gene_name));
+  }
+  if (block.source_organism) {
+    parts.push(String(block.source_organism));
+  }
+  if (block.identity != null) {
+    parts.push(`${Math.round(block.identity * 100)}% identity`);
+  }
+
+  return parts.join(" · ");
+}
+
 export function getGeneratedFieldRows(annotation) {
   const payload = getAnnotationPayload(annotation);
   const fieldProvenance = getFieldProvenance(annotation);
-  return GENERATED_FIELD_ORDER.map(([key, label]) => ({
-    key,
-    label,
-    value: formatAnnotationValue(payload[key]),
-    orthologDerived: fieldProvenance[key] === FIELD_PROVENANCE_ORTHolog_DERIVED,
-  }));
+  const orthologFields = getOrthologFields(annotation);
+  return GENERATED_FIELD_ORDER.map(([key, label]) => {
+    const provenance = fieldProvenance[key];
+    const orthologEntry = orthologFields[key];
+    return {
+      key,
+      label,
+      value: formatAnnotationValue(payload[key]),
+      orthologDerived:
+        provenance === FIELD_PROVENANCE_ORTHolog_DERIVED ||
+        provenance === FIELD_PROVENANCE_TARGET_PLUS_ORTHOLOG,
+      orthologBlock: orthologEntry
+        ? {
+            value: formatAnnotationValue(orthologEntry.value),
+            sourceLabel: formatOrthologSourceLabel(orthologEntry),
+          }
+        : null,
+    };
+  });
 }
 
 export function getMetadataRows(annotation) {

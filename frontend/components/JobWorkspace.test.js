@@ -32,3 +32,18 @@ test("completed job annotation link falls back to name and preflight identifiers
     /href=\{`\/annotations\?query=\$\{encodeURIComponent\(annotationQuery\)\}`\}/,
   );
 });
+
+test("JobWorkspace exposes an ortholog fallback checkbox and manual override inputs", async () => {
+  const workspace = await readProjectFile("components/JobWorkspace.js");
+
+  assert.match(workspace, /allowOrthologFallback: false/);
+  assert.match(workspace, /Allow ortholog fallback/);
+  assert.match(
+    workspace,
+    /updateForm\("allowOrthologFallback", event\.target\.checked\)/,
+  );
+  assert.match(workspace, /form\.allowOrthologFallback \?/);
+  assert.match(workspace, /updateForm\("orthologProfile", event\.target\.value\)/);
+  assert.match(workspace, /updateForm\("orthologLocus", event\.target\.value\)/);
+  assert.match(workspace, /updateForm\("orthologName", event\.target\.value\)/);
+});

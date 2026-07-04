@@ -12,6 +12,7 @@ METADATA_FIELDS = ('annotation_metadata', 'annotation_notes')
 COMPARISON_IGNORE_FIELDS = frozenset(METADATA_FIELDS)
 FIELD_PROVENANCE_DIRECT = 'direct'
 FIELD_PROVENANCE_ORTHolog_DERIVED = 'ortholog_derived'
+FIELD_PROVENANCE_TARGET_PLUS_ORTHOLOG = 'target_plus_ortholog'
 DEFAULT_EXCLUDED_WARNINGS = frozenset({
     'excluded_species',
     'missing_target_organism',
@@ -318,6 +319,19 @@ def find_fields_needing_ortholog(direct_annotation, field_coverage, profile_fiel
     return missing
 
 
+def fields_eligible_for_ortholog(profile_field_defs):
+    """All ortholog-allowed, in-schema fields regardless of whether the target
+    filled them (the relevance-budget trigger decides whether the pass runs)."""
+    eligible = []
+    for field_def in profile_field_defs:
+        if not field_def.ortholog_allowed:
+            continue
+        if not field_defs.include_in_llm_schema(field_def):
+            continue
+        eligible.append(field_def.key)
+    return eligible
+
+
 def merge_ortholog_evidence(
     direct_annotation,
     ortholog_annotation,
@@ -370,6 +384,76 @@ def merge_ortholog_evidence(
 
     metadata_block['field_provenance'] = field_provenance
     metadata_block['review_flags'] = review_flags
+    merged['annotation_metadata'] = metadata_block
+    return merged, fields_filled
+
+
+def merge_ortholog_annotation(
+    direct_annotation,
+    ortholog_annotation,
+    eligible_fields,
+    ortholog_hit,
+    *,
+    target_gene_id=None,
+    target_gene_name=None,
+):
+    """Keep both target and ortholog evidence per field.
+
+    - target empty, ortholog present  -> canonical value = ortholog, provenance 'ortholog_derived'
+    - both present                     -> canonical value = target, ortholog stored in
+                                          annotation_metadata.ortholog_fields, provenance
+                                          'target_plus_ortholog'
+    - ortholog empty                  -> no change
+    """
+    merged = dict(direct_annotation)
+    metadata_block = dict(merged.get('annotation_metadata') or {})
+    field_provenance = dict(metadata_block.get('field_provenance') or {})
+    review_flags = dict(metadata_block.get('review_flags') or {})
+    ortholog_fields = dict(metadata_block.get('ortholog_fields') or {})
+    fields_filled = []
+
+    for field_key in eligible_fields:
+        ortholog_value = (ortholog_annotation or {}).get(field_key)
+        if _field_value_missing(ortholog_value):
+            continue
+        direct_value = merged.get(field_key)
+        if _field_value_missing(direct_value):
+            merged[field_key] = ortholog_value
+            field_provenance[field_key] = FIELD_PROVENANCE_ORTHolog_DERIVED
+        else:
+            field_provenance[field_key] = FIELD_PROVENANCE_TARGET_PLUS_ORTHOLOG
+        ortholog_fields[field_key] = {
+            'value': ortholog_value,
+            'source_organism': ortholog_hit.source_organism_name,
+            'source_organism_code': ortholog_hit.source_organism_code,
+            'source_gene_id': ortholog_hit.source_gene_id,
+            'source_gene_name': ortholog_hit.source_gene_name,
+            'identity': ortholog_hit.identity,
+            'score': ortholog_hit.score,
+        }
+        review_flags[field_key] = True
+        fields_filled.append(field_key)
+
+    if fields_filled:
+        ortholog_label = ortholog_hit.source_gene_id
+        if ortholog_hit.source_organism_name:
+            ortholog_label = f'{ortholog_hit.source_gene_id} ({ortholog_hit.source_organism_name})'
+        target_label = target_gene_id or 'target gene'
+        if target_gene_name:
+            target_label = f'{target_label} ({target_gene_name})'
+        note = (
+            f'Ortholog evidence added for fields ({", ".join(fields_filled)}) from '
+            f'{ortholog_label} (identity {ortholog_hit.identity}, score {ortholog_hit.score}). '
+            f'Ortholog-derived values describe the ortholog gene, not direct experimental '
+            f'evidence for {target_label}; curator review required.'
+        )
+        existing_notes = merged.get('annotation_notes')
+        merged['annotation_notes'] = f'{existing_notes}\n\n{note}' if existing_notes else note
+
+    metadata_block['field_provenance'] = field_provenance
+    metadata_block['review_flags'] = review_flags
+    if ortholog_fields:
+        metadata_block['ortholog_fields'] = ortholog_fields
     merged['annotation_metadata'] = metadata_block
     return merged, fields_filled
 

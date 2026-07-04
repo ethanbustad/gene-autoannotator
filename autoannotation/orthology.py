@@ -13,6 +13,7 @@ from . import organisms
 log = logging.getLogger(__name__)
 
 KEGG_SSDB_BEST_URL = 'https://www.kegg.jp/ssdb-bin/ssdb_best?org_gene={org_gene}'
+MIN_ORTHOLOG_IDENTITY = 0.30
 SSDB_ENTRY_PATTERN = re.compile(
     r'<A HREF="/entry/([a-z]{3,4}:[^"]+)"[^>]*>\1</A>\s+([^<]*?)\s*'
     r'<A HREF="/entry/K\d+"[^>]*>K\d+</a>\s+(\d+)\s+(\d+)\s+([\d.]+)\s+(\d+)',
@@ -125,6 +126,7 @@ class OrthologHit:
     source_gene_name: str | None
     score: float | None
     lookup_source: str
+    identity: float | None = None
     raw_response: str | None = None
 
     def to_metadata(self):
@@ -134,6 +136,7 @@ class OrthologHit:
             'source_gene_id': self.source_gene_id,
             'source_gene_name': self.source_gene_name,
             'score': self.score,
+            'identity': self.identity,
             'lookup_source': self.lookup_source,
         }
 
@@ -149,25 +152,33 @@ class OrthologPassResult:
     fields_requested: list[str] | None = None
 
 
-def parse_ssdb_best_response(html, query_organism_code):
-    """Parse KEGG SSDB best-hit HTML and return the top non-self hit."""
+def parse_ssdb_hits(html, query_organism_code):
+    """Parse KEGG SSDB best-hit HTML into all non-self hits, best score first."""
     query_code = query_organism_code.lower()
+    hits = []
     for match in SSDB_ENTRY_PATTERN.finditer(html):
-        org_gene, description, score_str, _aln_len, _identity, _query_len = match.groups()
+        org_gene, description, _length, sw_score, identity, _overlap = match.groups()
         org_code, gene_id = org_gene.split(':', 1)
         if org_code.lower() == query_code:
             continue
         description = ' '.join(description.split())
-        return OrthologHit(
+        hits.append(OrthologHit(
             source_organism_code=org_code.lower(),
             source_organism_name=KEGG_ORGANISM_NAMES.get(org_code.lower()),
             source_gene_id=gene_id,
             source_gene_name=description or None,
-            score=float(score_str),
+            score=float(sw_score),
+            identity=float(identity),
             lookup_source='kegg_ssdb',
             raw_response=None,
-        )
-    return None
+        ))
+    return hits
+
+
+def parse_ssdb_best_response(html, query_organism_code):
+    """Backward-compatible: return the first non-self hit (table order)."""
+    hits = parse_ssdb_hits(html, query_organism_code)
+    return hits[0] if hits else None
 
 
 def _cache_path(cache_dir, kegg_organism_code, gene_locus):
@@ -176,9 +187,10 @@ def _cache_path(cache_dir, kegg_organism_code, gene_locus):
     return os.path.join(cache_dir, 'orthologs', f'{digest}.json')
 
 
-def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *, fetch_html=None):
+def _fetch_ssdb_hits(kegg_organism_code, gene_locus, cache_dir='./.cache', *, fetch_html=None):
+    """Return all non-self SSDB hits for a gene, using a cached JSON list."""
     if not kegg_organism_code or not gene_locus:
-        return None
+        return []
 
     cache_file = _cache_path(cache_dir, kegg_organism_code, gene_locus)
     if os.path.isfile(cache_file):
@@ -186,16 +198,10 @@ def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *,
             with open(cache_file, 'r', encoding='utf-8') as handle:
                 cached = json.load(handle)
             if cached is None:
-                return None
-            hit = OrthologHit(**{**cached, 'raw_response': None})
-            log.debug(
-                'Using cached ortholog hit %s:%s for %s:%s',
-                hit.source_organism_code,
-                hit.source_gene_id,
-                kegg_organism_code,
-                gene_locus,
-            )
-            return hit
+                return []
+            if isinstance(cached, dict):  # legacy single-hit cache
+                cached = [cached]
+            return [OrthologHit(**{**item, 'raw_response': None}) for item in cached]
         except (json.JSONDecodeError, TypeError, KeyError):
             log.warning('Invalid ortholog cache at %s; refetching', cache_file)
 
@@ -210,16 +216,40 @@ def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *,
             html = response.text
     except Exception as exc:
         log.warning('KEGG SSDB lookup failed for %s: %s', org_gene, exc)
-        return None
+        return []
 
-    hit = parse_ssdb_best_response(html, kegg_organism_code)
+    hits = parse_ssdb_hits(html, kegg_organism_code)
     os.makedirs(os.path.dirname(cache_file), exist_ok=True)
     with open(cache_file, 'w', encoding='utf-8') as handle:
-        if hit is None:
-            json.dump(None, handle)
-        else:
-            json.dump(hit.to_metadata(), handle, indent=2)
-    return hit
+        json.dump([hit.to_metadata() for hit in hits], handle, indent=2)
+    return hits
+
+
+def lookup_top_ortholog(kegg_organism_code, gene_locus, cache_dir='./.cache', *, fetch_html=None):
+    hits = _fetch_ssdb_hits(kegg_organism_code, gene_locus, cache_dir, fetch_html=fetch_html)
+    return hits[0] if hits else None
+
+
+def lookup_best_profiled_ortholog(
+    kegg_organism_code, gene_locus, cache_dir='./.cache', *,
+    fetch_html=None, min_identity=MIN_ORTHOLOG_IDENTITY,
+):
+    hits = _fetch_ssdb_hits(kegg_organism_code, gene_locus, cache_dir, fetch_html=fetch_html)
+    return select_best_profiled_ortholog(hits, min_identity=min_identity)
+
+
+def build_manual_ortholog_hit(profile, locus, name=None):
+    code = (profile.kegg_organism_code or profile.profile_id).lower()
+    return OrthologHit(
+        source_organism_code=code,
+        source_organism_name=profile.canonical_name,
+        source_gene_id=locus,
+        source_gene_name=name,
+        score=None,
+        identity=None,
+        lookup_source='manual',
+        raw_response=None,
+    )
 
 
 def profile_for_kegg_organism(kegg_code):
@@ -229,6 +259,10 @@ def profile_for_kegg_organism(kegg_code):
             return profile
     hints = KEGG_ORGANISM_PROFILE_HINTS.get(kegg_code)
     if hints is None:
+        try:
+            return organisms.resolve_profile(kegg_code)
+        except organisms.UnknownOrganismError:
+            pass
         organism_name = KEGG_ORGANISM_NAMES.get(kegg_code, kegg_code)
         hints = {
             'profile_id': f'kegg-{kegg_code}',
@@ -275,6 +309,20 @@ def supports_ortholog_literature_pass(hit):
         if profile.kegg_organism_code and profile.kegg_organism_code.lower() == code:
             return True
     return False
+
+
+def select_best_profiled_ortholog(hits, *, min_identity=MIN_ORTHOLOG_IDENTITY):
+    """Pick the highest-SW-score hit that has a saved profile/hint and clears the
+    identity floor. Returns None when no hit qualifies."""
+    qualifying = [
+        hit for hit in hits
+        if supports_ortholog_literature_pass(hit)
+        and hit.identity is not None
+        and hit.identity >= min_identity
+    ]
+    if not qualifying:
+        return None
+    return max(qualifying, key=lambda hit: (hit.score if hit.score is not None else 0.0))
 
 
 _GENE_SYMBOL_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,11}$')

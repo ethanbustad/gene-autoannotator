@@ -221,3 +221,22 @@ def test_annotation_cli_passes_cache_supplied_name_flag(monkeypatch):
     )
 
     assert captured["cache_supplied_name"] is True
+
+
+def test_main_forwards_ortholog_flags(monkeypatch):
+    from autoannotation import __main__ as cli
+
+    captured = {}
+
+    def fake_get_gene_annotation(**kwargs):
+        captured.update(kwargs)
+        return None
+
+    monkeypatch.setattr(cli, "get_gene_annotation", fake_get_gene_annotation)
+    cli.main(
+        profile="mtb-h37rv", locus="Rv0001",
+        allow_ortholog_fallback=True,
+        ortholog_override={"profile_id": "mtb-h37rv", "locus": "Rv9999", "name": "x"},
+    )
+    assert captured["allow_ortholog_fallback"] is True
+    assert captured["ortholog_override"]["locus"] == "Rv9999"
