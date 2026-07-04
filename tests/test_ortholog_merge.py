@@ -155,3 +155,62 @@ def test_attach_ortholog_metadata_adds_top_hit_and_pass_block():
     assert updated['annotation_metadata']['ortholog_pass']['skipped_reason'] == (
         'no_eligible_missing_fields'
     )
+
+
+def test_merge_ortholog_annotation_keeps_both_values():
+    from autoannotation import metadata, orthology
+
+    hit = orthology.OrthologHit(
+        source_organism_code="mory", source_organism_name="Mycobacterium orygis",
+        source_gene_id="MO_000001", source_gene_name="octT",
+        score=2600.0, identity=0.62, lookup_source="kegg_ssdb",
+    )
+    direct = {
+        "gene_id": "Rv0001", "name": "dnaA",
+        "function": "target function text",
+        "infection_impact": None,
+        "annotation_metadata": {},
+    }
+    ortholog = {
+        "function": "ortholog function text",
+        "infection_impact": "ortholog infection text",
+    }
+    merged, filled = metadata.merge_ortholog_annotation(
+        direct, ortholog, ["function", "infection_impact"], hit,
+        target_gene_id="Rv0001", target_gene_name="dnaA",
+    )
+
+    # both present -> canonical value stays target, ortholog stored separately
+    assert merged["function"] == "target function text"
+    assert merged["annotation_metadata"]["field_provenance"]["function"] == "target_plus_ortholog"
+    of = merged["annotation_metadata"]["ortholog_fields"]["function"]
+    assert of["value"] == "ortholog function text"
+    assert of["source_gene_id"] == "MO_000001"
+    assert of["identity"] == 0.62
+
+    # target empty -> canonical value becomes ortholog, provenance ortholog_derived
+    assert merged["infection_impact"] == "ortholog infection text"
+    assert merged["annotation_metadata"]["field_provenance"]["infection_impact"] == "ortholog_derived"
+
+    assert set(filled) == {"function", "infection_impact"}
+    assert merged["annotation_metadata"]["review_flags"]["function"] is True
+
+
+def test_merge_ortholog_annotation_skips_empty_ortholog_values():
+    from autoannotation import metadata, orthology
+
+    hit = orthology.OrthologHit(
+        source_organism_code="mory", source_organism_name="Mycobacterium orygis",
+        source_gene_id="MO_1", source_gene_name=None,
+        score=1.0, identity=0.5, lookup_source="kegg_ssdb",
+    )
+    direct = {"function": "target only", "infection_impact": None, "annotation_metadata": {}}
+    ortholog = {"function": None, "infection_impact": None}
+    merged, filled = metadata.merge_ortholog_annotation(
+        direct, ortholog, ["function", "infection_impact"], hit,
+        target_gene_id="Rv0001", target_gene_name="dnaA",
+    )
+    assert filled == []
+    assert "ortholog_fields" not in merged["annotation_metadata"] or \
+        merged["annotation_metadata"]["ortholog_fields"] == {}
+    assert merged["function"] == "target only"
