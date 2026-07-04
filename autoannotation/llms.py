@@ -844,6 +844,7 @@ class LlmHandler:
                 return self.get_llm_gene_info_json(
                     gene_id, gene_name, info_text, model, json_schema=json_schema, retry=False,
                     section_type=section_type, organism_profile=organism_profile,
+                    evidence_mode=evidence_mode, ortholog_context=ortholog_context,
                     field_defs_profile=field_defs_profile,
                 )
             else:

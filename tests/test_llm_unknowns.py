@@ -228,6 +228,50 @@ def test_build_section_prompt_ortholog_uses_target_fields_and_ortholog_species()
     assert "Trypanosoma cruzi" in prompt
 
 
+def test_get_llm_gene_info_retry_preserves_ortholog_framing(monkeypatch):
+    handler = llms.LlmHandler(cache_dir="./.cache")
+    handler._read_cache = lambda model, prompt, json_schema: (None, None)
+    handler._write_cache = lambda *args, **kwargs: True
+
+    prompts = []
+    calls = {"n": 0}
+
+    def fake_chat(*, model, messages, format, options):
+        prompts.append(messages[0]["content"])
+        calls["n"] += 1
+        if calls["n"] == 1:
+            # Missing 'message' key -> KeyError inside the method -> triggers retry.
+            return {}
+        return {
+            "message": {"content": json.dumps({"gene_id": "TcCLB.1", "name": "geneA"})},
+            "total_duration": 1_000_000_000,
+        }
+
+    monkeypatch.setattr(llms.ollama, "chat", fake_chat)
+
+    handler.get_llm_gene_info_json(
+        "TcCLB.1",
+        "geneA",
+        "excerpt text",
+        "fake-model",
+        section_type="results",
+        organism_profile=organisms.resolve_profile("tcruzi-clbrener"),
+        evidence_mode="ortholog",
+        ortholog_context={"target_gene_id": "Rv0001", "target_gene_name": "dnaA"},
+        field_defs_profile=organisms.resolve_profile("mtb-h37rv"),
+    )
+
+    assert calls["n"] == 2  # first attempt failed, retry ran
+    retry_prompt = prompts[1]
+    # Retry must keep the ortholog template and its target-gene guardrail...
+    assert "ORTHOLOG inference pass" in retry_prompt
+    assert "Rv0001" in retry_prompt
+    # ...the target profile's field set...
+    assert "infection_impact" in retry_prompt
+    # ...and the ortholog profile's species framing.
+    assert "Trypanosoma cruzi" in retry_prompt
+
+
 def test_build_field_coverage_marks_null_as_insufficient():
     coverage = metadata.build_field_coverage({
         'function': 'Known function.',
