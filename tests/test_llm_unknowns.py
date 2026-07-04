@@ -195,6 +195,39 @@ def test_normalize_response_json_preserves_mtb_rv_id_for_legacy_outputs():
     assert normalized['rv_id'] == 'Rv0001'
 
 
+def test_build_json_schema_uses_field_defs_profile_keys_with_organism_species():
+    from autoannotation import llms, organisms
+
+    target = organisms.resolve_profile("mtb-h37rv")            # has infection_impact etc.
+    ortholog = organisms.resolve_profile("tcruzi-clbrener")    # search/framing profile
+
+    schema = llms.build_json_schema(
+        ortholog, require_biology=True, field_defs_profile=target,
+    )
+    props = schema["properties"]
+    # keys come from the TARGET profile
+    assert "infection_impact" in props
+    # species framing in a description comes from the ORTHOLOG profile
+    assert "Trypanosoma cruzi" in props["infection_impact"]["description"]
+
+
+def test_build_section_prompt_ortholog_uses_target_fields_and_ortholog_species():
+    from autoannotation import llms, organisms
+
+    target = organisms.resolve_profile("mtb-h37rv")
+    ortholog = organisms.resolve_profile("tcruzi-clbrener")
+    prompt = llms.build_section_prompt(
+        "TcCLB.1", "geneA", "excerpt text",
+        section_type="results",
+        organism_profile=ortholog,
+        field_defs_profile=target,
+        evidence_mode="ortholog",
+        ortholog_context={"target_gene_id": "Rv0001", "target_gene_name": "dnaA"},
+    )
+    assert "infection_impact" in prompt
+    assert "Trypanosoma cruzi" in prompt
+
+
 def test_build_field_coverage_marks_null_as_insufficient():
     coverage = metadata.build_field_coverage({
         'function': 'Known function.',

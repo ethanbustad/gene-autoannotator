@@ -69,7 +69,9 @@ def is_unknown_value(value):
     return False
 
 
-def normalize_annotation_fields(parsed, *, require_biology_keys=False, organism_profile=None):
+def normalize_annotation_fields(
+    parsed, *, require_biology_keys=False, organism_profile=None, field_defs_profile=None,
+):
     """Map empty or placeholder values to JSON null while preserving supplied identity."""
     normalized = {
         'gene_id': parsed.get('gene_id') or parsed.get('rv_id'),
@@ -84,8 +86,9 @@ def normalize_annotation_fields(parsed, *, require_biology_keys=False, organism_
     ):
         normalized['rv_id'] = normalized['gene_id']
 
-    if organism_profile is not None:
-        biology_field_defs = field_defs.resolve_effective_fields(organism_profile)
+    schema_profile = field_defs_profile or organism_profile
+    if schema_profile is not None:
+        biology_field_defs = field_defs.resolve_effective_fields(schema_profile)
     else:
         biology_field_defs = tuple(
             field_defs.AnnotationFieldDef(
@@ -205,11 +208,12 @@ def _identity_properties(organism_profile=None, *, allow_missing_locus=False):
     }
 
 
-def _biology_properties_from_profile(organism_profile=None):
+def _biology_properties_from_profile(organism_profile=None, field_defs_profile=None):
     if organism_profile is None:
         return _biology_properties('the organism')
+    schema_profile = field_defs_profile or organism_profile
     properties = {}
-    for field_def in field_defs.llm_schema_fields(organism_profile):
+    for field_def in field_defs.llm_schema_fields(schema_profile):
         properties[field_def.key] = field_defs.field_def_to_schema_property(
             field_def,
             species_name=organism_profile.species_name,
@@ -224,14 +228,16 @@ def build_json_schema(
     require_biology=False,
     aggregate=False,
     allow_missing_locus=False,
+    field_defs_profile=None,
 ):
     # Ollama's structured output support is used as the first guardrail. The
     # schema is intentionally small because factual support still comes from
     # prompts, section selection, and later curator review.
     required = ['gene_id', 'name']
+    schema_profile = field_defs_profile or organism_profile
     llm_fields = (
-        field_defs.llm_schema_fields(organism_profile)
-        if organism_profile is not None
+        field_defs.llm_schema_fields(schema_profile)
+        if schema_profile is not None
         else ()
     )
     if require_biology:
@@ -241,7 +247,7 @@ def build_json_schema(
             required += list(BIOLOGY_FIELDS)
     properties = {
         **_identity_properties(organism_profile, allow_missing_locus=allow_missing_locus),
-        **_biology_properties_from_profile(organism_profile),
+        **_biology_properties_from_profile(organism_profile, field_defs_profile=field_defs_profile),
     }
     if aggregate:
         properties['annotation_notes'] = _nullable_string(
@@ -316,13 +322,14 @@ Excerpt:
 '''
 
 
-def _section_fields_block(organism_profile):
+def _section_fields_block(organism_profile, field_defs_profile=None):
     if organism_profile is None:
         return (
             'function, functional_category, drug_susc_impact, infection_impact, '
             'essential_in_vitro, essential_in_vivo'
         )
-    llm_fields = field_defs.llm_schema_fields(organism_profile)
+    schema_profile = field_defs_profile or organism_profile
+    llm_fields = field_defs.llm_schema_fields(schema_profile)
     return field_defs.format_fields_for_prompt(
         llm_fields,
         species_name=organism_profile.species_name,
@@ -332,7 +339,7 @@ def _section_fields_block(organism_profile):
 
 def build_section_prompt(
     gene, name, text, *, section_type, organism_profile=None,
-    evidence_mode='target', ortholog_context=None,
+    evidence_mode='target', ortholog_context=None, field_defs_profile=None,
 ):
     organism_label = (
         organism_profile.canonical_name
@@ -347,7 +354,7 @@ def build_section_prompt(
             '\n- No locus identifier was supplied or resolved. Do not invent a locus '
             'identifier; set gene_id to null.'
         )
-    fields_block = _section_fields_block(organism_profile)
+    fields_block = _section_fields_block(organism_profile, field_defs_profile=field_defs_profile)
     if evidence_mode == 'ortholog':
         target_gene = (ortholog_context or {}).get('target_gene_id') or 'the target gene'
         target_name = (ortholog_context or {}).get('target_gene_name') or target_gene
@@ -481,12 +488,15 @@ class LlmHandler:
             return False
 
     @staticmethod
-    def normalize_response_json(gene_json, *, require_biology_keys=False, organism_profile=None):
+    def normalize_response_json(
+        gene_json, *, require_biology_keys=False, organism_profile=None, field_defs_profile=None,
+    ):
         parsed = json.loads(gene_json)
         normalized = normalize_annotation_fields(
             parsed,
             require_biology_keys=require_biology_keys,
             organism_profile=organism_profile,
+            field_defs_profile=field_defs_profile,
         )
         return json.dumps(normalized)
 
@@ -585,13 +595,14 @@ class LlmHandler:
         self, json_responses, pmids, model='gemma3:12b',
         json_schema=None, retry=True, literature_context=None,
         relevance_scores=None, organism_profile=None, allow_missing_locus=False,
-        evidence_mode='target', ortholog_context=None,
+        evidence_mode='target', ortholog_context=None, field_defs_profile=None,
     ):
         json_responses = list(json_responses)
         pmids = list(pmids)
         json_schema = json_schema or build_json_schema(
             organism_profile, require_biology=True, aggregate=True,
             allow_missing_locus=allow_missing_locus,
+            field_defs_profile=field_defs_profile,
         )
         if evidence_mode == 'ortholog':
             context = ortholog_context or {}
@@ -610,6 +621,7 @@ class LlmHandler:
             normalized = self.normalize_response_json(
                 json_response,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             )
             relevance_label = (
                 f'{relevance:.3f}' if relevance is not None else 'not available'
@@ -629,6 +641,7 @@ class LlmHandler:
                 cached_response,
                 require_biology_keys=True,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             ), cached_dur
 
         log.debug((
@@ -659,6 +672,7 @@ class LlmHandler:
                 response_text,
                 require_biology_keys=True,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             )
             usage = self._usage_from_response(response, duration_sec)
             self._record_usage('gene_aggregation', model, duration_sec, usage=usage)
@@ -671,6 +685,7 @@ class LlmHandler:
                     relevance_scores=relevance_scores, organism_profile=organism_profile,
                     allow_missing_locus=allow_missing_locus,
                     evidence_mode=evidence_mode, ortholog_context=ortholog_context,
+                    field_defs_profile=field_defs_profile,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
@@ -679,14 +694,22 @@ class LlmHandler:
     def get_llm_consensus_json(
         self, json1, json2, json3, model='gemma3:12b', json_schema=None,
         retry=True, section_type='unknown', organism_profile=None, allow_missing_locus=False,
+        field_defs_profile=None,
     ):
         json_schema = json_schema or build_json_schema(
             organism_profile,
             allow_missing_locus=allow_missing_locus,
+            field_defs_profile=field_defs_profile,
         )
-        json1 = self.normalize_response_json(json1, organism_profile=organism_profile)
-        json2 = self.normalize_response_json(json2, organism_profile=organism_profile)
-        json3 = self.normalize_response_json(json3, organism_profile=organism_profile)
+        json1 = self.normalize_response_json(
+            json1, organism_profile=organism_profile, field_defs_profile=field_defs_profile,
+        )
+        json2 = self.normalize_response_json(
+            json2, organism_profile=organism_profile, field_defs_profile=field_defs_profile,
+        )
+        json3 = self.normalize_response_json(
+            json3, organism_profile=organism_profile, field_defs_profile=field_defs_profile,
+        )
         prompt = prompt2_tmpl.format(json1, json2, json3, section_type)
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
@@ -701,6 +724,7 @@ class LlmHandler:
             return self.normalize_response_json(
                 cached_response,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             ), cached_dur
 
         log.debug((
@@ -730,6 +754,7 @@ class LlmHandler:
             response_text = self.normalize_response_json(
                 response_text,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             )
             usage = self._usage_from_response(response, duration_sec)
             self._record_usage('section_consensus', model, duration_sec, usage=usage)
@@ -740,6 +765,7 @@ class LlmHandler:
                     json1, json2, json3, model=model, json_schema=json_schema, retry=False,
                     section_type=section_type, organism_profile=organism_profile,
                     allow_missing_locus=allow_missing_locus,
+                    field_defs_profile=field_defs_profile,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
@@ -748,12 +774,13 @@ class LlmHandler:
     def get_llm_gene_info_json(
         self, gene_id, gene_name, info_text, model, json_schema=None,
         retry=True, section_type='unknown', organism_profile=None,
-        evidence_mode='target', ortholog_context=None,
+        evidence_mode='target', ortholog_context=None, field_defs_profile=None,
     ):
         organism_profile = organism_profile or organisms.resolve_profile('mtb-h37rv')
         json_schema = json_schema or build_json_schema(
             organism_profile,
             allow_missing_locus=gene_id is None,
+            field_defs_profile=field_defs_profile,
         )
         prompt = build_section_prompt(
             gene_id,
@@ -763,6 +790,7 @@ class LlmHandler:
             organism_profile=organism_profile,
             evidence_mode=evidence_mode,
             ortholog_context=ortholog_context,
+            field_defs_profile=field_defs_profile,
         )
 
         cached_response, cached_dur = self._read_cache(model, prompt, json_schema)
@@ -777,6 +805,7 @@ class LlmHandler:
             return self.normalize_response_json(
                 cached_response,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             ), cached_dur
 
         log.debug((
@@ -805,6 +834,7 @@ class LlmHandler:
             response_text = self.normalize_response_json(
                 response_text,
                 organism_profile=organism_profile,
+                field_defs_profile=field_defs_profile,
             )
             usage = self._usage_from_response(response, duration_sec)
             self._record_usage('section_summary', model, duration_sec, usage=usage)
@@ -814,6 +844,7 @@ class LlmHandler:
                 return self.get_llm_gene_info_json(
                     gene_id, gene_name, info_text, model, json_schema=json_schema, retry=False,
                     section_type=section_type, organism_profile=organism_profile,
+                    field_defs_profile=field_defs_profile,
                 )
             else:
                 raise RuntimeError(f'Failed to get response back from {model}') from ke
