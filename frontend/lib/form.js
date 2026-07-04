@@ -132,6 +132,7 @@ function buildBatchOptionsPayload(values) {
     allow_online_name_lookup: Boolean(values.allowOnlineNameLookup),
     refresh_gene_name_cache: Boolean(values.refreshGeneNameCache),
     cache_supplied_name: Boolean(values.cacheSuppliedName),
+    allow_ortholog_fallback: Boolean(values.allowOrthologFallback),
   };
 
   if (profile) {
@@ -184,7 +185,23 @@ export function buildJobPayload(values) {
     allow_online_name_lookup: Boolean(values.allowOnlineNameLookup),
     refresh_gene_name_cache: Boolean(values.refreshGeneNameCache),
     cache_supplied_name: Boolean(values.cacheSuppliedName),
+    allow_ortholog_fallback: Boolean(values.allowOrthologFallback),
   };
+
+  // Attach the manual ortholog override to the shared payload before the branch
+  // split so both profile and custom-organism jobs carry it. The backend falls
+  // back to automatic ortholog discovery when the override is omitted.
+  if (values.allowOrthologFallback) {
+    const orthologProfile = values.orthologProfile?.trim();
+    const orthologLocus = values.orthologLocus?.trim();
+    if (orthologProfile && orthologLocus) {
+      payload.ortholog_override = {
+        profile_id: orthologProfile,
+        locus: orthologLocus,
+        name: values.orthologName?.trim() || null,
+      };
+    }
+  }
 
   for (const [source, target] of [
     ["profile", "profile"],

@@ -283,6 +283,10 @@ export default function JobWorkspace() {
     allowOnlineNameLookup: true,
     refreshGeneNameCache: false,
     cacheSuppliedName: false,
+    allowOrthologFallback: false,
+    orthologProfile: "",
+    orthologLocus: "",
+    orthologName: "",
     locusRegex: "",
     searchTerms: "",
     targetPatterns: "",
@@ -626,7 +630,56 @@ export default function JobWorkspace() {
                 />
                 Cache supplied gene name
               </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.allowOrthologFallback}
+                  onChange={(event) => updateForm("allowOrthologFallback", event.target.checked)}
+                />
+                Allow ortholog fallback
+              </label>
             </div>
+
+            {form.allowOrthologFallback ? (
+              <div className="workbench-muted-bg grid gap-4 rounded-xl border workbench-border p-4 text-sm">
+                <p className="workbench-muted">
+                  Leave the ortholog fields blank for automatic ortholog lookup.
+                </p>
+                <label className="grid gap-2 font-medium">
+                  Ortholog organism/profile
+                  <select
+                    value={form.orthologProfile}
+                    onChange={(event) => updateForm("orthologProfile", event.target.value)}
+                    className="workbench-input"
+                  >
+                    <option value="">Automatic</option>
+                    {profiles.map((profile) => (
+                      <option key={profile.profile_id} value={profile.profile_id}>
+                        {profile.canonical_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-2 font-medium">
+                  Ortholog locus
+                  <input
+                    value={form.orthologLocus}
+                    onChange={(event) => updateForm("orthologLocus", event.target.value)}
+                    className="workbench-input"
+                    placeholder="Leave blank for automatic ortholog lookup"
+                  />
+                </label>
+                <label className="grid gap-2 font-medium">
+                  Ortholog gene name (optional)
+                  <input
+                    value={form.orthologName}
+                    onChange={(event) => updateForm("orthologName", event.target.value)}
+                    className="workbench-input"
+                    placeholder="octT"
+                  />
+                </label>
+              </div>
+            ) : null}
 
             {isCustomProfile ? (
               <details className="workbench-muted-bg rounded-xl border workbench-border p-4 text-sm">

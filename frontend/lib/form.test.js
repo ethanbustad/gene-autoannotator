@@ -30,6 +30,7 @@ test("buildJobPayload omits empty optional fields and maps option names", () => 
       allow_online_name_lookup: false,
       refresh_gene_name_cache: true,
       cache_supplied_name: false,
+      allow_ortholog_fallback: false,
     },
   );
 });
@@ -58,6 +59,7 @@ test("buildJobPayload supports name-only custom organism jobs", () => {
       allow_online_name_lookup: true,
       refresh_gene_name_cache: false,
       cache_supplied_name: false,
+      allow_ortholog_fallback: false,
       search_terms: ["Custom bacterium", "C. bacterium"],
       target_patterns: ["Custom bacterium"],
     },
@@ -88,6 +90,7 @@ test("buildJobPayload omits stale custom organism fields when a profile is selec
       allow_online_name_lookup: true,
       refresh_gene_name_cache: false,
       cache_supplied_name: true,
+      allow_ortholog_fallback: false,
     },
   );
 });
@@ -182,6 +185,7 @@ test("buildBatchPayload maps entries and options", () => {
       allow_online_name_lookup: false,
       refresh_gene_name_cache: false,
       cache_supplied_name: false,
+      allow_ortholog_fallback: false,
     },
   );
 });
@@ -192,4 +196,39 @@ test("readGeneFile parses allowed text files", async () => {
     { input: "Rv0001" },
     { input: "Rv0002" },
   ]);
+});
+
+test("buildJobPayload includes allow_ortholog_fallback and override when enabled", () => {
+  const payload = buildJobPayload({
+    profile: "mtb-h37rv",
+    locus: "Rv0001",
+    allowOrthologFallback: true,
+    orthologProfile: "mory",
+    orthologLocus: "MO_000001",
+    orthologName: "dnaA",
+  });
+  assert.equal(payload.allow_ortholog_fallback, true);
+  assert.deepEqual(payload.ortholog_override, {
+    profile_id: "mory",
+    locus: "MO_000001",
+    name: "dnaA",
+  });
+});
+
+test("buildJobPayload omits override when ortholog locus is blank", () => {
+  const payload = buildJobPayload({
+    profile: "mtb-h37rv",
+    locus: "Rv0001",
+    allowOrthologFallback: true,
+    orthologProfile: "mory",
+    orthologLocus: "",
+  });
+  assert.equal(payload.allow_ortholog_fallback, true);
+  assert.equal(payload.ortholog_override, undefined);
+});
+
+test("buildJobPayload defaults fallback to false", () => {
+  const payload = buildJobPayload({ profile: "mtb-h37rv", locus: "Rv0001" });
+  assert.equal(payload.allow_ortholog_fallback, false);
+  assert.equal(payload.ortholog_override, undefined);
 });
