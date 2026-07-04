@@ -15,6 +15,17 @@ def _normalize_optional_string(value):
     return value
 
 
+class OrthologOverride(BaseModel):
+    profile_id: str = Field(min_length=1)
+    locus: str = Field(min_length=1)
+    name: str | None = None
+
+    @field_validator("profile_id", "locus", "name", mode="before")
+    @classmethod
+    def normalize_strings(cls, value):
+        return _normalize_optional_string(value)
+
+
 class AnnotationFieldPayload(BaseModel):
     key: str = Field(min_length=1)
     label: str = Field(min_length=1)
@@ -106,6 +117,8 @@ class AnnotationJobRequest(BaseModel):
     excluded_species_patterns: list[str] = Field(default_factory=list)
     kegg_organism_code: str | None = None
     annotation_fields: list[dict[str, object]] = Field(default_factory=list)
+    allow_ortholog_fallback: bool = False
+    ortholog_override: OrthologOverride | None = None
 
     @field_validator(
         "profile",
@@ -128,6 +141,8 @@ class AnnotationJobRequest(BaseModel):
             raise ValueError("profile or organism is required")
         if not self.locus and not self.name:
             raise ValueError("name or locus is required")
+        if self.ortholog_override and not self.allow_ortholog_fallback:
+            raise ValueError("ortholog_override requires allow_ortholog_fallback=true")
         return self
 
 
@@ -202,6 +217,7 @@ class BatchJobOptions(BaseModel):
     target_patterns: list[str] = Field(default_factory=list)
     off_target_patterns: list[str] = Field(default_factory=list)
     excluded_species_patterns: list[str] = Field(default_factory=list)
+    allow_ortholog_fallback: bool = False
 
     @field_validator(
         "profile",

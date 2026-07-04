@@ -1121,3 +1121,36 @@ def test_batches_rejects_over_max_size(tmp_path, monkeypatch):
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Batch exceeds maximum size of 2."
+
+
+def test_job_request_rejects_override_without_flag():
+    import pytest
+    from pydantic import ValidationError
+    from backend.schemas import AnnotationJobRequest
+
+    with pytest.raises(ValidationError):
+        AnnotationJobRequest(
+            profile="mtb-h37rv", locus="Rv0001",
+            allow_ortholog_fallback=False,
+            ortholog_override={"profile_id": "mtb-h37rv", "locus": "Rv9999"},
+        )
+
+
+def test_job_request_accepts_flag_and_override():
+    from backend.schemas import AnnotationJobRequest
+
+    request = AnnotationJobRequest(
+        profile="mtb-h37rv", locus="Rv0001",
+        allow_ortholog_fallback=True,
+        ortholog_override={"profile_id": "mtb-h37rv", "locus": "Rv9999", "name": "x"},
+    )
+    assert request.allow_ortholog_fallback is True
+    assert request.ortholog_override.locus == "Rv9999"
+
+
+def test_job_request_flag_defaults_false():
+    from backend.schemas import AnnotationJobRequest
+
+    request = AnnotationJobRequest(profile="mtb-h37rv", locus="Rv0001")
+    assert request.allow_ortholog_fallback is False
+    assert request.ortholog_override is None
