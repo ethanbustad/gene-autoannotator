@@ -328,7 +328,6 @@ def test_get_gene_annotation_survives_kegg_lookup_failure(monkeypatch, tmp_path)
 def test_get_gene_annotation_accepts_tcruzi_profile_without_table(monkeypatch, tmp_path):
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakePmcPaperManager)
-    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
 
     result = autoannotation.get_gene_annotation(
         profile="tcruzi-clbrener",
@@ -377,7 +376,6 @@ def test_name_only_ad_hoc_annotation_uses_safe_profile_aware_mapping_key(monkeyp
 
     monkeypatch.setattr(autoannotation.llms, "LlmHandler", FakeLlmHandler)
     monkeypatch.setattr(autoannotation.pmc, "PmcPaperManager", FakeNameOnlyPaperManager)
-    monkeypatch.setattr(autoannotation.orthology, 'lookup_top_ortholog', lambda *args, **kwargs: None)
 
     result = autoannotation.get_gene_annotation(
         organism="Custom bacterium",
@@ -452,3 +450,21 @@ def test_ortholog_manual_override_bypasses_relevance(monkeypatch):
     )
     assert reason.hit is sentinel
     assert reason.skipped_reason is None
+
+
+def test_ortholog_manual_override_resolves_non_mtb_profile():
+    from autoannotation import autoannotation as aa
+
+    override = {"profile_id": "tcruzi-clbrener", "locus": "TcCLB.1", "name": "geneA"}
+    decision = aa._decide_ortholog_action(
+        allow_ortholog_fallback=True,
+        ortholog_override=override,
+        cumulative_relevance=aa.pmc.DEFAULT_TARGET_RELEVANCE + 100,
+        kegg_code="mtu",
+        gene="Rv0001",
+        cache_dir="./.cache",
+    )
+    assert decision.hit.lookup_source == "manual"
+    assert decision.hit.source_gene_id == "TcCLB.1"
+    search_profile = aa.orthology.profile_for_kegg_organism(decision.hit.source_organism_code)
+    assert "Trypanosoma cruzi" in search_profile.species_name

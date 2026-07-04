@@ -141,6 +141,14 @@ def test_profile_for_kegg_organism_builds_ad_hoc_for_msm():
     assert profile.excluded_species_patterns == ()
 
 
+def test_profile_for_kegg_organism_resolves_profile_id_fallback():
+    profile = orthology.profile_for_kegg_organism('tcruzi-clbrener')
+    assert 'Trypanosoma cruzi' in profile.species_name
+
+    mory = orthology.profile_for_kegg_organism('mory')
+    assert 'Mycobacterium orygis' in mory.species_name
+
+
 def test_supports_ortholog_literature_pass():
     mory = OrthologHit(
         source_organism_code='mory',

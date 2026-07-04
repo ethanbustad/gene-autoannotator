@@ -259,6 +259,10 @@ def profile_for_kegg_organism(kegg_code):
             return profile
     hints = KEGG_ORGANISM_PROFILE_HINTS.get(kegg_code)
     if hints is None:
+        try:
+            return organisms.resolve_profile(kegg_code)
+        except organisms.UnknownOrganismError:
+            pass
         organism_name = KEGG_ORGANISM_NAMES.get(kegg_code, kegg_code)
         hints = {
             'profile_id': f'kegg-{kegg_code}',

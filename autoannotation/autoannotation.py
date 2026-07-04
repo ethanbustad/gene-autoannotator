@@ -245,7 +245,7 @@ def run_paper_annotation_pass(
 
 @dataclass
 class OrthologDecision:
-    hit: object | None
+    hit: orthology.OrthologHit | None
     skipped_reason: str | None
 
 
@@ -253,13 +253,13 @@ def _decide_ortholog_action(
     *, allow_ortholog_fallback, ortholog_override, cumulative_relevance,
     kegg_code, gene, cache_dir,
 ):
+    """Decide whether/how to run the ortholog fallback. May perform a cache/network
+    SSDB lookup on the automatic path."""
     if not allow_ortholog_fallback:
         return OrthologDecision(hit=None, skipped_reason='fallback_disabled_for_job')
 
     if ortholog_override:
-        override_profile = orthology.profile_for_kegg_organism(
-            _override_kegg_code(ortholog_override)
-        )
+        override_profile = organisms.resolve_profile(ortholog_override['profile_id'])
         hit = orthology.build_manual_ortholog_hit(
             override_profile,
             ortholog_override['locus'],
@@ -277,14 +277,6 @@ def _decide_ortholog_action(
     if hit is None:
         return OrthologDecision(hit=None, skipped_reason='no_profiled_ortholog')
     return OrthologDecision(hit=hit, skipped_reason=None)
-
-
-def _override_kegg_code(ortholog_override):
-    profile_id = ortholog_override.get('profile_id')
-    for profile in organisms.PROFILES:
-        if profile.profile_id == profile_id and profile.kegg_organism_code:
-            return profile.kegg_organism_code
-    return profile_id
 
 
 def get_gene_annotation(
