@@ -133,13 +133,49 @@ def test_fields_eligible_for_ortholog_returns_all_allowed_in_schema():
 
     profile = organisms.resolve_profile("mtb-h37rv")
     defs = field_defs.resolve_annotation_field_defs(profile)
-    # force function ortholog_allowed True for the test profile shape
+    # mtb-h37rv marks only `function` as ortholog_allowed, and it is in the LLM schema.
     eligible = metadata.fields_eligible_for_ortholog(defs)
-    # only ortholog_allowed + include_in_llm_schema fields
+    assert eligible == ["function"]
+    expected = {
+        d.key for d in defs
+        if d.ortholog_allowed and field_defs.include_in_llm_schema(d)
+    }
+    assert set(eligible) == expected
     for key in eligible:
         matching = next(d for d in defs if d.key == key)
         assert matching.ortholog_allowed is True
         assert field_defs.include_in_llm_schema(matching)
+
+
+def test_fields_eligible_for_ortholog_excludes_out_of_schema_fields():
+    from autoannotation import field_defs, metadata
+
+    in_schema = field_defs.AnnotationFieldDef(
+        key="function",
+        label="Function",
+        description="",
+        type="string",
+        required=True,
+        inference_strategy="paper_llm",
+        ortholog_allowed=True,
+    )
+    # ortholog_allowed but excluded from the LLM schema: a non-paper_llm strategy
+    # whose key is not the special-cased `functional_category`.
+    out_of_schema = field_defs.AnnotationFieldDef(
+        key="go_derived_field",
+        label="GO-derived field",
+        description="",
+        type="array:string",
+        required=False,
+        inference_strategy="go_terms",
+        ortholog_allowed=True,
+    )
+    assert field_defs.include_in_llm_schema(in_schema) is True
+    assert field_defs.include_in_llm_schema(out_of_schema) is False
+
+    eligible = metadata.fields_eligible_for_ortholog([in_schema, out_of_schema])
+
+    assert eligible == ["function"]
 
 
 def test_annotation_metadata_records_submitted_and_resolved_target_fields():
