@@ -353,6 +353,7 @@ def create_app(
             target_patterns=request.target_patterns,
             off_target_patterns=request.off_target_patterns,
             excluded_species_patterns=request.excluded_species_patterns,
+            allow_ortholog_fallback=request.allow_ortholog_fallback,
         )
 
     @app.get("/health")

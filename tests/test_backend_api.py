@@ -1078,6 +1078,45 @@ def test_batches_create_queues_ready_jobs_only(tmp_path, monkeypatch):
     assert batch_payload["queue"]["queued"] == 1
 
 
+def test_batch_entry_request_inherits_fallback_flag():
+    from backend.schemas import BatchCreateRequest
+
+    request = BatchCreateRequest(
+        profile="mtb-h37rv",
+        entries=[{"input": "Rv0001"}],
+        allow_ortholog_fallback=True,
+    )
+    assert request.allow_ortholog_fallback is True
+
+
+def test_create_batch_propagates_fallback_flag(tmp_path, monkeypatch):
+    _patch_mtb_dnaa_lookup(monkeypatch, locus="Rv0001")
+    client = TestClient(_batch_app(tmp_path))
+
+    response = client.post(
+        "/batches",
+        json={
+            "profile": "mtb-h37rv",
+            "entries": [{"input": "Rv0001"}],
+            "allow_online_name_lookup": False,
+            "allow_ortholog_fallback": True,
+        },
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["job_ids"]
+
+    jobs_response = client.get("/jobs", params={"batch_id": payload["batch_id"]})
+    assert jobs_response.status_code == 200
+    jobs = jobs_response.json()["jobs"]
+    assert jobs
+    assert all(
+        job["request"]["allow_ortholog_fallback"] is True for job in jobs
+    )
+    assert all(job["request"].get("ortholog_override") is None for job in jobs)
+
+
 def test_batches_rejects_empty(tmp_path):
     client = TestClient(_batch_app(tmp_path), raise_server_exceptions=False)
 
