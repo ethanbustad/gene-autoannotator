@@ -25,4 +25,10 @@ def run_annotation_job(request: AnnotationJobRequest, annotation_main=None):
         no_online_name_lookup=not request.allow_online_name_lookup,
         refresh_gene_name_cache=request.refresh_gene_name_cache,
         cache_supplied_name=request.cache_supplied_name,
+        allow_ortholog_fallback=request.allow_ortholog_fallback,
+        ortholog_override=(
+            request.ortholog_override.model_dump()
+            if request.ortholog_override is not None
+            else None
+        ),
     )
