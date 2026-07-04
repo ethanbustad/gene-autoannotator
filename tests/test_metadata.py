@@ -128,6 +128,20 @@ def test_build_annotation_metadata_includes_profile_fields():
     assert annotation_metadata["gene_name_aliases"] == ["UBP1"]
 
 
+def test_fields_eligible_for_ortholog_returns_all_allowed_in_schema():
+    from autoannotation import field_defs, metadata, organisms
+
+    profile = organisms.resolve_profile("mtb-h37rv")
+    defs = field_defs.resolve_annotation_field_defs(profile)
+    # force function ortholog_allowed True for the test profile shape
+    eligible = metadata.fields_eligible_for_ortholog(defs)
+    # only ortholog_allowed + include_in_llm_schema fields
+    for key in eligible:
+        matching = next(d for d in defs if d.key == key)
+        assert matching.ortholog_allowed is True
+        assert field_defs.include_in_llm_schema(matching)
+
+
 def test_annotation_metadata_records_submitted_and_resolved_target_fields():
     annotation_metadata = metadata.build_annotation_metadata(
         gene=None,

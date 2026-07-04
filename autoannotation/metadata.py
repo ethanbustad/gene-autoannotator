@@ -318,6 +318,19 @@ def find_fields_needing_ortholog(direct_annotation, field_coverage, profile_fiel
     return missing
 
 
+def fields_eligible_for_ortholog(profile_field_defs):
+    """All ortholog-allowed, in-schema fields regardless of whether the target
+    filled them (the relevance-budget trigger decides whether the pass runs)."""
+    eligible = []
+    for field_def in profile_field_defs:
+        if not field_def.ortholog_allowed:
+            continue
+        if not field_defs.include_in_llm_schema(field_def):
+            continue
+        eligible.append(field_def.key)
+    return eligible
+
+
 def merge_ortholog_evidence(
     direct_annotation,
     ortholog_annotation,
