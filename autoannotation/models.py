@@ -2,17 +2,17 @@
 
 # === Performance models ===
 PERF_MODELS = {
-    'summary': ['mistral-nemo:12b','llama3:8b','gemma3:12b'],
+    'summary': ['mistral-nemo:12b','qwen3.5:9b','gemma4:12b'],
     'consensus': 'phi4:14b',
-    'aggregation': 'gemma3:12b'
+    'aggregation': 'gemma4:12b'
 }
 
 # === Lite models (<3GB each) ===
 # Use smaller, RAM-friendly alternatives that roughly mimic variety:
 LITE_MODELS = {
-    'summary': ['mistral:7b-instruct-v0.2-q3_K_M', 'llama3.2:3b', 'gemma3:4b'],
-    'consensus': 'phi3:3.8b',
-    'aggregation': 'gemma3:4b'
+    'summary': ['granite4.1:3b', 'qwen3.5:4b', 'gemma4:e4b'],
+    'consensus': 'ministral-3:3b',
+    'aggregation': 'gemma4:e4b'
 }
 
 # === Select mode ===
