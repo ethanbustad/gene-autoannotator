@@ -1,13 +1,11 @@
 # autoannotation/models.py
 
-# === Performance models ===
 PERF_MODELS = {
     'summary': ['mistral-nemo:12b','qwen3.5:9b','gemma4:12b'],
     'consensus': 'phi4:14b',
     'aggregation': 'gemma4:12b'
 }
 
-# === Lite models (<3GB each) ===
 # Use smaller, RAM-friendly alternatives that roughly mimic variety:
 LITE_MODELS = {
     'summary': ['granite4.1:3b', 'qwen3.5:4b', 'gemma4:e4b'],
@@ -15,7 +13,6 @@ LITE_MODELS = {
     'aggregation': 'gemma4:e4b'
 }
 
-# === Select mode ===
 MODE = 'performance'   # 'performance' or 'lite'
 
 if MODE == 'performance':

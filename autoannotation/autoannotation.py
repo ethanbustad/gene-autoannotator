@@ -67,7 +67,7 @@ def get_gene_annotation(gene, cache_dir='./.cache'):
         for label, section in sections:
             log.debug(f'Starting processing for PMC{pmc_id} {label}')
             section_distillation_candidates_cur = []
-            for model in (MODEL_SUMMARY): #for model in ('mistral-nemo:12b', 'llama3:8b', 'gemma3:12b'):
+            for model in (MODEL_SUMMARY):
                 section_distillation_candidate, duration_sec = llm_handler.get_llm_gene_info_json(
                     gene, name, section, model
                 )
